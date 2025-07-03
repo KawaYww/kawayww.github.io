@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <link rel="shortcut icon" href="/images/blog/avatar.avif" type="image/x-icon">
+    <link rel="stylesheet" href="/styles/highlight.min.css">
+    <link rel="stylesheet" href="/styles/highlight.min.css">
+    <script src="/scripts/highlight.min.js"></script>
+    <script src="/scripts/rust.min.js"></script>
+    <script src="/scripts/scheme.min.js"></script>
+    <script>
+    hljs.highlightAll();
+    document.addEventListener('htmx:afterSwap', function() {
+      hljs.highlightAll();
+    });
+  </script>
+    <script>
+    function pre_fetch() {
+      document.querySelectorAll('a').forEach(link => {
+        link.addEventListener('mouseover', () => {
+          // 修正路径：如果链接是 `a/b/c`，实际预加载 `a/b/c/index.html`
+          const prefetchUrl = link.href.endsWith('/') 
+            ? `${link.href}index.html` 
+            : link.href;
+    
+          // 发起预加载请求（强制使用缓存）
+          fetch(prefetchUrl, { 
+            cache: 'force-cache',
+            mode: 'no-cors' // 避免 CORS 问题（GitHub Pages 可能需要）
+          }).catch(e => console.log('Prefetch failed:', e)); // 静默失败
+        });
+      });
+    }
+    pre_fetch()
+    document.addEventListener('htmx:afterSwap', function() {
+      pre_fetch()
+    });
+  </script>
+    <script>
+    const title = document.createElement('title');
+    title.innerHTML = '柳下川'
+      
+    const lock = document.createElement('meta');
+    lock.name = 'darkreader-lock'
+
+    document.head.appendChild(title);
+    document.head.appendChild(lock);
+  </script>
+    <link rel="stylesheet" href="/styles/catppuccin-macchiato.css">
+    <script src="/scripts/htmx.min.js"></script>
+    <link href="/styles/tailwind.css" rel="stylesheet">
+    <link href="/iconfonts/iconfont.css" rel="stylesheet">
+    <div id="content" class="flex flex-col mx-4 mb-20 scroll-smooth" lang="zh-Hans">
+      <div class="text-2xl sm:text-3xl my-4 w-full text-center">『nixos』</div>
+      <div class="flex flex-col items-center m-4">
+        <div class="w-fit mx-auto text-lg font-semibold">摘要</div>
+        <div class="w-fit break-keep text-center sm:mx-[25%] *:inline">关于 nixos 的系列合集</div>
+      </div>
+    </div>
+  </body>
+</html>

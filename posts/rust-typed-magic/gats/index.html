@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <link rel="shortcut icon" href="/images/blog/avatar.avif" type="image/x-icon">
+    <link rel="stylesheet" href="/styles/highlight.min.css">
+    <link rel="stylesheet" href="/styles/highlight.min.css">
+    <script src="/scripts/highlight.min.js"></script>
+    <script src="/scripts/rust.min.js"></script>
+    <script src="/scripts/scheme.min.js"></script>
+    <script>
+    hljs.highlightAll();
+    document.addEventListener('htmx:afterSwap', function() {
+      hljs.highlightAll();
+    });
+  </script>
+    <script>
+    function pre_fetch() {
+      document.querySelectorAll('a').forEach(link => {
+        link.addEventListener('mouseover', () => {
+          // 修正路径：如果链接是 `a/b/c`，实际预加载 `a/b/c/index.html`
+          const prefetchUrl = link.href.endsWith('/') 
+            ? `${link.href}index.html` 
+            : link.href;
+    
+          // 发起预加载请求（强制使用缓存）
+          fetch(prefetchUrl, { 
+            cache: 'force-cache',
+            mode: 'no-cors' // 避免 CORS 问题（GitHub Pages 可能需要）
+          }).catch(e => console.log('Prefetch failed:', e)); // 静默失败
+        });
+      });
+    }
+    pre_fetch()
+    document.addEventListener('htmx:afterSwap', function() {
+      pre_fetch()
+    });
+  </script>
+    <script>
+    const title = document.createElement('title');
+    title.innerHTML = '柳下川'
+      
+    const lock = document.createElement('meta');
+    lock.name = 'darkreader-lock'
+
+    document.head.appendChild(title);
+    document.head.appendChild(lock);
+  </script>
+    <link rel="stylesheet" href="/styles/catppuccin-macchiato.css">
+    <script src="/scripts/htmx.min.js"></script>
+    <link href="/styles/tailwind.css" rel="stylesheet">
+    <link href="/iconfonts/iconfont.css" rel="stylesheet">
+    <div id="content" class="flex flex-col mx-4 mb-20 scroll-smooth" lang="zh-Hans">
+      <div class="text-2xl sm:text-3xl my-4 w-full text-center">『rust-typed-magic: 泛型关联类型(GATs)』</div>
+      <div class="font-medium w-fit sm:mx-auto flex flex-col border-l-4 pl-2 sm:flex-row sm:border-l-0 sm:pl-0">
+        <p>写自:2024-04-24</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>作者:柳下川</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>系列:<a class="underline underline-offset-5" href="/categories/rust-typed-magic" hx-get="/categories/rust-typed-magic/index.html" hx-target="body" hx-push-url="/categories/rust-typed-magic" hx-swap="innerHTML show:window:top">rust-typed-magic</a></p>
+      </div>
+      <div class="flex flex-col items-center m-4">
+        <div class="w-fit mx-auto text-lg font-semibold">摘要</div>
+        <div class="w-fit break-keep text-center sm:mx-[25%] *:inline">学习 rust 中的 gat(泛型关联类型), HKT(高阶类型), type-constructor(类型构造器) 等概念</div>
+      </div>
+      <div class="flex flex-col my-10 w-fit border-2 border-slate-500">
+        <p><span class="text-2xl">目录:</span></p>
+        <div class="w-fit pr-2 my-2">
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">┌─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#关联类型">关联类型</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#定义">定义</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#输入与输出">输入与输出</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#工程学优点">工程学优点</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#泛型关联类型">泛型关联类型</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#Type&amp;&amp; Kind">Type &amp;&amp; Kind</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#类型构造器">类型构造器</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#高阶类型(HKT)">高阶类型(HKT)</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#例子">例子</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#容器类型">容器类型</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#Functor">Functor</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#Self泛型">Self泛型</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#family-trait">family-trait</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">└───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#借贷迭代">借贷迭代</a></span></div>
+        </div>
+      </div>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="关联类型"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#关联类型">关联类型</a></h1>
+      <p><em>关联类型(associated-type)</em> 非常常见<br></p>
+      <h2 class="flex items-center w-fit my-6" id="定义"><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href="#定义">定义</a></h2>
+      <p>让我们以标准库中的 <a class="underline underline-offset-5 font-medium" href="https://doc.rust-lang.org/std/ops/trait.Add.html">Add</a> 为例开始:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">trait Add&lt;Rhs = Self> {
+    type Output;
+
+    fn add(self, rhs: Rhs) -> Self::Output;
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>该定义中的 <code class="font-semibold text-[#aa8bd5]"><code>Output</code></code> 便是所谓的 <em>关联类型(associated-type)</em>, 而 <code class="font-semibold text-[#aa8bd5]"><code>Rhs</code></code> 则是普通的泛型, 默认值是 <code class="font-semibold text-[#aa8bd5]"><code>Self</code></code><br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">impl Add for i32 {
+    type Output = i32;
+
+    fn add(self, other: i32) -> Self::Output { self + other }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>我们在实现中指定 <code class="font-semibold text-[#aa8bd5]"><code>Output</code></code> 的类型, 而 <code class="font-semibold text-[#aa8bd5]"><code>Rhs</code></code> 也已经推导为 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code><br>关联类型的出现是必要的, 在这里, 我们需要先澄清一下 trait 的 <em>输入类型(input)</em> 与 <em>输出类型(output)</em><br></p>
+      <h2 class="flex items-center w-fit my-6" id="输入与输出"><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href="#输入与输出">输入与输出</a></h2>
+      <ul class="list-disc ml-4">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>input</code></code>: <code class="font-semibold text-[#aa8bd5]"><code>Add</code></code> 中的泛型参数 <code class="font-semibold text-[#aa8bd5]"><code>Rhs</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>output</code></code>: <code class="font-semibold text-[#aa8bd5]"><code>Add</code></code> 中的关联类型 <code class="font-semibold text-[#aa8bd5]"><code>Output</code></code></li>
+      </ul>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">impl Add&lt;i32> for i32 { ... }
+impl Add&lt;Complex> for i32 { ... }</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>考虑这两种 <code class="font-semibold text-[#aa8bd5]"><code>impl</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Add&lt;i32></code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>Add&lt;Complex></code></code> 被视作两个不一样的 trait<br>作为类型参数的 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>Complex</code></code> 都是该 trait 的输入, 通过输入, 才最终确定并形成了这两个不同的 trait<br>但对于关联类型, 它是某个已经确定了的 trait 的输出, 因此它只可能在 impl 的时候由实现者确定, 不参与 trait 的类型推断<br><br>倘若没有关联类型, 我们只能全部写进泛型中当作参数<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">impl Add&lt;i32, i32> for i32 { ... }
+impl Add&lt;Complex, Complex> for i32 { ... }</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>以第一个 impl 为例子, 第一个 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code> 代表 <code class="font-semibold text-[#aa8bd5]"><code>Rhs</code></code>, 第二个 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code> 代表 <code class="font-semibold text-[#aa8bd5]"><code>Output</code></code>, 但现在你还分得清 input 与 output 吗?<br>不仅如此, 原本不该参与 通过泛型列表确认是哪个trait 这一推导过程, 而应由实现者在 impl 内部指定的 Output, 此刻却暴露了出来<br></p>
+      <h2 class="flex items-center w-fit my-6" id="工程学优点"><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href="#工程学优点">工程学优点</a></h2>
+      <p>你可能还是有点懵, 那就再以 <a class="underline underline-offset-5 font-medium" href="https://rust-lang.github.io/rfcs/0195-associated-items.html#associated-types-engineering-benefits-for-generics">rfc-0195</a> 中的代码为例子 (有些地方和真代码不一样, 看得懂即可):<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">trait Graph&lt;N, E> {
+    fn has_edge(&amp;self, &amp;N, &amp;N) -> bool;
+    ...
+}
+
+fn distance&lt;N, E, G: Graph&lt;N, E>>(graph: &amp;G, start: &amp;N, end: &amp;N) -> uint { ... }</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>我们有一个 <code class="font-semibold text-[#aa8bd5]"><code>Graph</code></code> trait, 来表示图论算法中的图, 涉及 3 种类型: <em>节点(Node)</em>, <em>边(Edge)</em>, <em>图(Graph)</em><br>如果我们定义了这样的 trait 并为某个具体的类型实现, 按理来说 <em>节点(N)</em> 与 <em>边(E)</em> 也是与该具体类型相关联的具体类型<br>但暴露给用户的却是必须强制写出来后才能使用的泛型参数, 这一点相当令人困惑<br><br>但倘若用关联类型改写:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">trait Graph {
+    type N;
+    type E;
+    fn has_edge(&amp;self, &amp;N, &amp;N) -> bool;
+}
+
+fn distance&lt;G: Graph>(graph: &amp;G, start: &amp;G::N, end: &amp;G::N) -> uint { ... }</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>下游的用户在使用时不再需要被强迫写成泛型, 需要引用 <code class="font-semibold text-[#aa8bd5]"><code>Node</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>Edge</code></code> 代表的具体类型时, 直接通过 <code class="font-semibold text-[#aa8bd5]"><code>G::N</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>G::E</code></code> 来使用即可<br><br>这在工程学上有着相当大的优势, 而且是单纯的泛型绝对替代不了的 (我直接翻译 rfc-0195 中的原文了):<br></p>
+      <ul class="list-disc ml-4">
+        <li>可读性/可扩展性:<br></li>
+      </ul>
+      <p>关联类型可以一次抽象出整个类型系列，而不必单独命名每个类型, 这提高了泛型代码的可读性 (如上面的 <code class="font-semibold text-[#aa8bd5]"><code>distance</code></code> 函数)<br>它还使泛型更具 “可扩展性”: trait 可以包含其他关联类型, 而不会给 "不关心这些类型的客户端" 带来额外的负担<br>相比之下, 在今天的 rust 中，为一个 trait 添加额外的泛型参数, 通常感觉是个非常 “重量级” 的举动<br><br></p>
+      <ul class="list-disc ml-4">
+        <li>易于重构/演进:<br></li>
+      </ul>
+      <p>由于 trait 的用户不必单独对其关联类型进行泛型参数化, 因此可在不破坏现有客户端代码的情况下, 添加新的关联类型<br>(泛型的话, 你每次添加新的代码, 用户也得给每个函数都加上新的泛型参数啦!! 想想刚刚的 <code class="font-semibold text-[#aa8bd5]"><code>distance</code></code>, 这会破坏所有涉及该 trait 的代码)<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="泛型关联类型"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#泛型关联类型">泛型关联类型</a></h1>
+      <p>关联类型允许泛型, 就是所谓的泛型关联类型啦! (废话!)<br>(但是这玩意儿让 rust 团队写了七年, 期间重构数次编译器与类型分析系统)<br><br>现在要介绍的, 是 rust 自 1.65 版本后引入的重大特性, 泛型关联类型(GAT/GATs, Generic-Associated-Types)<br>这是个相当重量级的特性, rust 团队为了支持这个特性, 写了整整将近 7 年, 诞生了诸如 <a class="underline underline-offset-5 font-medium" href="https://github.com/rust-lang/chalk">chalk</a> 等项目<br><br>(没错, 将近 7 年, 确切来说是 6.5 年, 而且至今仍在完善)<br><br>但现在(1.79)版本下, gat 仍然有相当多的不完善之处, 对其支持仅仅是最小化支持, 且带有相当多限制<br>但即使如此, 也已经相当够用了<br><br>顾名思义, 泛型关联类型, 也就是在关联类型的基础上添加了泛型, 仍然是关联类型的一种:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">trait Container {
+    type Value&lt;T>;  // Here
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>是的, 你没有看错, 仅仅是使得关联类型的位置能够支持泛型了<br>但这却解决了非常非常多的问题, 让 rust 能模拟一个非常重要的语法特性: <em>HKT(高阶类型, Higher-Kinded-Type)</em><br><br><em>GATs</em> 让我们拥有了使用 <em>type-constructor(类型构造器)</em> 的能力<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="Type&amp;&amp; Kind"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#Type&amp;&amp; Kind">Type &amp;&amp; Kind</a></h1>
+      <p>那么什么是 <em>type-constructor</em> 呢? 介绍它之前, 先让我们了解一下 <em>type(类型)</em> 与 <em>kind(阶)</em> 的概念<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">fn not(x: bool) -> bool {
+    !x
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <ul class="list-disc ml-4">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>not</code></code> 函数接收一个 type 为 bool 的参数, 返回一个 type 为 <code class="font-semibold text-[#aa8bd5]"><code>bool</code></code> 的值, 因此 <code class="font-semibold text-[#aa8bd5]"><code>not</code></code> 的 type 就是 <code class="font-semibold text-[#aa8bd5]"><code>bool -> bool</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>x</code></code> 这个参数的 type 则是 <code class="font-semibold text-[#aa8bd5]"><code>bool</code></code></li>
+      </ul>
+      <p>type 表示 <em>值的类型</em>, 那么什么是 <em>kind</em> 呢? 其实这也是较好理解的, 是基于 type 再往上抽象了一层的产物:<br></p>
+      <div class="my-4 mx-2 sm:mx-6"><svg style="overflow: visible;" class="typst-doc" viewBox="0 0 216 88.47" width="216pt" height="88.47pt" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:h5="http://www.w3.org/1999/xhtml">
+    <g>
+        <g transform="translate(0 -0.5)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 0 89.47 "/>
+        </g>
+        <g transform="translate(51.199999999999996 -0.5)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 0 89.47 "/>
+        </g>
+        <g transform="translate(164.79999999999998 -0.5)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 0 89.47 "/>
+        </g>
+        <g transform="translate(216 -0.5)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 0 89.47 "/>
+        </g>
+        <g transform="translate(-0.5 0)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 217 0 "/>
+        </g>
+        <g transform="translate(-0.5 29.49)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 217 0 "/>
+        </g>
+        <g transform="translate(-0.5 58.98)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 217 0 "/>
+        </g>
+        <g transform="translate(-0.5 88.47)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 217 0 "/>
+        </g>
+        <g transform="translate(10 19.49)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#g13E63C5FB002BC84F071C27303E2D767" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g6EB6ABCF987F2D2F3CC3305BE1B2F8EC" x="7.799999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gAA395CDB8780A6050BD528A17D4E1021" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g70EB2D61D515C6CD7747E985E6D939D9" x="23.4" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(61.199999999999996 19.49)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#g63C03E364D672B69F86C046CE899B4B" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gDF71F39C75C7BF0484B37FA1ACF5EBC5" x="7.799999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g8F12E8C1696D1C5678BF4D01D6709F9" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g70EB2D61D515C6CD7747E985E6D939D9" x="23.4" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(174.79999999999998 19.49)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#gDF94C7D669EFFC60CCC4098054F116CC" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g5FEB780DFBADB4C9AADB7543344670DA" x="7.799999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g13E63C5FB002BC84F071C27303E2D767" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gD8D014DEC5D67E4D74F84D6BBE2F092D" x="23.4" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(10 48.98)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#g13E63C5FB002BC84F071C27303E2D767" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gBD8992C497A3E41D2437748B7D27CA5A" x="7.799999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g63C03E364D672B69F86C046CE899B4B" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(61.199999999999996 48.98)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#g1F8BA05DE1D5A21B95537F5FC6A77B62" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gBD8992C497A3E41D2437748B7D27CA5A" x="7.799999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gBD8992C497A3E41D2437748B7D27CA5A" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g11EEFEB21FEA9CC41E09A4B1C65060ED" x="23.4" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g8559C9A56473870739E0D3365875C1EB" x="38.99999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gB836E220ABEBDA4A69177EFAE9FF1D67" x="46.79999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g1F8BA05DE1D5A21B95537F5FC6A77B62" x="62.399999999999984" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gBD8992C497A3E41D2437748B7D27CA5A" x="70.19999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gBD8992C497A3E41D2437748B7D27CA5A" x="77.99999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g11EEFEB21FEA9CC41E09A4B1C65060ED" x="85.79999999999998" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(174.79999999999998 48.98)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#gFCCC8E6202D935D8B064A09E46AFE285" x="0" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(10 78.47)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#g7713946901C3E0102737D19FB4EAF997" x="0" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(61.199999999999996 78.47)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#g1F8BA05DE1D5A21B95537F5FC6A77B62" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gBD8992C497A3E41D2437748B7D27CA5A" x="7.799999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gBD8992C497A3E41D2437748B7D27CA5A" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g11EEFEB21FEA9CC41E09A4B1C65060ED" x="23.4" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(174.79999999999998 78.47)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#gFCCC8E6202D935D8B064A09E46AFE285" x="0" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+    </g>
+    <defs id="glyph">
+        <symbol id="g13E63C5FB002BC84F071C27303E2D767" overflow="visible">
+            <path d="M 2.405 0.455 L 2.405 4.1080003 C 2.405 4.94 3.055 6.175 3.9910002 6.175 C 4.927 6.175 5.395 5.369 5.395 4.472 L 5.395 0.455 C 5.395 0.052 5.577 -0.13 5.98 -0.13 C 6.383 -0.13 6.565 0.052 6.565 0.455 L 6.565 4.81 C 6.565 6.3050003 5.577 7.28 4.186 7.28 C 3.237 7.28 2.652 6.76 2.405 5.928 L 2.405 6.695 C 2.405 7.098 2.223 7.28 1.82 7.28 C 1.417 7.28 1.235 7.098 1.235 6.695 L 1.235 0.455 C 1.235 0.052 1.417 -0.13 1.82 -0.13 C 2.223 -0.13 2.405 0.052 2.405 0.455 Z "/>
+        </symbol>
+        <symbol id="g6EB6ABCF987F2D2F3CC3305BE1B2F8EC" overflow="visible">
+            <path d="M 3.1460001 -0.13 C 4.316 -0.13 4.992 0.676 5.33 1.677 C 5.395 1.274 5.486 0.871 5.59 0.442 C 5.681 0.065 5.915 -0.13 6.3180003 -0.13 C 6.721 -0.13 6.8510003 0.065 6.76 0.442 C 6.201 2.795 6.201 4.6670003 6.552 6.708 C 6.617 7.111 6.461 7.28 6.045 7.28 C 5.863 7.28 5.7200003 7.241 5.603 7.163 C 5.421 7.033 5.382 6.695 5.33 6.3310003 C 5.083 6.8900003 4.6540003 7.28 3.9 7.28 C 1.885 7.28 0.91 5.304 0.91 2.9120002 C 0.91 0.624 1.898 -0.13 3.1460001 -0.13 Z M 3.263 1.04 C 2.47 1.04 2.08 1.69 2.08 2.795 C 2.08 4.6670003 2.925 6.11 4.004 6.11 C 5.135 6.11 5.135 4.862 5.135 4.03 L 5.135 4.004 C 5.135 2.236 4.342 1.04 3.263 1.04 Z "/>
+        </symbol>
+        <symbol id="gAA395CDB8780A6050BD528A17D4E1021" overflow="visible">
+            <path d="M 1.339 -0.13 C 1.69 -0.13 1.937 0.104 1.937 0.481 L 1.937 5.33 C 1.937 5.8110003 2.119 6.2530003 2.652 6.2530003 C 3.211 6.2530003 3.354 5.7720003 3.354 5.317 L 3.354 0.416 C 3.354 0.065 3.588 -0.13 3.9 -0.13 C 4.212 -0.13 4.446 0.065 4.446 0.416 L 4.446 5.33 C 4.446 5.7980003 4.6150002 6.2530003 5.1480002 6.2530003 C 5.7070003 6.2530003 5.863 5.7850003 5.863 5.317 L 5.863 0.481 C 5.863 0.104 6.123 -0.13 6.474 -0.13 C 6.8250003 -0.13 7.085 0.104 7.085 0.481 L 7.085 5.434 C 7.085 6.474 6.734 7.28 5.655 7.28 C 4.875 7.28 4.459 6.8640003 4.316 6.3050003 C 4.225 6.8250003 3.796 7.28 3.055 7.28 C 2.3400002 7.28 2.08 6.9160004 1.885 6.3050003 L 1.885 6.76 C 1.885 7.085 1.651 7.28 1.3000001 7.28 C 0.975 7.28 0.71500003 7.085 0.71500003 6.76 L 0.71500003 0.481 C 0.71500003 0.104 0.98800004 -0.13 1.339 -0.13 Z "/>
+        </symbol>
+        <symbol id="g70EB2D61D515C6CD7747E985E6D939D9" overflow="visible">
+            <path d="M 5.967 1.7160001 C 5.8240004 1.7160001 5.7720003 1.677 5.629 1.5600001 C 5.369 1.352 4.94 1.04 4.16 1.04 C 3.055 1.04 2.288 1.7290001 2.145 3.1200001 L 6.084 3.1200001 C 6.448 3.1200001 6.695 3.4190001 6.695 3.7310002 C 6.695 5.7720003 6.045 7.28 3.9650002 7.28 C 1.742 7.28 0.949 5.512 0.949 3.536 C 0.949 1.2870001 2.132 -0.13 4.1470003 -0.13 C 5.018 -0.13 5.7070003 0.13 6.2660003 0.65000004 C 6.474 0.85800004 6.539 0.98800004 6.539 1.144 C 6.539 1.4430001 6.2920003 1.7160001 5.967 1.7160001 Z M 5.317 4.16 L 2.145 4.16 C 2.288 5.304 2.8860002 6.11 3.9650002 6.11 C 4.94 6.11 5.525 5.317 5.525 4.589 C 5.525 4.225 5.408 4.16 5.317 4.16 Z "/>
+        </symbol>
+        <symbol id="g63C03E364D672B69F86C046CE899B4B" overflow="visible">
+            <path d="M 6.227 6.8900003 L 3.835 6.8900003 L 3.835 8.58 C 3.835 8.983 3.653 9.165 3.25 9.165 C 2.8470001 9.165 2.665 8.983 2.665 8.58 L 2.665 6.8900003 L 1.144 6.8900003 C 0.79300004 6.8900003 0.611 6.656 0.611 6.3050003 C 0.611 5.954 0.79300004 5.7200003 1.144 5.7200003 L 2.665 5.7200003 L 2.665 2.691 C 2.665 0.754 3.497 -0.13 4.745 -0.13 C 5.473 -0.13 6.071 -0.078 6.591 0.19500001 C 6.9160004 0.36400002 7.007 0.663 6.7990003 1.014 C 6.604 1.339 6.3440003 1.4560001 5.993 1.261 C 5.59 1.066 5.291 1.04 4.94 1.04 C 4.212 1.04 3.835 1.664 3.835 2.9120002 L 3.835 5.7200003 L 6.227 5.7200003 C 6.578 5.7200003 6.76 5.954 6.76 6.3050003 C 6.76 6.656 6.578 6.8900003 6.227 6.8900003 Z "/>
+        </symbol>
+        <symbol id="gDF71F39C75C7BF0484B37FA1ACF5EBC5" overflow="visible">
+            <path d="M 5.8110003 6.8640003 L 3.9910002 1.794 L 2.119 6.8640003 C 2.0540001 7.059 1.911 7.15 1.612 7.15 C 1.209 7.15 1.014 7.007 1.014 6.695 C 1.014 6.552 1.053 6.422 1.105 6.2790003 L 3.38 0.117 L 3.289 -0.143 C 3.081 -0.72800004 2.951 -1.092 2.47 -1.508 C 2.223 -1.7160001 1.924 -1.807 1.651 -1.807 C 1.235 -1.807 1.04 -2.015 1.04 -2.392 L 1.04 -2.405 C 1.04 -2.808 1.235 -2.977 1.69 -2.977 C 2.119 -2.977 2.691 -2.8470001 3.094 -2.548 C 3.4190001 -2.3270001 3.7310002 -1.898 3.9910002 -1.4300001 C 4.251 -0.975 4.485 -0.49400002 4.602 -0.13 L 6.8380003 6.2790003 C 7.02 6.8380003 6.8770003 7.15 6.3180003 7.15 C 6.019 7.15 5.876 7.059 5.8110003 6.8640003 Z "/>
+        </symbol>
+        <symbol id="g8F12E8C1696D1C5678BF4D01D6709F9" overflow="visible">
+            <path d="M 1.755 7.28 C 1.352 7.28 1.1700001 7.085 1.1700001 6.682 L 1.1700001 -1.885 C 1.1700001 -2.288 1.352 -2.47 1.755 -2.47 C 2.158 -2.47 2.3400002 -2.288 2.3400002 -1.885 L 2.3400002 1.222 C 2.496 0.442 3.1720002 -0.13 4.1210003 -0.13 C 6.3050003 -0.13 6.76 1.95 6.76 3.822 C 6.76 5.447 6.3700004 7.28 4.251 7.28 C 3.25 7.28 2.652 6.721 2.3400002 5.85 L 2.3400002 6.682 C 2.3400002 7.085 2.158 7.28 1.755 7.28 Z M 4.1340003 6.11 C 5.278 6.11 5.59 5.096 5.59 3.744 C 5.59 2.431 5.421 1.04 3.926 1.04 C 2.99 1.04 2.3400002 2.21 2.3400002 3.042 L 2.3400002 4.472 C 2.3400002 5.304 3.198 6.11 4.1340003 6.11 Z "/>
+        </symbol>
+        <symbol id="gDF94C7D669EFFC60CCC4098054F116CC" overflow="visible">
+            <path d="M 2.47 0.455 L 2.47 2.47 L 3.601 3.614 L 5.59 0.234 C 5.7980003 -0.13 6.084 -0.13 6.383 -0.13 C 6.695 -0.13 6.981 0.221 6.734 0.598 L 4.433 4.472 L 6.383 6.461 C 6.734 6.8120003 6.487 7.28 6.006 7.28 C 5.7850003 7.28 5.59 7.202 5.395 7.007 L 2.47 4.0690002 L 2.47 9.035 C 2.47 9.438 2.288 9.62 1.885 9.62 C 1.482 9.62 1.3000001 9.438 1.3000001 9.035 L 1.3000001 0.455 C 1.3000001 0.052 1.482 -0.13 1.885 -0.13 C 2.288 -0.13 2.47 0.052 2.47 0.455 Z "/>
+        </symbol>
+        <symbol id="g5FEB780DFBADB4C9AADB7543344670DA" overflow="visible">
+            <path d="M 6.656 1.1700001 L 4.81 1.1700001 L 4.81 5.85 C 4.81 6.565 4.485 6.8900003 3.77 6.8900003 L 1.937 6.8900003 C 1.5860001 6.8900003 1.365 6.656 1.365 6.3050003 C 1.365 5.954 1.5860001 5.7200003 1.937 5.7200003 L 3.1200001 5.7200003 C 3.471 5.7200003 3.64 5.551 3.64 5.2000003 L 3.64 1.1700001 L 1.664 1.1700001 C 1.3130001 1.1700001 1.105 0.936 1.105 0.58500004 C 1.105 0.234 1.3130001 0 1.664 0 L 6.656 0 C 7.007 0 7.215 0.234 7.215 0.58500004 C 7.215 0.936 7.007 1.1700001 6.656 1.1700001 Z M 4.16 8.177 C 4.732 8.177 5.083 8.489 5.083 8.996 C 5.083 9.516 4.732 9.841001 4.16 9.841001 C 3.588 9.841001 3.237 9.516 3.237 8.996 C 3.237 8.489 3.588 8.177 4.16 8.177 Z "/>
+        </symbol>
+        <symbol id="gD8D014DEC5D67E4D74F84D6BBE2F092D" overflow="visible">
+            <path d="M 6.045 -0.13 C 6.448 -0.13 6.63 0.065 6.63 0.468 L 6.63 9.035 C 6.63 9.438 6.448 9.62 6.045 9.62 C 5.642 9.62 5.46 9.438 5.46 9.035 L 5.46 5.928 C 5.304 6.708 4.6280003 7.28 3.6790001 7.28 C 1.495 7.28 1.04 5.2000003 1.04 3.328 C 1.04 1.7290001 1.4300001 -0.13 3.549 -0.13 C 4.55 -0.13 5.1480002 0.42900002 5.46 1.3000001 L 5.46 0.468 C 5.46 0.065 5.642 -0.13 6.045 -0.13 Z M 3.6660001 1.04 C 2.522 1.04 2.21 2.0540001 2.21 3.4060001 C 2.21 4.719 2.379 6.11 3.874 6.11 C 4.81 6.11 5.46 4.94 5.46 4.1080003 L 5.46 2.678 C 5.46 1.8460001 4.602 1.04 3.6660001 1.04 Z "/>
+        </symbol>
+        <symbol id="gBD8992C497A3E41D2437748B7D27CA5A" overflow="visible">
+            <path d="M 3.9 -0.13 C 5.915 -0.13 6.8250003 1.4430001 6.8250003 3.588 C 6.8250003 5.7330003 5.941 7.28 3.9 7.28 C 1.885 7.28 0.975 5.7330003 0.975 3.588 C 0.975 1.4430001 1.885 -0.13 3.9 -0.13 Z M 3.9 1.04 C 2.691 1.04 2.145 2.08 2.145 3.575 C 2.145 5.07 2.652 6.11 3.9 6.11 C 5.1480002 6.11 5.655 5.083 5.655 3.588 C 5.655 2.093 5.109 1.04 3.9 1.04 Z "/>
+        </symbol>
+        <symbol id="g1F8BA05DE1D5A21B95537F5FC6A77B62" overflow="visible">
+            <path d="M 1.755 -0.13 C 2.158 -0.13 2.3400002 0.065 2.3400002 0.468 L 2.3400002 1.3000001 C 2.652 0.42900002 3.25 -0.13 4.251 -0.13 C 6.3700004 -0.13 6.76 1.7290001 6.76 3.328 C 6.76 5.2000003 6.3050003 7.28 4.1210003 7.28 C 3.1720002 7.28 2.496 6.708 2.3400002 5.928 L 2.3400002 9.035 C 2.3400002 9.438 2.158 9.62 1.755 9.62 C 1.352 9.62 1.1700001 9.438 1.1700001 9.035 L 1.1700001 0.468 C 1.1700001 0.065 1.352 -0.13 1.755 -0.13 Z M 4.1340003 1.04 C 3.198 1.04 2.3400002 1.8460001 2.3400002 2.678 L 2.3400002 4.1080003 C 2.3400002 4.94 2.99 6.11 3.926 6.11 C 5.421 6.11 5.59 4.719 5.59 3.4060001 C 5.59 2.0540001 5.278 1.04 4.1340003 1.04 Z "/>
+        </symbol>
+        <symbol id="g11EEFEB21FEA9CC41E09A4B1C65060ED" overflow="visible">
+            <path d="M 4.017 2.9120002 L 4.03 8.45 C 4.03 9.165 3.7050002 9.49 2.99 9.49 L 1.378 9.49 C 1.0270001 9.49 0.845 9.308001 0.845 8.957 C 0.845 8.606 1.0270001 8.424 1.378 8.424 L 2.3400002 8.424 C 2.691 8.424 2.8600001 8.255 2.8600001 7.9040003 L 2.8470001 2.691 C 2.8470001 0.754 3.6790001 -0.13 4.927 -0.13 C 5.655 -0.13 6.2530003 -0.078 6.7730002 0.19500001 C 7.098 0.36400002 7.189 0.663 6.981 1.014 C 6.7860003 1.339 6.526 1.4560001 6.175 1.261 C 5.7720003 1.066 5.473 1.04 5.122 1.04 C 4.394 1.04 4.017 1.664 4.017 2.9120002 Z "/>
+        </symbol>
+        <symbol id="g8559C9A56473870739E0D3365875C1EB" overflow="visible">
+            <path d="M 1.5600001 3.7050002 L 7.8 3.7050002 L 7.8 4.875 L 1.5600001 4.875 C 1.1570001 4.875 0.975 4.6930003 0.975 4.29 C 0.975 3.887 1.1570001 3.7050002 1.5600001 3.7050002 Z "/>
+        </symbol>
+        <symbol id="gB836E220ABEBDA4A69177EFAE9FF1D67" overflow="visible">
+            <path d="M 3.783 6.11 C 3.9 5.993 3.9 5.863 3.783 5.7460003 L 3.094 5.057 C 2.977 4.94 2.821 4.875 2.652 4.875 L 0 4.875 L 0 3.7050002 L 2.652 3.7050002 C 2.821 3.7050002 2.977 3.64 3.094 3.523 L 3.783 2.834 C 3.9 2.717 3.9 2.5870001 3.783 2.47 L 2.5870001 1.274 C 2.3140001 1.001 2.3140001 0.71500003 2.5870001 0.442 C 2.8600001 0.169 3.1460001 0.169 3.4190001 0.442 L 6.526 3.549 C 7.033 4.056 7.033 4.524 6.526 5.031 L 3.4190001 8.1380005 C 3.1460001 8.411 2.8600001 8.411 2.5870001 8.1380005 C 2.3140001 7.8650002 2.3140001 7.579 2.5870001 7.306 Z M 5.1610003 3.848 C 4.914 3.601 4.6800003 3.601 4.433 3.848 L 4.355 3.926 C 4.0950003 4.186 4.0950003 4.394 4.355 4.6540003 L 4.433 4.732 C 4.6800003 4.979 4.914 4.979 5.1610003 4.732 L 5.2390003 4.6540003 C 5.486 4.407 5.486 4.173 5.2390003 3.926 Z "/>
+        </symbol>
+        <symbol id="gFCCC8E6202D935D8B064A09E46AFE285" overflow="visible">
+            <path d="M 3.9 0.91 C 4.303 0.91 4.485 1.092 4.485 1.495 L 4.485 3.276 L 6.032 2.379 C 6.2400002 2.262 6.435 2.236 6.591 2.3400002 C 6.708 2.431 6.8250003 2.561 6.8900003 2.73 C 6.994 3.029 6.9030004 3.224 6.617 3.3930001 L 5.07 4.29 L 6.617 5.1870003 C 6.9030004 5.356 6.994 5.551 6.8900003 5.863 C 6.8250003 6.019 6.721 6.149 6.591 6.2400002 C 6.435 6.3440003 6.2400002 6.3180003 6.032 6.201 L 4.485 5.304 L 4.485 7.085 C 4.485 7.488 4.303 7.67 3.9 7.67 C 3.497 7.67 3.315 7.488 3.315 7.085 L 3.315 5.304 L 1.768 6.201 C 1.5600001 6.3180003 1.365 6.3440003 1.222 6.2400002 C 1.079 6.149 0.975 6.019 0.92300004 5.863 C 0.806 5.551 0.897 5.356 1.183 5.1870003 L 2.73 4.29 L 1.183 3.3930001 C 0.897 3.224 0.806 3.029 0.92300004 2.73 C 0.975 2.561 1.092 2.431 1.222 2.3400002 C 1.365 2.236 1.5600001 2.262 1.768 2.379 L 3.315 3.276 L 3.315 1.495 C 3.315 1.092 3.497 0.91 3.9 0.91 Z "/>
+        </symbol>
+        <symbol id="g7713946901C3E0102737D19FB4EAF997" overflow="visible">
+            <path d="M 2.275 0.26 L 3.9 2.665 L 5.525 0.26 C 5.6940002 0 5.915 -0.13 6.188 -0.13 C 6.565 -0.13 6.994 0.156 6.643 0.637 L 4.589 3.6790001 L 6.5 6.5 C 6.8510003 7.02 6.435 7.28 6.058 7.28 C 5.7590003 7.28 5.538 7.15 5.369 6.8900003 L 3.9 4.7060003 L 2.431 6.8900003 C 2.262 7.137 2.0540001 7.28 1.755 7.28 C 1.378 7.28 0.949 7.02 1.3000001 6.5 L 3.211 3.6790001 L 1.1570001 0.637 C 0.806 0.156 1.235 -0.13 1.612 -0.13 C 1.885 -0.13 2.106 0.013 2.275 0.26 Z "/>
+        </symbol>
+    </defs>
+</svg>
+</div>
+      <p>不管是 <code class="font-semibold text-[#aa8bd5]"><code>bool</code></code> 还是 <code class="font-semibold text-[#aa8bd5]"><code>bool -> bool</code></code>, 两者的类型都是一个已经非常具体的类型, 其 kind 则是 <code class="font-semibold text-[#aa8bd5]"><code>*</code></code><br>为了便于理解, 姑且称呼这些类型为 <em>具体类型</em> (你也可以将它们叫作 <em>full-type</em>, <em>actual-type</em>, <em>standalone-type</em>)<br>这些类型都是很具体的, 其 kind 是相同的 <code class="font-semibold text-[#aa8bd5]"><code>*</code></code><br><br>(当我们站在 kind 这个抽象层上看待 type 时, 应该使用 type 指代具体的 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>bool</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>i32 -> i32</code></code>, 它们都是 type)<br>(其实站在 type 这个抽象层看待 value 时, 也是一样的道理)<br><br>一句话, type 用来抽象 value, kind 用于抽象 type<br>倘若你要问 <code class="font-semibold text-[#aa8bd5]"><code>true</code></code> 的 kind 是 <code class="font-semibold text-[#aa8bd5]"><code>*</code></code> 吗? 那不对, 你得说 <code class="font-semibold text-[#aa8bd5]"><code>bool</code></code> 的 kind 是 <code class="font-semibold text-[#aa8bd5]"><code>*</code></code> 才对<br><br>你可能要说了:<br>什么鬼啊, 照你这么说岂不是所有的类型都是 <code class="font-semibold text-[#aa8bd5]"><code>*</code></code> 了, 比如 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>fn(i32) -> i32</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Vec&lt;T></code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Result&lt;T, E></code></code>…<br>这些类型都是具体类型, 其 kind 难道不都是 <code class="font-semibold text-[#aa8bd5]"><code>*</code></code> 吗?<br><br>没错, 在 rust 中的 <code class="font-semibold text-[#aa8bd5]"><code>Vec&lt;T></code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Option&lt;T></code></code>, 它们都是一层的 type, 即其 kind 是 <code class="font-semibold text-[#aa8bd5]"><code>*</code></code><br><strong>但如果是 <code class="font-semibold text-[#aa8bd5]"><code>Vec</code></code> 而不是 <code class="font-semibold text-[#aa8bd5]"><code>Vec&lt;T></code></code> 呢?</strong> 假设这也是某种类型<br><br>你会发现, 你必须提供一个类型 (比如 <code class="font-semibold text-[#aa8bd5]"><code>Vec&lt;i32></code></code> 就是向 <code class="font-semibold text-[#aa8bd5]"><code>Vec</code></code> 提供了 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code> 作为参数), 才能构造出最终的具体类型<br>对于这种特殊类型来说, 其 kind 就是 <code class="font-semibold text-[#aa8bd5]"><code>* -> *</code></code> 了<br></p>
+      <div class="my-4 mx-2 sm:mx-6"><svg style="overflow: visible;" class="typst-doc" viewBox="0 0 289.59999999999997 235.92" width="289.59999999999997pt" height="235.92pt" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:h5="http://www.w3.org/1999/xhtml">
+    <g>
+        <g transform="translate(0 -0.5)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 0 236.92 "/>
+        </g>
+        <g transform="translate(183.79999999999995 -0.5)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 0 236.92 "/>
+        </g>
+        <g transform="translate(289.59999999999997 -0.5)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 0 236.92 "/>
+        </g>
+        <g transform="translate(-0.5 0)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 290.6 0 "/>
+        </g>
+        <g transform="translate(-0.5 29.49)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 290.6 0 "/>
+        </g>
+        <g transform="translate(-0.5 58.98)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 290.6 0 "/>
+        </g>
+        <g transform="translate(-0.5 88.47)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 290.6 0 "/>
+        </g>
+        <g transform="translate(-0.5 117.96)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 290.6 0 "/>
+        </g>
+        <g transform="translate(-0.5 147.45000000000002)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 290.6 0 "/>
+        </g>
+        <g transform="translate(-0.5 176.94)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 290.6 0 "/>
+        </g>
+        <g transform="translate(-0.5 206.43)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 290.6 0 "/>
+        </g>
+        <g transform="translate(-0.5 235.92)">
+            <path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" d="M 0 0 L 290.6 0 "/>
+        </g>
+        <g transform="translate(10 19.49)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#g63C03E364D672B69F86C046CE899B4B" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gDF71F39C75C7BF0484B37FA1ACF5EBC5" x="7.799999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g8F12E8C1696D1C5678BF4D01D6709F9" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g70EB2D61D515C6CD7747E985E6D939D9" x="23.4" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(193.79999999999995 19.49)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#gDF94C7D669EFFC60CCC4098054F116CC" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g5FEB780DFBADB4C9AADB7543344670DA" x="7.799999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g13E63C5FB002BC84F071C27303E2D767" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gD8D014DEC5D67E4D74F84D6BBE2F092D" x="23.4" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(10 48.98)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#g3F6410CEA252BD8E099E821445958E46" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g70EB2D61D515C6CD7747E985E6D939D9" x="7.799999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g25B58355DC9936D630AE57DFA4F2FAD0" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gC5F0D25586FF9C92211936BA4ABC0F12" x="23.4" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g5FEB780DFBADB4C9AADB7543344670DA" x="31.199999999999996" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gE2E3883508F67B456A4464CFDCA61A7D" x="38.99999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g1F3B1B88FAB4F913AEB6B36593077EBF" x="46.79999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g11704D0704B38908F4A29E94A715DC1F" x="54.59999999999999" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(193.79999999999995 48.98)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#gFCCC8E6202D935D8B064A09E46AFE285" x="0" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(10 78.47)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#g3F6410CEA252BD8E099E821445958E46" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g70EB2D61D515C6CD7747E985E6D939D9" x="7.799999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g25B58355DC9936D630AE57DFA4F2FAD0" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gC5F0D25586FF9C92211936BA4ABC0F12" x="23.4" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gAC92FDE0D4F9D2A0E83B1DC1CEDC7F24" x="31.199999999999996" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g11704D0704B38908F4A29E94A715DC1F" x="38.99999999999999" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(193.79999999999995 78.47)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#gFCCC8E6202D935D8B064A09E46AFE285" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g8559C9A56473870739E0D3365875C1EB" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gB836E220ABEBDA4A69177EFAE9FF1D67" x="23.4" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gFCCC8E6202D935D8B064A09E46AFE285" x="38.99999999999999" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(10 107.96)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#g1A6C182C905C0A5C646EB32BB02CE2D3" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g8F12E8C1696D1C5678BF4D01D6709F9" x="7.799999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g63C03E364D672B69F86C046CE899B4B" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g5FEB780DFBADB4C9AADB7543344670DA" x="23.4" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gBD8992C497A3E41D2437748B7D27CA5A" x="31.199999999999996" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g13E63C5FB002BC84F071C27303E2D767" x="38.99999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gC5F0D25586FF9C92211936BA4ABC0F12" x="46.79999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g5FEB780DFBADB4C9AADB7543344670DA" x="54.59999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gE2E3883508F67B456A4464CFDCA61A7D" x="62.399999999999984" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g1F3B1B88FAB4F913AEB6B36593077EBF" x="70.19999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g11704D0704B38908F4A29E94A715DC1F" x="77.99999999999999" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(193.79999999999995 107.96)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#gFCCC8E6202D935D8B064A09E46AFE285" x="0" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(10 137.45000000000002)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#g1A6C182C905C0A5C646EB32BB02CE2D3" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g8F12E8C1696D1C5678BF4D01D6709F9" x="7.799999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g63C03E364D672B69F86C046CE899B4B" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g5FEB780DFBADB4C9AADB7543344670DA" x="23.4" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gBD8992C497A3E41D2437748B7D27CA5A" x="31.199999999999996" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g13E63C5FB002BC84F071C27303E2D767" x="38.99999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gC5F0D25586FF9C92211936BA4ABC0F12" x="46.79999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gAC92FDE0D4F9D2A0E83B1DC1CEDC7F24" x="54.59999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g11704D0704B38908F4A29E94A715DC1F" x="62.399999999999984" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(193.79999999999995 137.45000000000002)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#gFCCC8E6202D935D8B064A09E46AFE285" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g8559C9A56473870739E0D3365875C1EB" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gB836E220ABEBDA4A69177EFAE9FF1D67" x="23.4" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gFCCC8E6202D935D8B064A09E46AFE285" x="38.99999999999999" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(10 166.94)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#g31943F373035DC8F277868CB036AB86C" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g70EB2D61D515C6CD7747E985E6D939D9" x="7.799999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g8C33D6BD7448013D27B90D3BAADDE4C0" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g32A0B2B4E3D2BE2ABFAFA786774FACA7" x="23.4" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g11EEFEB21FEA9CC41E09A4B1C65060ED" x="31.199999999999996" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g63C03E364D672B69F86C046CE899B4B" x="38.99999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gC5F0D25586FF9C92211936BA4ABC0F12" x="46.79999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gDA1F1F9831395242813FF3C721405FFC" x="54.59999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g63C03E364D672B69F86C046CE899B4B" x="62.399999999999984" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gD640595687D0C51A7274FC7B9A12B3F9" x="70.19999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g5FEB780DFBADB4C9AADB7543344670DA" x="77.99999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g13E63C5FB002BC84F071C27303E2D767" x="85.79999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gDAD6BAF7510301BD7D478F74FB678BA0" x="93.59999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gDE53C16F817BF7CD99333ACC9CCE7D4" x="101.39999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g909F14C7312249493023AD7C01F64A59" x="116.99999999999997" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gD640595687D0C51A7274FC7B9A12B3F9" x="124.79999999999997" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gD640595687D0C51A7274FC7B9A12B3F9" x="132.59999999999997" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gBD8992C497A3E41D2437748B7D27CA5A" x="140.39999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gD640595687D0C51A7274FC7B9A12B3F9" x="148.2" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g11704D0704B38908F4A29E94A715DC1F" x="156" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(193.79999999999995 166.94)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#gFCCC8E6202D935D8B064A09E46AFE285" x="0" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(10 196.43)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#g31943F373035DC8F277868CB036AB86C" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g70EB2D61D515C6CD7747E985E6D939D9" x="7.799999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g8C33D6BD7448013D27B90D3BAADDE4C0" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g32A0B2B4E3D2BE2ABFAFA786774FACA7" x="23.4" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g11EEFEB21FEA9CC41E09A4B1C65060ED" x="31.199999999999996" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g63C03E364D672B69F86C046CE899B4B" x="38.99999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gC5F0D25586FF9C92211936BA4ABC0F12" x="46.79999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gDA1F1F9831395242813FF3C721405FFC" x="54.59999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g63C03E364D672B69F86C046CE899B4B" x="62.399999999999984" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gD640595687D0C51A7274FC7B9A12B3F9" x="70.19999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g5FEB780DFBADB4C9AADB7543344670DA" x="77.99999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g13E63C5FB002BC84F071C27303E2D767" x="85.79999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gDAD6BAF7510301BD7D478F74FB678BA0" x="93.59999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gDE53C16F817BF7CD99333ACC9CCE7D4" x="101.39999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gAC92FDE0D4F9D2A0E83B1DC1CEDC7F24" x="116.99999999999997" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g11704D0704B38908F4A29E94A715DC1F" x="124.79999999999997" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(193.79999999999995 196.43)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#gFCCC8E6202D935D8B064A09E46AFE285" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g8559C9A56473870739E0D3365875C1EB" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gB836E220ABEBDA4A69177EFAE9FF1D67" x="23.4" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gFCCC8E6202D935D8B064A09E46AFE285" x="38.99999999999999" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(10 225.92)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#g31943F373035DC8F277868CB036AB86C" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g70EB2D61D515C6CD7747E985E6D939D9" x="7.799999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g8C33D6BD7448013D27B90D3BAADDE4C0" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g32A0B2B4E3D2BE2ABFAFA786774FACA7" x="23.4" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g11EEFEB21FEA9CC41E09A4B1C65060ED" x="31.199999999999996" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g63C03E364D672B69F86C046CE899B4B" x="38.99999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gC5F0D25586FF9C92211936BA4ABC0F12" x="46.79999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gAC92FDE0D4F9D2A0E83B1DC1CEDC7F24" x="54.59999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gDE53C16F817BF7CD99333ACC9CCE7D4" x="62.399999999999984" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gAC92FDE0D4F9D2A0E83B1DC1CEDC7F24" x="77.99999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g11704D0704B38908F4A29E94A715DC1F" x="85.79999999999998" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+        <g transform="translate(193.79999999999995 225.92)">
+            <g class="typst-text" transform="scale(1, -1)">
+                <use xlink:href="#gFCCC8E6202D935D8B064A09E46AFE285" x="0" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g8559C9A56473870739E0D3365875C1EB" x="15.599999999999998" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gB836E220ABEBDA4A69177EFAE9FF1D67" x="23.4" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gFCCC8E6202D935D8B064A09E46AFE285" x="38.99999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#g8559C9A56473870739E0D3365875C1EB" x="54.59999999999999" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gB836E220ABEBDA4A69177EFAE9FF1D67" x="62.399999999999984" fill="#ffffff" fill-rule="nonzero"/>
+                <use xlink:href="#gFCCC8E6202D935D8B064A09E46AFE285" x="77.99999999999999" fill="#ffffff" fill-rule="nonzero"/>
+            </g>
+        </g>
+    </g>
+    <defs id="glyph">
+        <symbol id="g63C03E364D672B69F86C046CE899B4B" overflow="visible">
+            <path d="M 6.227 6.8900003 L 3.835 6.8900003 L 3.835 8.58 C 3.835 8.983 3.653 9.165 3.25 9.165 C 2.8470001 9.165 2.665 8.983 2.665 8.58 L 2.665 6.8900003 L 1.144 6.8900003 C 0.79300004 6.8900003 0.611 6.656 0.611 6.3050003 C 0.611 5.954 0.79300004 5.7200003 1.144 5.7200003 L 2.665 5.7200003 L 2.665 2.691 C 2.665 0.754 3.497 -0.13 4.745 -0.13 C 5.473 -0.13 6.071 -0.078 6.591 0.19500001 C 6.9160004 0.36400002 7.007 0.663 6.7990003 1.014 C 6.604 1.339 6.3440003 1.4560001 5.993 1.261 C 5.59 1.066 5.291 1.04 4.94 1.04 C 4.212 1.04 3.835 1.664 3.835 2.9120002 L 3.835 5.7200003 L 6.227 5.7200003 C 6.578 5.7200003 6.76 5.954 6.76 6.3050003 C 6.76 6.656 6.578 6.8900003 6.227 6.8900003 Z "/>
+        </symbol>
+        <symbol id="gDF71F39C75C7BF0484B37FA1ACF5EBC5" overflow="visible">
+            <path d="M 5.8110003 6.8640003 L 3.9910002 1.794 L 2.119 6.8640003 C 2.0540001 7.059 1.911 7.15 1.612 7.15 C 1.209 7.15 1.014 7.007 1.014 6.695 C 1.014 6.552 1.053 6.422 1.105 6.2790003 L 3.38 0.117 L 3.289 -0.143 C 3.081 -0.72800004 2.951 -1.092 2.47 -1.508 C 2.223 -1.7160001 1.924 -1.807 1.651 -1.807 C 1.235 -1.807 1.04 -2.015 1.04 -2.392 L 1.04 -2.405 C 1.04 -2.808 1.235 -2.977 1.69 -2.977 C 2.119 -2.977 2.691 -2.8470001 3.094 -2.548 C 3.4190001 -2.3270001 3.7310002 -1.898 3.9910002 -1.4300001 C 4.251 -0.975 4.485 -0.49400002 4.602 -0.13 L 6.8380003 6.2790003 C 7.02 6.8380003 6.8770003 7.15 6.3180003 7.15 C 6.019 7.15 5.876 7.059 5.8110003 6.8640003 Z "/>
+        </symbol>
+        <symbol id="g8F12E8C1696D1C5678BF4D01D6709F9" overflow="visible">
+            <path d="M 1.755 7.28 C 1.352 7.28 1.1700001 7.085 1.1700001 6.682 L 1.1700001 -1.885 C 1.1700001 -2.288 1.352 -2.47 1.755 -2.47 C 2.158 -2.47 2.3400002 -2.288 2.3400002 -1.885 L 2.3400002 1.222 C 2.496 0.442 3.1720002 -0.13 4.1210003 -0.13 C 6.3050003 -0.13 6.76 1.95 6.76 3.822 C 6.76 5.447 6.3700004 7.28 4.251 7.28 C 3.25 7.28 2.652 6.721 2.3400002 5.85 L 2.3400002 6.682 C 2.3400002 7.085 2.158 7.28 1.755 7.28 Z M 4.1340003 6.11 C 5.278 6.11 5.59 5.096 5.59 3.744 C 5.59 2.431 5.421 1.04 3.926 1.04 C 2.99 1.04 2.3400002 2.21 2.3400002 3.042 L 2.3400002 4.472 C 2.3400002 5.304 3.198 6.11 4.1340003 6.11 Z "/>
+        </symbol>
+        <symbol id="g70EB2D61D515C6CD7747E985E6D939D9" overflow="visible">
+            <path d="M 5.967 1.7160001 C 5.8240004 1.7160001 5.7720003 1.677 5.629 1.5600001 C 5.369 1.352 4.94 1.04 4.16 1.04 C 3.055 1.04 2.288 1.7290001 2.145 3.1200001 L 6.084 3.1200001 C 6.448 3.1200001 6.695 3.4190001 6.695 3.7310002 C 6.695 5.7720003 6.045 7.28 3.9650002 7.28 C 1.742 7.28 0.949 5.512 0.949 3.536 C 0.949 1.2870001 2.132 -0.13 4.1470003 -0.13 C 5.018 -0.13 5.7070003 0.13 6.2660003 0.65000004 C 6.474 0.85800004 6.539 0.98800004 6.539 1.144 C 6.539 1.4430001 6.2920003 1.7160001 5.967 1.7160001 Z M 5.317 4.16 L 2.145 4.16 C 2.288 5.304 2.8860002 6.11 3.9650002 6.11 C 4.94 6.11 5.525 5.317 5.525 4.589 C 5.525 4.225 5.408 4.16 5.317 4.16 Z "/>
+        </symbol>
+        <symbol id="gDF94C7D669EFFC60CCC4098054F116CC" overflow="visible">
+            <path d="M 2.47 0.455 L 2.47 2.47 L 3.601 3.614 L 5.59 0.234 C 5.7980003 -0.13 6.084 -0.13 6.383 -0.13 C 6.695 -0.13 6.981 0.221 6.734 0.598 L 4.433 4.472 L 6.383 6.461 C 6.734 6.8120003 6.487 7.28 6.006 7.28 C 5.7850003 7.28 5.59 7.202 5.395 7.007 L 2.47 4.0690002 L 2.47 9.035 C 2.47 9.438 2.288 9.62 1.885 9.62 C 1.482 9.62 1.3000001 9.438 1.3000001 9.035 L 1.3000001 0.455 C 1.3000001 0.052 1.482 -0.13 1.885 -0.13 C 2.288 -0.13 2.47 0.052 2.47 0.455 Z "/>
+        </symbol>
+        <symbol id="g5FEB780DFBADB4C9AADB7543344670DA" overflow="visible">
+            <path d="M 6.656 1.1700001 L 4.81 1.1700001 L 4.81 5.85 C 4.81 6.565 4.485 6.8900003 3.77 6.8900003 L 1.937 6.8900003 C 1.5860001 6.8900003 1.365 6.656 1.365 6.3050003 C 1.365 5.954 1.5860001 5.7200003 1.937 5.7200003 L 3.1200001 5.7200003 C 3.471 5.7200003 3.64 5.551 3.64 5.2000003 L 3.64 1.1700001 L 1.664 1.1700001 C 1.3130001 1.1700001 1.105 0.936 1.105 0.58500004 C 1.105 0.234 1.3130001 0 1.664 0 L 6.656 0 C 7.007 0 7.215 0.234 7.215 0.58500004 C 7.215 0.936 7.007 1.1700001 6.656 1.1700001 Z M 4.16 8.177 C 4.732 8.177 5.083 8.489 5.083 8.996 C 5.083 9.516 4.732 9.841001 4.16 9.841001 C 3.588 9.841001 3.237 9.516 3.237 8.996 C 3.237 8.489 3.588 8.177 4.16 8.177 Z "/>
+        </symbol>
+        <symbol id="g13E63C5FB002BC84F071C27303E2D767" overflow="visible">
+            <path d="M 2.405 0.455 L 2.405 4.1080003 C 2.405 4.94 3.055 6.175 3.9910002 6.175 C 4.927 6.175 5.395 5.369 5.395 4.472 L 5.395 0.455 C 5.395 0.052 5.577 -0.13 5.98 -0.13 C 6.383 -0.13 6.565 0.052 6.565 0.455 L 6.565 4.81 C 6.565 6.3050003 5.577 7.28 4.186 7.28 C 3.237 7.28 2.652 6.76 2.405 5.928 L 2.405 6.695 C 2.405 7.098 2.223 7.28 1.82 7.28 C 1.417 7.28 1.235 7.098 1.235 6.695 L 1.235 0.455 C 1.235 0.052 1.417 -0.13 1.82 -0.13 C 2.223 -0.13 2.405 0.052 2.405 0.455 Z "/>
+        </symbol>
+        <symbol id="gD8D014DEC5D67E4D74F84D6BBE2F092D" overflow="visible">
+            <path d="M 6.045 -0.13 C 6.448 -0.13 6.63 0.065 6.63 0.468 L 6.63 9.035 C 6.63 9.438 6.448 9.62 6.045 9.62 C 5.642 9.62 5.46 9.438 5.46 9.035 L 5.46 5.928 C 5.304 6.708 4.6280003 7.28 3.6790001 7.28 C 1.495 7.28 1.04 5.2000003 1.04 3.328 C 1.04 1.7290001 1.4300001 -0.13 3.549 -0.13 C 4.55 -0.13 5.1480002 0.42900002 5.46 1.3000001 L 5.46 0.468 C 5.46 0.065 5.642 -0.13 6.045 -0.13 Z M 3.6660001 1.04 C 2.522 1.04 2.21 2.0540001 2.21 3.4060001 C 2.21 4.719 2.379 6.11 3.874 6.11 C 4.81 6.11 5.46 4.94 5.46 4.1080003 L 5.46 2.678 C 5.46 1.8460001 4.602 1.04 3.6660001 1.04 Z "/>
+        </symbol>
+        <symbol id="g3F6410CEA252BD8E099E821445958E46" overflow="visible">
+            <path d="M 0.832 8.944 L 3.081 0.49400002 C 3.198 0.078 3.471 -0.13 3.9 -0.13 C 4.355 -0.13 4.602 0.078 4.719 0.49400002 L 6.968 8.944 C 7.059 9.295 6.981 9.62 6.474 9.62 C 6.123 9.62 5.889 9.464 5.7980003 9.165 L 4.0950003 2.405 C 3.9910002 2.002 3.809 2.002 3.7050002 2.405 L 2.002 9.165 C 1.911 9.464 1.677 9.62 1.326 9.62 C 0.819 9.62 0.741 9.295 0.832 8.944 Z "/>
+        </symbol>
+        <symbol id="g25B58355DC9936D630AE57DFA4F2FAD0" overflow="visible">
+            <path d="M 1.04 3.562 C 1.04 1.0270001 2.379 -0.13 4.29 -0.13 C 5.057 -0.13 5.863 -0.065 6.3180003 0.49400002 C 6.669 0.91 6.617 1.222 6.409 1.4300001 C 6.11 1.677 5.7850003 1.612 5.577 1.404 C 5.317 1.144 4.771 1.04 4.316 1.04 C 3.1330001 1.04 2.21 1.924 2.21 3.627 C 2.21 5.291 3.081 6.11 4.329 6.11 C 5.096 6.11 5.551 5.8240004 5.7460003 5.525 C 5.902 5.2650003 6.201 5.2000003 6.513 5.395 C 6.8120003 5.564 6.8900003 5.863 6.643 6.2660003 C 6.3310003 6.7860003 5.564 7.28 4.251 7.28 C 2.522 7.28 1.04 6.227 1.04 3.562 Z "/>
+        </symbol>
+        <symbol id="gC5F0D25586FF9C92211936BA4ABC0F12" overflow="visible">
+            <path d="M 1.69 3.354 L 5.7330003 1.326 C 6.3700004 1.001 6.695 1.235 6.695 1.8460001 C 6.695 2.197 6.578 2.366 6.3700004 2.47 L 3.068 4.056 C 2.821 4.173 2.821 4.407 3.068 4.524 L 6.3700004 6.149 C 6.578 6.2530003 6.695 6.422 6.695 6.7730002 C 6.695 7.3840003 6.3700004 7.579 5.7330003 7.254 L 1.69 5.2260003 C 1.2870001 5.031 1.105 4.745 1.105 4.29 C 1.105 3.835 1.2870001 3.549 1.69 3.354 Z "/>
+        </symbol>
+        <symbol id="gE2E3883508F67B456A4464CFDCA61A7D" overflow="visible">
+            <path d="M 1.3130001 0.273 C 1.898 0.013 2.795 -0.13 3.536 -0.13 C 5.616 -0.13 6.76 0.98800004 6.76 2.652 C 6.76 3.9650002 6.201 5.018 4.888 5.122 C 5.889 5.291 6.3310003 6.2530003 6.3310003 7.254 C 6.3310003 9.022 4.836 9.62 3.315 9.62 C 2.5870001 9.62 1.872 9.49 1.521 9.243 C 1.196 9.022 1.118 8.684 1.261 8.424 C 1.417 8.112 1.755 7.9950004 2.015 8.1380005 C 2.418 8.359 2.821 8.45 3.302 8.45 C 4.1340003 8.45 5.1610003 8.177 5.1610003 7.137 C 5.1610003 5.889 3.7180002 5.551 2.821 5.551 C 2.301 5.551 2.08 5.382 2.08 4.979 C 2.08 4.524 2.3530002 4.342 2.665 4.381 C 3.77 4.446 5.59 4.29 5.59 2.938 C 5.59 1.677 4.784 1.04 3.536 1.04 C 2.977 1.04 2.3400002 1.183 1.872 1.378 C 1.417 1.5730001 1.118 1.404 0.975 1.092 C 0.819 0.741 0.962 0.416 1.3130001 0.273 Z "/>
+        </symbol>
+        <symbol id="g1F3B1B88FAB4F913AEB6B36593077EBF" overflow="visible">
+            <path d="M 1.768 0 L 6.396 0 C 6.7990003 0 6.981 0.18200001 6.981 0.58500004 C 6.981 0.98800004 6.7990003 1.1700001 6.396 1.1700001 L 3.055 1.1700001 C 2.756 1.1700001 2.743 1.3130001 2.834 1.404 L 5.135 3.848 C 6.006 4.784 6.734 5.902 6.734 6.981 C 6.734 9.061 5.382 9.62 3.757 9.62 C 2.769 9.62 2.119 9.477 1.5600001 9.074 C 1.3000001 8.879 1.183 8.554 1.339 8.281 C 1.508 7.9820004 1.8460001 7.813 2.158 8.008 C 2.5870001 8.268001 3.029 8.45 3.7180002 8.45 C 4.758 8.45 5.564 8.047 5.564 6.8380003 C 5.564 5.967 4.7060003 5.031 4.1470003 4.446 L 1.261 1.4560001 C 1.066 1.261 0.98800004 1.0270001 0.98800004 0.754 C 0.98800004 0.24700001 1.261 0 1.768 0 Z "/>
+        </symbol>
+        <symbol id="g11704D0704B38908F4A29E94A715DC1F" overflow="visible">
+            <path d="M 6.11 3.354 C 6.513 3.549 6.695 3.835 6.695 4.29 C 6.695 4.745 6.513 5.031 6.11 5.2260003 L 2.0670002 7.254 C 1.4300001 7.579 1.105 7.3840003 1.105 6.7730002 C 1.105 6.422 1.222 6.2530003 1.4300001 6.149 L 4.732 4.524 C 4.979 4.407 4.979 4.173 4.732 4.056 L 1.4300001 2.47 C 1.222 2.366 1.105 2.197 1.105 1.8460001 C 1.105 1.235 1.4300001 1.001 2.0670002 1.326 Z "/>
+        </symbol>
+        <symbol id="gFCCC8E6202D935D8B064A09E46AFE285" overflow="visible">
+            <path d="M 3.9 0.91 C 4.303 0.91 4.485 1.092 4.485 1.495 L 4.485 3.276 L 6.032 2.379 C 6.2400002 2.262 6.435 2.236 6.591 2.3400002 C 6.708 2.431 6.8250003 2.561 6.8900003 2.73 C 6.994 3.029 6.9030004 3.224 6.617 3.3930001 L 5.07 4.29 L 6.617 5.1870003 C 6.9030004 5.356 6.994 5.551 6.8900003 5.863 C 6.8250003 6.019 6.721 6.149 6.591 6.2400002 C 6.435 6.3440003 6.2400002 6.3180003 6.032 6.201 L 4.485 5.304 L 4.485 7.085 C 4.485 7.488 4.303 7.67 3.9 7.67 C 3.497 7.67 3.315 7.488 3.315 7.085 L 3.315 5.304 L 1.768 6.201 C 1.5600001 6.3180003 1.365 6.3440003 1.222 6.2400002 C 1.079 6.149 0.975 6.019 0.92300004 5.863 C 0.806 5.551 0.897 5.356 1.183 5.1870003 L 2.73 4.29 L 1.183 3.3930001 C 0.897 3.224 0.806 3.029 0.92300004 2.73 C 0.975 2.561 1.092 2.431 1.222 2.3400002 C 1.365 2.236 1.5600001 2.262 1.768 2.379 L 3.315 3.276 L 3.315 1.495 C 3.315 1.092 3.497 0.91 3.9 0.91 Z "/>
+        </symbol>
+        <symbol id="gAC92FDE0D4F9D2A0E83B1DC1CEDC7F24" overflow="visible">
+            <path d="M 1.534 8.034 C 1.339 7.3190002 1.612 7.085 2.0670002 7.085 C 2.444 7.085 2.652 7.254 2.756 7.605 C 2.925 8.125 3.367 8.45 4.1340003 8.45 C 5.018 8.45 5.551 8.034 5.551 7.163 C 5.551 6.2920003 5.031 6.006 4.303 5.525 C 3.7180002 5.122 3.328 4.537 3.263 3.874 C 3.211 3.341 3.4060001 3.1200001 3.861 3.1200001 C 4.264 3.1200001 4.446 3.302 4.537 3.7050002 C 4.6280003 4.238 4.914 4.589 5.369 4.914 C 5.993 5.395 6.721 5.967 6.721 7.176 C 6.721 8.931 5.7330003 9.62 4.1340003 9.62 C 2.821 9.62 1.8460001 9.165 1.534 8.034 Z M 2.9120002 0.871 C 2.9120002 0.312 3.341 -0.13 3.9 -0.13 C 4.459 -0.13 4.901 0.312 4.901 0.871 C 4.901 1.4300001 4.459 1.8590001 3.9 1.8590001 C 3.341 1.8590001 2.9120002 1.4300001 2.9120002 0.871 Z "/>
+        </symbol>
+        <symbol id="g8559C9A56473870739E0D3365875C1EB" overflow="visible">
+            <path d="M 1.5600001 3.7050002 L 7.8 3.7050002 L 7.8 4.875 L 1.5600001 4.875 C 1.1570001 4.875 0.975 4.6930003 0.975 4.29 C 0.975 3.887 1.1570001 3.7050002 1.5600001 3.7050002 Z "/>
+        </symbol>
+        <symbol id="gB836E220ABEBDA4A69177EFAE9FF1D67" overflow="visible">
+            <path d="M 3.783 6.11 C 3.9 5.993 3.9 5.863 3.783 5.7460003 L 3.094 5.057 C 2.977 4.94 2.821 4.875 2.652 4.875 L 0 4.875 L 0 3.7050002 L 2.652 3.7050002 C 2.821 3.7050002 2.977 3.64 3.094 3.523 L 3.783 2.834 C 3.9 2.717 3.9 2.5870001 3.783 2.47 L 2.5870001 1.274 C 2.3140001 1.001 2.3140001 0.71500003 2.5870001 0.442 C 2.8600001 0.169 3.1460001 0.169 3.4190001 0.442 L 6.526 3.549 C 7.033 4.056 7.033 4.524 6.526 5.031 L 3.4190001 8.1380005 C 3.1460001 8.411 2.8600001 8.411 2.5870001 8.1380005 C 2.3140001 7.8650002 2.3140001 7.579 2.5870001 7.306 Z M 5.1610003 3.848 C 4.914 3.601 4.6800003 3.601 4.433 3.848 L 4.355 3.926 C 4.0950003 4.186 4.0950003 4.394 4.355 4.6540003 L 4.433 4.732 C 4.6800003 4.979 4.914 4.979 5.1610003 4.732 L 5.2390003 4.6540003 C 5.486 4.407 5.486 4.173 5.2390003 3.926 Z "/>
+        </symbol>
+        <symbol id="g1A6C182C905C0A5C646EB32BB02CE2D3" overflow="visible">
+            <path d="M 3.9 1.04 C 3.068 1.04 2.5870001 1.664 2.3270001 2.444 C 2.0540001 3.211 1.9890001 4.1340003 1.9890001 4.758 C 1.9890001 5.369 2.0540001 6.2790003 2.3270001 7.059 C 2.5870001 7.826 3.068 8.45 3.9 8.45 C 5.564 8.45 5.8110003 5.98 5.8110003 4.771 C 5.8110003 3.523 5.564 1.04 3.9 1.04 Z M 3.9 -0.13 C 5.2000003 -0.13 5.954 0.572 6.409 1.547 C 6.8640003 2.522 6.981 3.744 6.981 4.784 C 6.981 6.8250003 6.5 9.62 3.9 9.62 C 1.261 9.62 0.819 6.7860003 0.819 4.771 C 0.819 2.691 1.3000001 -0.13 3.9 -0.13 Z "/>
+        </symbol>
+        <symbol id="gBD8992C497A3E41D2437748B7D27CA5A" overflow="visible">
+            <path d="M 3.9 -0.13 C 5.915 -0.13 6.8250003 1.4430001 6.8250003 3.588 C 6.8250003 5.7330003 5.941 7.28 3.9 7.28 C 1.885 7.28 0.975 5.7330003 0.975 3.588 C 0.975 1.4430001 1.885 -0.13 3.9 -0.13 Z M 3.9 1.04 C 2.691 1.04 2.145 2.08 2.145 3.575 C 2.145 5.07 2.652 6.11 3.9 6.11 C 5.1480002 6.11 5.655 5.083 5.655 3.588 C 5.655 2.093 5.109 1.04 3.9 1.04 Z "/>
+        </symbol>
+        <symbol id="g31943F373035DC8F277868CB036AB86C" overflow="visible">
+            <path d="M 2.366 5.33 L 2.366 7.8 C 2.366 8.151 2.535 8.32 2.8860002 8.32 L 4.251 8.32 C 5.1870003 8.32 5.941 7.826 5.941 6.8250003 C 5.941 6.3440003 5.7460003 5.954 5.447 5.7070003 C 5.135 5.46 4.719 5.33 4.251 5.33 Z M 2.366 4.16 L 3.9 4.16 L 5.7980003 0.26 C 5.941 0 6.136 -0.13 6.5 -0.13 C 7.007 -0.13 7.163 0.117 6.9030004 0.637 L 5.122 4.264 C 6.3050003 4.537 7.15 5.434 7.15 6.8250003 C 7.15 8.528 5.876 9.49 4.251 9.49 L 2.236 9.49 C 1.521 9.49 1.196 9.165 1.196 8.45 L 1.196 0.455 C 1.196 0.052 1.378 -0.13 1.781 -0.13 C 2.184 -0.13 2.366 0.052 2.366 0.455 Z "/>
+        </symbol>
+        <symbol id="g8C33D6BD7448013D27B90D3BAADDE4C0" overflow="visible">
+            <path d="M 3.913 -0.13 C 5.434 -0.13 6.76 0.416 6.76 1.937 C 6.76 3.601 5.2130003 4.03 3.9 4.303 C 3.341 4.407 2.496 4.602 2.496 5.291 C 2.496 5.876 3.1330001 6.11 3.9 6.11 C 4.6930003 6.11 5.109 5.837 5.525 5.421 C 5.7200003 5.2260003 5.941 5.1870003 6.097 5.1870003 C 6.448 5.1870003 6.617 5.434 6.617 5.7070003 C 6.617 5.8240004 6.578 5.98 6.461 6.175 C 6.006 6.9030004 5.031 7.28 3.9 7.28 C 2.509 7.28 1.326 6.734 1.326 5.278 C 1.326 3.7180002 2.717 3.367 3.9 3.1200001 C 4.485 3.016 5.59 2.717 5.59 1.95 C 5.59 1.1570001 4.485 1.04 3.9 1.04 C 3.068 1.04 2.6260002 1.391 2.0670002 1.872 C 1.872 2.0410001 1.742 2.106 1.547 2.106 C 1.3000001 2.106 1.053 1.9890001 1.053 1.612 C 1.053 1.365 1.144 1.118 1.3130001 0.92300004 C 2.002 0.13 2.8730001 -0.13 3.913 -0.13 Z "/>
+        </symbol>
+        <symbol id="g32A0B2B4E3D2BE2ABFAFA786774FACA7" overflow="visible">
+            <path d="M 5.395 6.695 L 5.395 3.042 C 5.395 2.21 4.745 0.975 3.809 0.975 C 2.8730001 0.975 2.405 1.781 2.405 2.678 L 2.405 6.695 C 2.405 7.098 2.223 7.28 1.82 7.28 C 1.417 7.28 1.235 7.098 1.235 6.695 L 1.235 2.3400002 C 1.235 0.845 2.223 -0.13 3.614 -0.13 C 4.563 -0.13 5.1480002 0.39000002 5.395 1.222 L 5.395 0.455 C 5.395 0.052 5.577 -0.13 5.98 -0.13 C 6.383 -0.13 6.565 0.052 6.565 0.455 L 6.565 6.695 C 6.565 7.098 6.383 7.28 5.98 7.28 C 5.577 7.28 5.395 7.098 5.395 6.695 Z "/>
+        </symbol>
+        <symbol id="g11EEFEB21FEA9CC41E09A4B1C65060ED" overflow="visible">
+            <path d="M 4.017 2.9120002 L 4.03 8.45 C 4.03 9.165 3.7050002 9.49 2.99 9.49 L 1.378 9.49 C 1.0270001 9.49 0.845 9.308001 0.845 8.957 C 0.845 8.606 1.0270001 8.424 1.378 8.424 L 2.3400002 8.424 C 2.691 8.424 2.8600001 8.255 2.8600001 7.9040003 L 2.8470001 2.691 C 2.8470001 0.754 3.6790001 -0.13 4.927 -0.13 C 5.655 -0.13 6.2530003 -0.078 6.7730002 0.19500001 C 7.098 0.36400002 7.189 0.663 6.981 1.014 C 6.7860003 1.339 6.526 1.4560001 6.175 1.261 C 5.7720003 1.066 5.473 1.04 5.122 1.04 C 4.394 1.04 4.017 1.664 4.017 2.9120002 Z "/>
+        </symbol>
+        <symbol id="gDA1F1F9831395242813FF3C721405FFC" overflow="visible">
+            <path d="M 5.356 7.605 C 5.499 7.254 5.668 7.111 6.019 7.111 C 6.435 7.111 6.63 7.3320003 6.539 7.696 C 6.2920003 8.84 5.291 9.62 3.9 9.62 C 2.275 9.62 1.1700001 8.606 1.1700001 7.085 C 1.1700001 5.2520003 2.405 4.771 3.9 4.355 C 4.901 4.0820003 5.6940002 3.835 5.6940002 2.5870001 C 5.6940002 1.5860001 5.005 1.04 3.9 1.04 C 3.029 1.04 2.483 1.391 2.236 2.106 C 2.093 2.483 1.8330001 2.6000001 1.482 2.6000001 C 1.118 2.6000001 0.936 2.3400002 0.98800004 2.015 C 1.235 0.663 2.3400002 -0.13 3.9 -0.13 C 5.7330003 -0.13 6.8640003 0.92300004 6.8640003 2.5870001 C 6.8640003 4.6280003 5.564 5.109 3.9 5.564 C 3.029 5.8110003 2.3400002 6.032 2.3400002 7.111 C 2.3400002 7.852 2.925 8.45 3.9 8.45 C 4.563 8.45 5.109 8.229 5.356 7.605 Z "/>
+        </symbol>
+        <symbol id="gD640595687D0C51A7274FC7B9A12B3F9" overflow="visible">
+            <path d="M 2.015 -0.13 C 2.418 -0.13 2.6000001 0.052 2.6000001 0.455 L 2.6000001 4.55 C 2.6000001 5.629 3.6920002 6.11 4.589 6.11 C 5.525 6.11 5.7200003 5.499 5.7200003 4.7060003 L 5.7200003 4.55 C 5.7200003 4.1470003 5.902 3.9650002 6.3050003 3.9650002 C 6.708 3.9650002 6.8900003 4.1470003 6.8900003 4.55 L 6.8900003 4.7060003 C 6.8900003 6.097 6.552 7.28 4.992 7.28 C 3.9910002 7.28 2.8730001 6.76 2.6000001 5.928 L 2.6000001 6.695 C 2.6000001 7.098 2.418 7.28 2.015 7.28 C 1.612 7.28 1.4300001 7.098 1.4300001 6.695 L 1.4300001 0.455 C 1.4300001 0.052 1.612 -0.13 2.015 -0.13 Z "/>
+        </symbol>
+        <symbol id="gDAD6BAF7510301BD7D478F74FB678BA0" overflow="visible">
+            <path d="M 5.46 1.5600001 L 5.46 0 C 5.46 -1.495 4.576 -1.95 3.9520001 -1.95 C 3.224 -1.95 2.6260002 -1.521 2.249 -1.066 C 2.132 -0.91 2.002 -0.832 1.807 -0.832 C 1.521 -0.832 1.3130001 -1.066 1.235 -1.326 C 1.1570001 -1.612 1.183 -1.807 1.378 -2.028 C 1.8590001 -2.6130002 2.5870001 -3.1200001 3.796 -3.1200001 C 5.356 -3.1200001 6.63 -2.184 6.63 0 L 6.63 6.695 C 6.63 7.098 6.448 7.28 6.045 7.28 C 5.642 7.28 5.46 7.098 5.46 6.695 L 5.46 5.928 C 5.2130003 6.76 4.6280003 7.28 3.6790001 7.28 C 1.495 7.28 1.04 5.278 1.04 3.653 C 1.04 2.8600001 1.1570001 1.963 1.521 1.2870001 C 1.885 0.611 2.509 0.13 3.549 0.13 C 4.446 0.13 5.1480002 0.52 5.46 1.5600001 Z M 3.6660001 1.235 C 2.418 1.235 2.21 2.6260002 2.21 3.7310002 C 2.21 4.264 2.262 4.875 2.496 5.356 C 2.717 5.8240004 3.1330001 6.175 3.874 6.175 C 4.81 6.175 5.46 4.94 5.46 4.1080003 L 5.46 2.938 C 5.46 2.106 4.602 1.235 3.6660001 1.235 Z "/>
+        </symbol>
+        <symbol id="gDE53C16F817BF7CD99333ACC9CCE7D4" overflow="visible">
+            <path d="M 1.95 -2.8990002 C 4.446 -2.3400002 5.057 -1.092 5.057 0.299 C 5.057 1.092 4.758 2.015 3.861 2.015 C 3.1330001 2.015 2.73 1.5600001 2.73 0.871 C 2.73 0.312 3.081 -0.013 3.614 -0.117 C 3.9910002 -0.208 4.0950003 -0.338 4.004 -0.637 C 3.809 -1.222 2.964 -1.898 1.651 -2.223 C 1.4560001 -2.275 1.378 -2.509 1.469 -2.704 C 1.5600001 -2.9120002 1.742 -2.951 1.95 -2.8990002 Z "/>
+        </symbol>
+        <symbol id="g909F14C7312249493023AD7C01F64A59" overflow="visible">
+            <path d="M 2.47 5.551 L 2.47 7.8 C 2.47 8.151 2.639 8.32 2.99 8.32 L 6.227 8.32 C 6.578 8.32 6.76 8.554 6.76 8.905 C 6.76 9.2560005 6.578 9.49 6.227 9.49 L 2.3400002 9.49 C 1.625 9.49 1.3000001 9.165 1.3000001 8.45 L 1.3000001 1.04 C 1.3000001 0.32500002 1.625 0 2.3400002 0 L 6.227 0 C 6.578 0 6.76 0.234 6.76 0.58500004 C 6.76 0.936 6.578 1.1700001 6.227 1.1700001 L 2.99 1.1700001 C 2.639 1.1700001 2.47 1.339 2.47 1.69 L 2.47 4.381 L 5.7850003 4.381 C 6.136 4.381 6.3700004 4.6150002 6.3700004 4.966 C 6.3700004 5.317 6.136 5.551 5.7850003 5.551 Z "/>
+        </symbol>
+    </defs>
+</svg>
+</div>
+      <p><code class="font-semibold text-[#aa8bd5]"><code>Vec&lt;?></code></code> 就表示前文的 <code class="font-semibold text-[#aa8bd5]"><code>Vec</code></code>, 需要向其中提供一个参数, 当你看到这, 类型构造器的概念其实也已经了解差不多了<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="类型构造器"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#类型构造器">类型构造器</a></h1>
+      <p>虽然前面已经讲了, 但这里还是写点具体的 rust 代码吧?<br><br>如下代码中的 <code class="font-semibold text-[#aa8bd5]"><code>Trait::Type</code></code> 便如同前文的 <code class="font-semibold text-[#aa8bd5]"><code>not</code></code> 函数, 不过 <code class="font-semibold text-[#aa8bd5]"><code>not</code></code> 是参数接收一个值, 并返回一个值, 其参数是 type 为 <code class="font-semibold text-[#aa8bd5]"><code>bool</code></code> 的 value<br>而此时的 <code class="font-semibold text-[#aa8bd5]"><code>Trait::Type</code></code> 却是接收一个类型, 并返回一个新类型, 即参数是 kind 为 <code class="font-semibold text-[#aa8bd5]"><code>*</code></code> 的 type, 返回值是个新的 type<br>像这样接收 type, 以 type 作为参数并创建新的 type 的玩意儿, 我们将其称为 类型构造器<br><br>因此, <code class="font-semibold text-[#aa8bd5]"><code>Trait::Type</code></code> 的 kind 可以表示为 <code class="font-semibold text-[#aa8bd5]"><code>* -> *</code></code><br>(或者 <code class="font-semibold text-[#aa8bd5]"><code>type -> type</code></code>, 都表达了只在乎 kind, 就像是不管是 <code class="font-semibold text-[#aa8bd5]"><code>true</code></code> 还是 <code class="font-semibold text-[#aa8bd5]"><code>false</code></code>, 都可以用 <code class="font-semibold text-[#aa8bd5]"><code>bool</code></code> 来表示, 表达了只在乎 type)<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">trait Trait {
+    type Type&lt;T>;
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>我们可以通过将类型作为 <code class="font-semibold text-[#aa8bd5]"><code>Type&lt;T></code></code> 中的泛型参数 <code class="font-semibold text-[#aa8bd5]"><code>T</code></code> 传入, 然后在 <code class="font-semibold text-[#aa8bd5]"><code>impl</code></code> 块里面指定新的类型, 比如如下我们指定了类型构造器是 <code class="font-semibold text-[#aa8bd5]"><code>X -> Option&lt;X></code></code><br>在使用时, 我们只需要给类型构造器传入一个类型, 比如 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code> 后就能得到 <code class="font-semibold text-[#aa8bd5]"><code>Option&lt;i32></code></code> 了<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">trait Trait {
+    type Type&lt;T>;
+}
+
+impl Trait for () {
+    type Type&lt;X> = Option&lt;X>;
+}
+
+fn main() {
+    let a = &lt;() as Trait>::Type::&lt;i32>::default();  // Option::&lt;i32>::default()
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p><em>GATs</em> 其实就是让 <em>关联类型</em> 允许成为 <em>类型构造器</em><br>之前这玩意也被叫作 <em>ACT(Associated-Type-Constructors, 关联类型构造器)</em>, 差不多的意思, 无须在意<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="高阶类型(HKT)"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#高阶类型(HKT)">高阶类型(HKT)</a></h1>
+      <p>你可能听到过许多次 <em>高阶类型(Higher-Kinded-Type, HKT)</em> 的名字, 其实这与 <em>高阶函数(Higner-Ordered-Function, HOF)</em> 是一个道理:<br><br></p>
+      <ul class="list-disc ml-4">
+        <li><em>高阶函数(HOF)</em>: 某种参数可以是 <em>函数与变量</em> 的 <em>函数</em><br></li>
+        <li><em>高阶类型(HKT)</em>: 某种参数可以是 <em>类型构造器与类型</em> 的 <em>类型构造器</em><br></li>
+      </ul>
+      <p><br>当然, 就像是 <em>HOF(高阶函数)</em> 不仅可以接收 <em>函数</em> 作为参数, 也可以如同 <em>普通的函数</em> 那样接收 <em>变量</em> 作为参数<br>HKT(高阶类型) 也一样, 不仅可以接收 类型构造器 作为参数, 也可以如同 普通的类型构造器 那样接收 类型 作为参数<br><br>继续类比进行理解, 对于 <em>高阶函数</em> 来讲, 什么 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>foreach</code></code> 之类的函数你肯定已经用过了, 这些函数都需要你手动传入闭包<br>换句话说, 这赋予了让用户选择怎么做的权利, 你传入 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code> 里面的闭包可以是让数组全部加 <code class="font-semibold text-[#aa8bd5]"><code>10</code></code>, 可以是全部变成 <code class="font-semibold text-[#aa8bd5]"><code>0</code></code><br><br><em>高阶类型(HKT)</em> 也是一样的道理, 比如我们在设计某个容器类型时:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">// 一个包装容器的类型
+// 伪代码中的 `C[_]` 表示一个类型构造器
+struct Container&lt;C[_] {
+    data: C&lt;i32>
+    // ...
+    // ...
+}
+
+Container&lt;Vec>
+Container&lt;LinkedList></code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>你可以用 <code class="font-semibold text-[#aa8bd5]"><code>Container&lt;Vec></code></code> 或者 <code class="font-semibold text-[#aa8bd5]"><code>Container&lt;LinkedList></code></code> 让用户决定该以何种形式去存储数据<br>但很可惜的是, 前文也说过 rust 中并不存在 HKT, 仅仅只有 <code class="font-semibold text-[#aa8bd5]"><code>Vec&lt;i32></code></code>, <code class="font-semibold text-[#aa8bd5]"><code>LinkedList&lt;i32></code></code> 这些具体类型, 只能通过 GATs 去模拟<br>HKT 就是类似这样的类型, 只是它提供了 <em>根据传入的类型构造器(或者类型), 构造某个新类型</em> 的能力<br><br>再多举一点类似的例子, 比如下面这段伪代码, 来自于 <a class="underline underline-offset-5 font-medium" href="https://docs.rs/lending-iterator/latest/lending_iterator/">lending_iterator</a> 中对 HKT 的说明:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">// ArrayKind 是一个类型构造器
+struct Container&lt;ArrayKind[_]> {
+    array_i32s: ArrayKind&lt;i32>,
+    array_strings: ArrayKind&lt;String>,
+}
+
+
+type StructOfVecs = Container&lt;Vec>;
+// Equals to
+struct StructOfVecs {
+    array_i32s: Vec&lt;i32>,
+    array_strings: Vec&lt;String>,
+}
+
+
+type StructOfVecDeques = Container&lt;LinkedList>;
+// Equals to
+struct StructOfVecDeques {
+    array_i32s: LinkedList&lt;i32>,
+    array_strings: LinkedList&lt;String>,
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>我们甚至可以更加灵活一点, 通过临时构造一个类型, 来取代上面作为参数的 <code class="font-semibold text-[#aa8bd5]"><code>Vec</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>LinkedList</code></code>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">// 假设 `HKT!` 是一个魔法宏, 人为临时地构造了一个 `类型构造器`, 如同向 `map` 函数传入闭包一样
+type StructOfPairs = StructOfArrays&lt; HKT!(T => [T; 2]) >;
+// Equals to
+struct StructOfPairs {
+    array_i32s: [i32; 2],
+    array_strings: [String; 2],
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>当然, rust 中并没有这种语法, 在 rust 中存在的是 <code class="font-semibold text-[#aa8bd5]"><code>Vec&lt;i32></code></code>, <code class="font-semibold text-[#aa8bd5]"><code>LinkedList&lt;i32></code></code> 这样的具体类型<br>但是, rust 中存在 GATs, 也就是上一节中介绍的那个 <em>泛型关联类型</em> 哩 :)<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="例子"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#例子">例子</a></h1>
+      <p>来点小例子吧, 随便瞎扯一些, 想到了啥就扯点啥<br></p>
+      <h2 class="flex items-center w-fit my-6" id="容器类型"><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href="#容器类型">容器类型</a></h2>
+      <p>我将如何抽象某个容器类型放到第一个地方讲, 因为这部分比较经典与有趣 <span style="display: inline-block;"><del class="">(其实是因为比较简单啦, 太难直接把读者劝退了咋办)</del></span><br>得益于 rust 中 GATs 的存在, 我们可以如上面的伪代码中那样抽象容器类型:<br><br>在 <code class="font-semibold text-[#aa8bd5]"><code>iterate</code></code> 方法中, 我们返回了集合迭代时的具体类型, 但因为不同集合类型的迭代器具体类型是不一样的, 所以我们需要进行抽象:<br><br></p>
+      <ul class="list-disc ml-4">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>Vec&lt;T></code></code> 对应的迭代器具体类型 <code class="font-semibold text-[#aa8bd5]"><code>std::slice::Iter&lt;'a, T></code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>LinkedList&lt;T></code></code> 对应的迭代器具体类型是 <code class="font-semibold text-[#aa8bd5]"><code>std::collections::linked_list::Iter&lt;'a, T></code></code></li>
+      </ul>
+      <p><br>因此我们可以通过 GATs 来表述, 无非就是多了个生命周期 (生命周期也是泛型的一种), 然后为各种集合类型实现该 trait:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">// Vec
+impl&lt;T> Collection&lt;T> for Vec&lt;T> {
+    type Iter&lt;'iter> = std::slice::Iter&lt;'iter, T> 
+    where
+        T: 'iter;
+
+    fn empty() -> Self {
+        vec![]
+    }
+
+    fn add(&amp;mut self, value: T) {
+        self.push(value);
+    }
+
+    fn iterate(&amp;self) -> Self::Iter&lt;'_> {
+        self.iter()
+    }
+}
+
+// LinkedList
+impl&lt;T> Collection&lt;T> for LinkedList&lt;T> {
+    type Iter&lt;'iter> = std::collections::linked_list::Iter&lt;'iter, T>
+    where
+        T: 'iter;
+
+    fn empty() -> Self {
+        LinkedList::new()
+    }
+
+    fn add(&amp;mut self, value: T) {
+        self.push_back(value);
+    }
+
+    fn iterate(&amp;self) -> Self::Iter&lt;'_> {
+        self.iter()
+    }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>以 trait 为基调的实现比较符合 rust 常见的编码风格<br>你可以把你脑子里那些什么 <em>HKT</em>, <em>GATs</em> 等名词, <em>类型构造器</em>, <em>kind</em>, <em>type</em> 等概念全删掉, 然后仅简单将上述代码看作关联类型<br>(这也是语言特性的开发团队为了一致性与兼容性所深思熟虑过的事情捏)<br><br>然后我们可以拥有像这样的方法, 比如让元素是整数类型的集合转换为浮点数的集合:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">fn floatify&lt;Input, Output>(ints: &amp;Input) -> Output
+where 
+    Input: Collection&lt;i32>,
+    Output: Collection&lt;f32>
+{
+    let mut floats = Output::empty();
+    for &amp;i in ints.iterate() {
+        floats.add(i as f32);
+    }
+    floats
+}
+
+fn main() {
+    let v = vec![1, 2, 3];
+    let v: Vec&lt;_> = floatify(&amp;v);
+
+    let l = LinkedList::from_iter([4, 5, 6]);
+    let l: LinkedList&lt;_> = floatify(&amp;l);
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>同时需要注意类型推断, 这让迭代器被 <code class="font-semibold text-[#aa8bd5]"><code>collect</code></code> 成某个具体的集合类型时同理, 毕竟有许多实现了 <code class="font-semibold text-[#aa8bd5]"><code>Collection&lt;f32></code></code>, 编译器怎么知道是哪个呢?<br>我们希望不会改变集合的类型, 仅改变集合元素的类型, 但当故意手动添加不同集合的类型作为注解时, 能导致集合的类型改变:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">let l = LinkedList::from_iter([4, 5, 6]);
+let l: Vec&lt;_> = floatify(&amp;l);</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>这是因为 rust 通过我们提供的类型推导出了 <code class="font-semibold text-[#aa8bd5]"><code>Output</code></code> 类型, 而 <code class="font-semibold text-[#aa8bd5]"><code>Input</code></code> 的类型则是根据我们传入的参数, 已经固定推导出来了<br>有没有什么办法从类型的关系上, 让 rust 不必通过用户提供的类型进行推导, 而是直接从参数进行推导, 从而限制住用户这种太过自由的行为呢?<br><br>当然! 这里可以让编译器自动推导出 <code class="font-semibold text-[#aa8bd5]"><code>Input</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>Output</code></code> 是相同的集合类型(除了元素的类型不同) 这一我们想要的事实<br>其实就是加个关联类型成员, 再将其添加一个 trait-bound 即可:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">trait Collection&lt;T> {
+    type Output&lt;M>: Collection&lt;M>;
+    // ...
+}
+
+impl&lt;T> Collection&lt;T> for Vec&lt;T> {
+    type Output&lt;M> = Vec&lt;M>;
+    // ...
+}
+
+fn floatify&lt;Input>(ints: &amp;Input) -> Input::Output&lt;f32>
+where 
+    Input: Collection&lt;i32>,
+{
+    let mut floats = Input::Output::&lt;f32>::empty();
+    // ...
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>我们不想使用用户提供的类型注解, 所以直接用跟参数一起的关联类型, 避免了集合的类型能从 <code class="font-semibold text-[#aa8bd5]"><code>Vec</code></code> 变成 <code class="font-semibold text-[#aa8bd5]"><code>LinkedList</code></code><br>值得注意的是, 有时候我们想要的是将选择的权力交给调用方, 也就是用户, 在下文中的 family-trait 部分中会提到<br></p>
+      <h2 class="flex items-center w-fit my-6" id="Functor"><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href="#Functor">Functor</a></h2>
+      <p>(倘若你已经理解了先前的知识点, 这里理解起来应该也不算太难)<br><br>相信大家肯定用过 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code> 函数吧, 不管是 <code class="font-semibold text-[#aa8bd5]"><code>std::iter::Iterator</code></code> 这个 trait 里面的 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code>, 还是为 <code class="font-semibold text-[#aa8bd5]"><code>array</code></code> 类型单独实现的 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code>, 反正你肯定用过就对了<br>那么你有没有想过, 为什么 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code> 函数的实现就得分离开来呢? 能否有个统一的 trait, 比如 <code class="font-semibold text-[#aa8bd5]"><code>Mapable</code></code>, 能够抽象这样的行为, 统一规范所有的实现呢?<br><br>在各种各样以函数式编程为主的语言中, 就存在着这样一个概念, 不过它不叫 <code class="font-semibold text-[#aa8bd5]"><code>Mapable</code></code>, 而叫 <code class="font-semibold text-[#aa8bd5]"><code>Functor</code></code><br>让我们尝试利用 rust 中的 GATs 来实现这样一个抽象了 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code> 行为的 trait:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">trait Functor {
+    type Inner;      // Unwrapped/Unplugged (代表容器内部值的类型)
+    type Output&lt;T>;  // Wrapper/Plugged (代表容器本身的类型, 其实是个接收类型创建新类型的类型构造器)
+
+    // 为了与原本的 `map` 区分开来, 我们将方法取名为 `fmap`  
+    fn fmap&lt;F, B>(self, f: F) -> Self::Output&lt;B>
+    where
+        F: FnMut(Self::Inner) -> B;
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>倘若你把 <code class="font-semibold text-[#aa8bd5]"><code>Output&lt;T></code></code> 改成 <code class="font-semibold text-[#aa8bd5]"><code>Output</code></code>, 意图根据此来指代整个容器类型的概念…你可以自己试一试, 无法编译通过<br>以 <code class="font-semibold text-[#aa8bd5]"><code>Option</code></code> 类型为例 (<code class="font-semibold text-[#aa8bd5]"><code>Result</code></code> 类型同理):<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">impl&lt;T> Functor for Option&lt;T> {
+    type Inner = T;
+    type Output&lt;U> = Option&lt;U>;
+
+    fn fmap&lt;F, U>(self, mut f: F) -> Self::Output&lt;U>
+    where
+        F: FnMut(Self::Inner) -> U,
+    {
+        #[allow(clippy::manual_map)]
+        match self {
+            None => None,
+            Some(t) => Some(f(t)),
+        }
+
+        // // 你也可以直接复用标准库中已经实现的 `map`  
+        // self.map(f)
+    }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>照猫画虎为 <code class="font-semibold text-[#aa8bd5]"><code>array</code></code> 类型实现一下:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">impl&lt;T, const N: usize> Functor for [T; N] {
+    type Inner = T;
+    type Output&lt;U> = [U; N];
+    fn fmap&lt;F, B>(self, f: F) -> Self::Output&lt;B>
+    where
+        F: FnMut(Self::Inner) -> B,
+    {
+        self.map(f)
+    }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>倘若没有 GATs, 也就是没有 <code class="font-semibold text-[#aa8bd5]"><code>type Output&lt;T></code></code> 这里的类型构造器的情况下, 我们将只可能拥有同态的 functor<br>也就是说 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code> 函数必须返回相同的类型, 即只能 <code class="font-semibold text-[#aa8bd5]"><code>T -> T</code></code>, 而无法 <code class="font-semibold text-[#aa8bd5]"><code>T -> U</code></code>, 我们此刻的是多态的 functor, 对应后者<br><br>还有其他非常多的来自函数式编程中的一些概念, 不过 Functor 算是其中最经典最简单的一个了<br>其余在 rust 中的实现, 就请自行查阅与思考吧!<br><br><span style="display: inline-block;"><del class="">(我是不会告诉你其实是因为有些概念我也看不懂所以才不继续讲的)</del></span><br></p>
+      <h2 class="flex items-center w-fit my-6" id="Self泛型"><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href="#Self泛型">Self泛型</a></h2>
+      <p>众所周知, rust 中的 <code class="font-semibold text-[#aa8bd5]"><code>Self</code></code> 是一个类型别名, 指示你正在 impl 的那个类型, 如 <code class="font-semibold text-[#aa8bd5]"><code>impl i32 { ... }</code></code> 时, <code class="font-semibold text-[#aa8bd5]"><code>Self</code></code> 就指代 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code><br>同样众所周知的一点, 那就是 <code class="font-semibold text-[#aa8bd5]"><code>Self</code></code> 是不能够添加泛型的, 你只能 <code class="font-semibold text-[#aa8bd5]"><code>Self</code></code>, 而不能 <code class="font-semibold text-[#aa8bd5]"><code>Self&lt;T></code></code><br><br>让 <code class="font-semibold text-[#aa8bd5]"><code>Self</code></code> 能够泛型化有什么用呢? 让我们以之前的 <code class="font-semibold text-[#aa8bd5]"><code>Functor</code></code> 为例, 倘若其可以支持泛型:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">trait Functor&lt;T>: HKT1 {
+    fn map&lt;U, F>(self, f: F) -> Self::With&lt;U>
+    where
+        F: FnMut(T) -> U;
+}
+
+impl&lt;T> Functor&lt;T> for Option&lt;T> {
+    fn map&lt;U, F>(self, f: F) -> Self&lt;U> 
+    where
+        F: FnMut(T) -> U
+    {
+        self.map(f)
+    }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>倘若用模式匹配的思想看待上述伪代码, 你会发现返回值的类型 <code class="font-semibold text-[#aa8bd5]"><code>Self&lt;U></code></code> 对应 <code class="font-semibold text-[#aa8bd5]"><code>Option&lt;U></code></code>, 则 <code class="font-semibold text-[#aa8bd5]"><code>Self</code></code> 就自然对应了 <code class="font-semibold text-[#aa8bd5]"><code>Option</code></code><br>这在今天的 rust 中可能吗? 不, 这不可能, rust 中的类型都是具体类型, 比如 <code class="font-semibold text-[#aa8bd5]"><code>M&lt;T, U, Z></code></code>, 而不可能是 <code class="font-semibold text-[#aa8bd5]"><code>M</code></code> 这种没写全的<br><br>哭唧唧, 要是能够像这样写岂不是会写得很爽? (虽然本质上一样, 无非是先前那套 Functor 的关联类型给你隐藏起来了而已)<br>但鉴于 GATs 的存在, 我们确实可以模拟出来:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">trait HKT1 {
+    type Inner1;
+    type With&lt;T>;
+}
+
+impl&lt;T> HKT1 for Option&lt;T> {
+    type Inner1 = T;
+    type With&lt;A> = Option&lt;A>;
+}
+
+impl&lt;T> Functor&lt;T> for Option&lt;T> {
+    fn map&lt;U, F>(self, f: F) -> Self::With&lt;U>
+    where
+        F: FnMut(T) -> U,
+    {
+        self.map(f)
+    }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>本质上和先前的 <code class="font-semibold text-[#aa8bd5]"><code>Functor</code></code> 是一样的, 只是我们包装起来稍微舒服点, 通过 <code class="font-semibold text-[#aa8bd5]"><code>Self::With&lt;U></code></code> 来模拟 <code class="font-semibold text-[#aa8bd5]"><code>Self&lt;U></code></code> 了<br>你也可以模仿上面的 <code class="font-semibold text-[#aa8bd5]"><code>HKT1</code></code>, 定义 <code class="font-semibold text-[#aa8bd5]"><code>HKT2</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>HKT3</code></code> 等 trait, 并且实现:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">trait HKT2 {
+    type Inner1;
+    type Inner2;
+    type With&lt;T, U>;
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>如果使用宏的话, 这些重复的定义都能够自动生成, 且自动为你指定的类型实现, 不过我懒得继续讲宏了, 就这样吧, 略过略过!!<br>(你可以把宏理解为操控字符串, 只要你懂得怎么自动生成这些代码, 就可以通过声明宏喂给编译器进行解析)<br></p>
+      <h2 class="flex items-center w-fit my-6" id="family-trait"><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href="#family-trait">family-trait</a></h2>
+      <p><code class="font-semibold text-[#aa8bd5]"><code>family-trait</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>type-family</code></code> 是种技巧, 也可以说是设计模式, 你能暴露出部分内部的实现, 然后让用户自行选择使用哪部分<br><br>其实理解起来很简单, 让我们看看下面几个类型:<br><br></p>
+      <ul class="list-disc ml-4">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>Rc&lt;RefCell&lt;T>></code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>Rc&lt;Cell&lt;T>></code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>Arc&lt;Mutex&lt;T>></code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>Arc&lt;RwLock&lt;T>></code></code></li>
+      </ul>
+      <p><br>这些都是 <em>智能指针(smart-pointer)</em>, 且提供了内部可变性, 但是分为了单/多线程的情况<br><br>让我们再具体一点, 并且将问题只放在 <code class="font-semibold text-[#aa8bd5]"><code>Rc</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>Arc</code></code> 上, 倘若你正在编写树状的数据结构, 用 <code class="font-semibold text-[#aa8bd5]"><code>Rc</code></code> 或 <code class="font-semibold text-[#aa8bd5]"><code>Arc</code></code> 来包裹树的结点<br>如果你只用了 <code class="font-semibold text-[#aa8bd5]"><code>Rc</code></code> 作为结点的类型, 那么你的用户就会开始吵闹: "喂, 为什么用的不是 <code class="font-semibold text-[#aa8bd5]"><code>Arc</code></code> 啊? 你让我多线程情况下怎么用啊?"<br>如果你只用了 <code class="font-semibold text-[#aa8bd5]"><code>Arc</code></code> 作为结点的类型, 那么你的用户就会开始吵闹: "喂, 为什么用的不是 <code class="font-semibold text-[#aa8bd5]"><code>Rc</code></code> 啊? 单线程情况下速度也太慢了吧?"<br><br>你汗流浃背, 为了满足两大需求不同的群体, 你选择…写两份代码! 粘贴, 复制, 将 <code class="font-semibold text-[#aa8bd5]"><code>Rc</code></code> 替换为 <code class="font-semibold text-[#aa8bd5]"><code>Arc</code></code>, 一气呵成<br>(但面对天灾(指暴怒且嗷嗷待哺的用户们), 我们并非无计可施)<br><br>(其实写两份代码也是非常简单的正确方法捏, 比如 <code class="font-semibold text-[#aa8bd5]"><code>im-rc</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>im</code></code> 这两个 crate 就是这种情况)<br><br>倘若我们可以定义一个 reference-counted(引用计数) 的 family<br>但通过 GATs, 我们就可以先内部进行抽象, 然后再暴露出去让用户自己选择到底是 <code class="font-semibold text-[#aa8bd5]"><code>Rc</code></code> 还是 <code class="font-semibold text-[#aa8bd5]"><code>Arc</code></code> 了:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">trait RefCountedFamily {
+    type Pointer&lt;T>;
+    fn new&lt;T>(value: T) -> Self::Pointer&lt;T>;
+    // ...
+    // ...
+}
+
+struct RcFamily;
+impl RefCountedFamily for RcFamily {
+    type Pointer&lt;T> = Rc&lt;T>;
+    fn new&lt;T>(value: T) -> Self::Pointer&lt;T> {
+        Rc::new(value)
+    }
+    // ...
+    // ...
+}
+
+struct ArcFamily;
+impl RefCountedFamily for ArcFamily {
+    type Pointer&lt;T> = Arc&lt;T>;
+    fn new&lt;T>(value: T) -> Self::Pointer&lt;T> {
+        Arc::new(value)
+    }
+    // ...
+    // ...
+}
+
+struct Container&lt;P: RefCountedFamily> {
+    data: P::Pointer&lt;i32>,
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>用户使用的时候可以通过传入诸如 <code class="font-semibold text-[#aa8bd5]"><code>RcFamily</code></code> 这种实现了 family-trait 的具体类型, 以此选择了使用 <code class="font-semibold text-[#aa8bd5]"><code>Rc</code></code>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">let c = Container::&lt;RcFamily> {
+    data: RcFamily::new(1),
+};</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>对于最开始的 <code class="font-semibold text-[#aa8bd5]"><code>Rc&lt;RefCell&lt;T>></code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Rc&lt;Cell&lt;T>></code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Arc&lt;Mutex&lt;T>></code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Arc&lt;RwLock&lt;T>></code></code> 也是同理<br>你可以组合这些类型, 暴露出来, 然后交给用户进行选择, 抽象了 线程安全/智能指针 的选择<br></p>
+      <h2 class="flex items-center w-fit my-6" id="借贷迭代"><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href="#借贷迭代">借贷迭代</a></h2>
+      <p>(以下部分代码来自 <a class="underline underline-offset-5 font-medium" href="https://rust-lang.github.io/generic-associated-types-initiative/explainer/motivation.html">https://rust-lang.github.io/generic-associated-types-initiative/explainer/motivation.html</a>)<br><br><code class="font-semibold text-[#aa8bd5]"><code>streaming-iterator</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>lending-iterator</code></code>, 这两个都是同一个东西, 请注意, 这和 <em>async(异步)</em> 生态中的 <code class="font-semibold text-[#aa8bd5]"><code>Stream</code></code> 不是一个概念<br>因为前者的名字可能会与 async 生态中的 <code class="font-semibold text-[#aa8bd5]"><code>Stream</code></code> 一起造成困扰, 所以我个人更偏向于使用后者的名词<br><br><em>lending-iterator(借贷迭代器)</em>, 概念上来讲就是 GATs 版的 <code class="font-semibold text-[#aa8bd5]"><code>std::iter::Iterator</code></code>, 并且关联类型的泛型参数是个 lifetime<br><br>先让我们重温下 <code class="font-semibold text-[#aa8bd5]"><code>std::iter::Iterator</code></code> 相关的内容:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">pub trait Iterator {
+    type Item;
+    fn next(&amp;mut self) -> Option&lt;Self::Item>;
+    // ...
+    // ...
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>里面有一个非泛型的关联类型 <code class="font-semibold text-[#aa8bd5]"><code>Item</code></code>, 我们可以调用 <code class="font-semibold text-[#aa8bd5]"><code>next</code></code> 方法进行迭代, 因此我们可以写出类似这样的代码:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+    </script><p><code class=" language-rust text-sm sm:text-base">struct Iter&lt;'a, T> {
+    data: &amp;'a [T],
+}
+
+impl&lt;'a, T> Iterator for Iter&lt;'a, T> {
+    type Item = &amp;'a T;
+
+    fn next(&amp;mut self) -> Option&lt;Self::Item> {
+        self.data.split_first().map(|(prefix_elem, suffix)| {
+            self.data = suffix;
+            prefix_elem
+        })
+    }
+}
+
+fn main() {
+    let mut iter = Iter { data: &amp;[1, 2, 3] };
+    assert_eq!(iter.next(), Some(&amp;1));
+    assert_eq!(iter.next(), Some(&amp;2));
+    assert_eq!(iter.next(), Some(&amp;3));
+    assert_eq!(iter.next(), None);
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copyCode(this)">复制</button></pre>
+      <p>在这里, <code class="font-semibold text-[#aa8bd5]"><code>Item</code></code> 的类型被指定为 <code class="font-semibold text-[#aa8bd5]"><code>&amp;'a T</code></code>, sd<br></p>
+      <p>(写累了, 鸽了, 什么时候想起来了再继续吧)<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <div class="flex flex-col sm:mx-2 *:my-2"><a class="flex items-center border-2 border-slate-500 w-full sm:rounded-md hover:border-white  justify-start " href="/posts/rust-typed-magic/curried-function" hx-get="/posts/rust-typed-magic/curried-function/index.html" hx-target="body" hx-push-url="/posts/rust-typed-magic/curried-function" hx-swap="innerHTML show:window:top"><span class="text-2xl sm:text-4xl sm:p-2 pl-2 pr-1 order-first ">&lt;</span> <span class="text-xl sm:text-2xl sm:p-2">柯里化柯里化与过程过程宏</span></a> <a class="flex items-center border-2 border-slate-500 w-full sm:rounded-md hover:border-white  justify-end " href="/posts/rust-typed-magic/heterogeneous-list" hx-get="/posts/rust-typed-magic/heterogeneous-list/index.html" hx-target="body" hx-push-url="/posts/rust-typed-magic/heterogeneous-list" hx-swap="innerHTML show:window:top"><span class="text-2xl sm:text-4xl sm:p-2 pr-2 pl-1 order-last ">></span> <span class="text-xl sm:text-2xl sm:p-2">异构列表</span></a></div>
+    </div>
+  </body>
+</html>
