@@ -1,0 +1,32 @@
+<!doctype html><meta charset=utf-8><meta content="width=device-width,initial-scale=1" name=viewport><body><link rel="shortcut icon" href=/images/blog/avatar.avif type=image/x-icon><link href=/styles/highlight.min.css rel=stylesheet><link href=/styles/highlight.min.css rel=stylesheet><script src=/scripts/highlight.min.js></script><script src=/scripts/rust.min.js></script><script src=/scripts/scheme.min.js></script><script>hljs.highlightAll();
+    document.addEventListener('htmx:afterSwap', function() {
+      hljs.highlightAll();
+    });</script><script>function pre_fetch() {
+      document.querySelectorAll('a').forEach(link => {
+        link.addEventListener('mouseover', () => {
+          console.log('Prefetching...')
+          
+          // 修正路径：如果链接是 `a/b/c`，实际预加载 `a/b/c/index.html`
+          const prefetchUrl = link.href.endsWith('/') 
+            ? `${link.href}index.html` 
+            : link.href;
+    
+          // 发起预加载请求（强制使用缓存）
+          fetch(prefetchUrl, { 
+            cache: 'force-cache',
+            mode: 'no-cors' // 避免 CORS 问题（GitHub Pages 可能需要）
+          }).catch(e => console.log('Prefetch failed:', e)); // 静默失败
+        });
+      });
+    }
+    pre_fetch()
+    document.addEventListener('htmx:afterSwap', function() {
+      pre_fetch()
+    });</script><script>const title = document.createElement('title');
+    title.innerHTML = '柳下川'
+      
+    const lock = document.createElement('meta');
+    lock.name = 'darkreader-lock'
+
+    document.head.appendChild(title);
+    document.head.appendChild(lock);</script><link href=/styles/catppuccin-macchiato.css rel=stylesheet><script src=/scripts/htmx.min.js></script><link href=/styles/tailwind.css rel=stylesheet><link href=/iconfonts/iconfont.css rel=stylesheet><div class="flex flex-col mx-4 mb-20 scroll-smooth" id=content lang=zh-Hans><div class="text-2xl sm:text-3xl my-4 w-full text-center">『计算机组成与设计』</div><div class="flex flex-col items-center m-4"><div class="w-fit mx-auto text-lg font-semibold">摘要</div><div class="w-fit break-keep text-center sm:mx-[25%] *:inline">这是由 Dabvid A.Patterson 与 John L.Hennessy (两位图灵奖获得者) 合著的 &lt;>,<br>该书对计算机组成的研究与设计起到了全面系统的总结, 本系列采用其 MIPS 第六版<br></div></div><div class="flex felx-row items-center my-1"><input class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-1 outline-solid outline-sky-300" checked type=checkbox><div><a class="underline underline-offset-5 font-medium" hx-swap="innerHTML show:window:top" href=/posts/computer-organization-and-design/p1 hx-get=/posts/computer-organization-and-design/p1/index.html hx-push-url=/posts/computer-organization-and-design/p1 hx-target=body>计算机抽象及其相关技术</a></div></div><div class="flex felx-row items-center my-1"><input class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-1 outline-solid outline-sky-300" checked type=checkbox><div><a class="underline underline-offset-5 font-medium" hx-swap="innerHTML show:window:top" href=/posts/computer-organization-and-design/p2 hx-get=/posts/computer-organization-and-design/p2/index.html hx-push-url=/posts/computer-organization-and-design/p2 hx-target=body>指令: 计算机的语言</a></div></div><div class="flex felx-row items-center my-1"><input class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-1 outline-solid outline-sky-300" checked type=checkbox><div><a class="underline underline-offset-5 font-medium" hx-swap="innerHTML show:window:top" href=/posts/computer-organization-and-design/p3 hx-get=/posts/computer-organization-and-design/p3/index.html hx-push-url=/posts/computer-organization-and-design/p3 hx-target=body>计算机的算数运算</a></div></div><div class="flex felx-row items-center my-1"><input class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-1 outline-solid outline-sky-300" checked type=checkbox><div><a class="underline underline-offset-5 font-medium" hx-swap="innerHTML show:window:top" href=/posts/computer-organization-and-design/p4 hx-get=/posts/computer-organization-and-design/p4/index.html hx-push-url=/posts/computer-organization-and-design/p4 hx-target=body>处理器</a></div></div><div class="flex felx-row items-center my-1"><input class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-1 outline-solid outline-sky-300" checked type=checkbox><div><a class="underline underline-offset-5 font-medium" hx-swap="innerHTML show:window:top" href=/posts/computer-organization-and-design/p5 hx-get=/posts/computer-organization-and-design/p5/index.html hx-push-url=/posts/computer-organization-and-design/p5 hx-target=body>大容量和高精度: 开发存储器层次结构</a></div></div><div class="flex felx-row items-center my-1"><input class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-1 outline-solid outline-sky-300" checked type=checkbox><div><a class="underline underline-offset-5 font-medium" hx-swap="innerHTML show:window:top" href=/posts/computer-organization-and-design/p6 hx-get=/posts/computer-organization-and-design/p6/index.html hx-push-url=/posts/computer-organization-and-design/p6 hx-target=body>从客户端到云的并行处理器</a></div></div></div>
