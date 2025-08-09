@@ -1,0 +1,117 @@
+@font-face {
+  font-family: "iconfont"; /* Project id 2857321 */
+  src: url('/iconfonts/iconfont.woff2?t=1753874276735') format('woff2'),
+}
+
+.iconfont {
+  font-family: "iconfont" !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-math:before {
+  content: "\e791";
+}
+
+.icon-week:before {
+  content: "\e6e2";
+}
+
+.icon-love:before {
+  content: "\e799";
+}
+
+.icon-about:before {
+  content: "\e7a7";
+}
+
+.icon-arrow-down:before {
+  content: "\ed1b";
+}
+
+.icon-restart:before {
+  content: "\e658";
+}
+
+.icon-question:before {
+  content: "\ed19";
+}
+
+.icon-restart-1:before {
+  content: "\e618";
+}
+
+.icon-arrow-right:before {
+  content: "\e688";
+}
+
+.icon-error:before {
+  content: "\e839";
+}
+
+.icon-chat:before {
+  content: "\e620";
+}
+
+.icon-github:before {
+  content: "\e885";
+}
+
+.icon-flower:before {
+  content: "\e626";
+}
+
+.icon-code:before {
+  content: "\e695";
+}
+
+.icon-sidebar:before {
+  content: "\e7c2";
+}
+
+.icon-arrow-up:before {
+  content: "\e610";
+}
+
+.icon-config:before {
+  content: "\e625";
+}
+
+.icon-literature:before {
+  content: "\e66d";
+}
+
+.icon-arrow-right-thin:before {
+  content: "\e687";
+}
+
+.icon-arrow-left-thin:before {
+  content: "\e685";
+}
+
+.icon-categories:before {
+  content: "\e72c";
+}
+
+.icon-zhihu:before {
+  content: "\e893";
+}
+
+.icon-home:before {
+  content: "\e600";
+}
+
+.icon-bilibili:before {
+  content: "\e75c";
+}
+
+.icon-email:before {
+  content: "\e77e";
+}
+
+.icon-qq:before {
+  content: "\e882";
+}
+

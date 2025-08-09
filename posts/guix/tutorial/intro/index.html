@@ -1,0 +1,285 @@
+<!doctype html><html lang=zh-Hans><meta charset=utf-8><meta content="width=device-width,initial-scale=1" name=viewport><title>柳下川</title><meta content=柳下川的博客 name=description><link href=/styles/tailwind.css rel=stylesheet><body><link rel="shortcut icon" href=/images/blog/avatar.avif type=image/x-icon><link href=/styles/highlight.min.css rel=stylesheet><link href=/fonts/MapleMono-NF-CN-Regular/result.css rel=stylesheet><link href=/fonts/MapleMono-NF-CN-Italic/result.css rel=stylesheet><link href=/fonts/MapleMono-NF-CN-Bold/result.css rel=stylesheet><script src=/scripts/highlight.min.js></script><script src=/scripts/rust.min.js></script><script src=/scripts/scheme.min.js></script><script>hljs.highlightAll();
+    document.addEventListener('htmx:afterSwap', function() {
+      hljs.highlightAll();
+    });</script><script defer src=/scripts/prefetch.js></script><script>if (!document.querySelector('meta[name="darkreader-lock"]')) {
+      const lock = document.createElement('meta');
+      lock.name = 'darkreader-lock';
+      document.head.appendChild(lock);
+    }</script><link href=/styles/catppuccin-macchiato.css rel=stylesheet><script src=/scripts/htmx.min.js></script><link href=/styles/tailwind.css rel=stylesheet><link href=/iconfonts/iconfont.css rel=stylesheet><div class="flex flex-col mx-4 mb-20 scroll-smooth" id=content lang=zh-Hans><div class="text-2xl sm:text-3xl my-4 w-full text-center">『Guix, 你撅起吧!』</div><div class="font-medium w-fit sm:mx-auto flex flex-col border-l-4 pl-2 sm:flex-row sm:border-l-0 sm:pl-0"><p>写自:2025-07-08<div class="px-2 hidden sm:inline">│</div><p>作者:柳上川<div class="px-2 hidden sm:inline">│</div><p>系列:<a class="underline underline-offset-5" hx-swap="innerHTML show:window:top" href=/categories/guix hx-get=/categories/guix/index.html hx-push-url=/categories/guix hx-target=body>guix</a></div><div class="flex flex-col items-center m-4"><div class="w-fit mx-auto text-lg font-semibold">摘要</div><div class="w-fit break-keep text-center sm:mx-[25%] *:inline">guix, 撅! ! 撅起撅起撅起撅起哇!!<br>本文暂且作为虚拟机安装 Guix 的介绍, 但实机安装也完全可以参考<br>不过想在非自由固件(大多数机器)上安装, 请自行观看 <a class="underline underline-offset-5 font-medium" href=https://gitlab.com/nonguix/nonguix>nonguix</a> 的文档</div></div><div class="flex flex-col my-10 w-fit border-2 border-slate-500"><p><span class=text-2xl>目录:</span><div class="w-fit pr-2 my-2"><div class=leading-5><span class=pl-2><span class="font-bold text-sm">┌─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#zi-liao-lai-yuan>资料来源</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#jie-shao>介绍</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#guan-yu-gou-shi>关于勾史</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#bing-fei-gou-shi>并非勾史</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#xi-tong-an-zhuang>系统安装</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#xia-zai-iso>下载ISO</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#sshlian-jie>SSH连接</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#ci-pan-fen-qu>磁盘分区</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#ji-xu-an-zhuang>继续安装</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#jing-xiang-yuan-jia-su>镜像源加速</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#fei-zi-you-ruan-jian>非自由软件</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">└─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#pei-zhi>配置</a></span></div></div></div><hr class="border-2 border-dashed my-10"><h1 class="flex items-center w-fit my-6" id=zi-liao-lai-yuan><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href=#zi-liao-lai-yuan>资料来源</a></h1><p>本文主要参考自官方的文档: <a class="underline underline-offset-5 font-medium" href=https://guix.gnu.org/manual/en/guix.html>GNU Guix Reference Manual</a><br>本文仅为个人对 Guix 系统的大致介绍与备忘录, 倘若有更细致/不同的需求, 请享受官方的说明文档<br><br>其他或许能帮助到你的参考资料:<br><ul class="list-disc ml-5"><li><a class="underline underline-offset-5 font-medium" href=https://guix.gnu.org/cookbook/en/guix-cookbook.html>GNU Guix Cookbook</a><li><a class="underline underline-offset-5 font-medium" href=https://guix.gnu.org/guix-refcard.pdf>GNU Guix Reference Card</a><li><a class="underline underline-offset-5 font-medium" href=https://guix.gnu.org/en/videos/>Guix Videos</a></ul><p><br>目前的 ISO 基于发行版 1.4.0<br><hr class="border-2 border-dashed my-10"><h1 class="flex items-center w-fit my-6" id=jie-shao><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href=#jie-shao>介绍</a></h1><h2 class="flex items-center w-fit my-6" id=guan-yu-gou-shi><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href=#guan-yu-gou-shi>关于勾史</a></h2><p>Guix, 是<span style="display: inline-block;"><del>抄袭了nix项目的代码并将其scheme归一化的邪教徒</del></span>一个现代化的工具, 用于安装, 管理, 回滚 <em>Eeverthing on your system</em><br>这样的工具有声明式/可复现的优点, 一次配置, 永远不忘!<br><br>亦或者说 guix/nix 才是真正的懒人必备品(大概?), 当需要配置时, 作为享受共建生态的我可以不 care 那些繁琐细节<br><ul class="list-disc ml-5"><li>我不想在乎我为了安装一个包还需要装其他什么无用的依赖, 因为反正会忘<li>我不想在乎我为了设置内核设置显卡需要编辑什么文件亦或者哪些 tricks, 因为反正会忘<li>我不想在乎我为了美化grub菜单, 美化桌面主题, 需要去下载哪些主题包, 运行哪些脚本, 因为反正会忘<li>……</ul><p><br>byd, 无关紧要的事情怎能如此之多? 好讨厌这些把脑子搅得乱七八糟的勾史记忆嗷!<br>洒家对这些到处查文档, 东拉一坨西拉一坨的勾史已经忍耐无法了, 可令人烦心的事情不止于此:<br><span style="font-size: 110%;">还不至于此</span>:<br><span style="font-size: 125%;">还远不至于此</span>:<br><span style="font-size: 140%;">还远远不至于此</span>:<br><ul class="list-disc ml-5"><li>脚本执行到一半时台式机断电了, 先前执行的命令也只执行了一半, 然后完蛋了, 还得修, 修起来还好麻烦!<li>某些神秘编程语言的包管理器无 lock 机制, 时隔几个月之后发现构建发生变化<li>哪怕神秘包管理工具有了 lock 机制, 它也控制不了系统库发生的变化<li>当同时依赖 A-1.0, B-1.0, B-1.0 中的 A-1.1 时, 发生依赖冲突<li>构建环境未隔离, 导致构建结果与预期不符合, chroot 也可能被污染, 也无法自动计算与共享依赖<li>当想将桌面变成 Nord 主题的统一配色, 需要在 10001 个软件中用不同配置语言修改配色方案<li>当想将桌面统一从 Nord 换到 Gruvbox, 需要再次为 10001 个软件用不同配置语言进行修改<li>没有办法做到轻易的系统或者说包级别的状态回滚, 依赖文件系统算什么本事!<li>重装系统时, 想复现先前的环境会极其痛苦, 维护自己的脚本会让你想死的心都有<li>无法为一百台主机统一进行配置, 命令式且无原子性, 遇见网络抖动你就老实了<li>想临时安装体验一下某个命令, 可是安装完后发现很难卸载, 该无良软件到处拉史, 删了本体也删不掉史<li>照着官网的文档搭建环境, 可是总是也搭不好, 编译不过去, 于是尝试开了几个 GB 的 Docker<li>遇见 0-days 级别的错误, 某个库爆出投毒的丑闻, 想要单独对其降级但是发现会破坏依赖关系搞坏系统<li>Haskell 的某个包管理器挺史的, 开发团队在愚人节时宣布弃用它并全面转向 nix, 而这或许是愚人节特有的真心话环节 (x<li>……</ul><p><br>虽说这个世界没有银弹, 没有能实现一切愿望的圣杯, 可理想主义者们总归是怀着对璀璨未来的向往继续前进, 于是,<br>Yes! Guix is the future! ! !<br><br><span style="display: inline-block;"><del>不是我就吹一嘴而已你们别TM当真了, 写篇介绍的文章好歹要捧下我介绍的东东吧咳咳</del></span><h2 class="flex items-center w-fit my-6" id=bing-fei-gou-shi><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href=#bing-fei-gou-shi>并非勾史</a></h2><p>有一篇论文, <a class="underline underline-offset-5 font-medium" href=https://programming-journal.org/2023/7/1/>&lt;&lt;Building a Secure Software Supply Chain with GNU Guix>></a>, 讲供应链的每个环节, 从源代码到二进制都有被攻击的可能<br><br>传统包管理有着二进制分发, 依赖中央仓库, 难以验证构建过程是否真实的局限性<br>缺乏对 <em>Downgrade Attacks(回滚式攻击)</em> 的防御, 缺乏对 <em>Code Provenance(代码溯源)</em> 的认证<br><br>什么叫 <em>Downgrade Attack</em>? 是一种利用系统/协议(网络协议中也有喵)的向下兼容性, 使得攻击者完成了通过降低安全级别进行攻击的手段<br>举个例子, 本地安装的 openssl-3.0 此时已修复漏洞 CVE-2023-1234, 但攻击者篡改了仓库的 metadata 且伪造了数字签名<br>此时, 看似是 openssl-3.1, 其实只是被伪造的, 还未修复漏洞时的 openssl-2.9, 更新变成了迈向较低安全性的一次降级<br><br>在 guix-manual 的第 6.6 节(Invoking guix pull)中的 <code class="font-semibold text-[#aa8bd5]"><code>--allow-downgrades</code></code> 下面, 提及过 guix 在默认情况下可以阻止 <em>Downgrade Attacks</em><br>除非你在明确风险后运行 <code class="font-semibold text-[#aa8bd5]"><code>guix pull --allow-downgrades</code></code>, 才会使得 channel 的 git 仓库被重置为较早版本, 导致安装较旧且已知易受攻击的包<br><br>传统的包管理工具并没有针对这种情况的版本连续性检查机制, 更新时仅验证版本号而非时间顺序<br><hr class="border-2 border-dashed my-10"><h1 class="flex items-center w-fit my-6" id=xi-tong-an-zhuang><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href=#xi-tong-an-zhuang>系统安装</a></h1><h2 class="flex items-center w-fit my-6" id=xia-zai-iso><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href=#xia-zai-iso>下载ISO</a></h2><p>首先, 让我们从官网的 <a class="underline underline-offset-5 font-medium" href=https://guix.gnu.org/zh-CN/download/>地址</a> 上, 把 ISO 文件下载到本地<br>你也可以通过 <code class="font-semibold text-[#aa8bd5]"><code>https://mirrors.sjtug.sjtu.edu.cn/gnu/guix/guix-system-install-X.Y.Z.x86_64-linux.iso</code></code> 在上交的镜像站上下载<br>比如在我写下这篇文章的 2025-06-16 时, Guix System 的最新发行版本是 <code class="font-semibold text-[#aa8bd5]"><code>1.4.0</code></code>, 那么可以:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base">wget https://mirrors.sjtug.sjtu.edu.cn/gnu/guix/guix-system-install-1.4.0.x86_64-linux.iso
+curl -O https://mirrors.sjtug.sjtu.edu.cn/gnu/guix/guix-system-install-1.4.0.x86_64-linux.iso
+axel https://mirrors.sjtug.sjtu.edu.cn/gnu/guix/guix-system-install-1.4.0.x86_64-linux.iso</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p>然后我们就能用 qemu/kvm, 还有各种其他虚拟机来体验 guix, 当然也可头铁地直接在实体机上安装<br>但是<strong>极其不推荐</strong>! 强烈建议<strong>先在虚拟机上使用</strong>, 熟悉基本操作后再考虑实体安装, 而且务必记得去看下 <a class="underline underline-offset-5 font-medium" href=https://gitlab.com/nonguix/nonguix>nonguix</a> 的文档<br>当我们在虚拟机上熟悉后, 可以尝试在服务器上使用, 毕竟 guix/nix 声明式的配置, 其稳定程度坚若磐石<br><br>我将虚拟机的启动方式配置为 UEFI, 现在启动后会出现 grub 菜单, 选中第一个 <code class="font-semibold text-[#aa8bd5]"><code>GNU Guix installation 1.4.0</code></code>, 回车进入<br><code class="font-semibold text-[#aa8bd5]"><code>Locale language/location</code></code> 随便选一个, 然后选择 <code class="font-semibold text-[#aa8bd5]"><code>Install using the shell based process</code></code> 来手动安装<br>(因为我们需要设置镜像源与添加更多自用配置, 所以不使用 TUI 工具, 而是直接在 shell 里面手动敲命令装)<br><h2 class="flex items-center w-fit my-6" id=sshlian-jie><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href=#sshlian-jie>SSH连接</a></h2><p>TTY 中的黑色框框好丑呀! 先用 ssh 登录虚拟机<br>Guix 中类似 <code class="font-semibold text-[#aa8bd5]"><code>systemd</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>openrc</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>runit</code></code> 的初始化系统/服务管理器叫 <a class="underline underline-offset-5 font-medium" href=https://www.gnu.org/software/shepherd/>shepherd(牧羊人)</a><br>这是用一种 scheme 方言(<a class="underline underline-offset-5 font-medium" href=https://www.gnu.org/software/guile/>gnu/guile</a>) 写的, 听上去就觉得好酷欸不是吗 (x<br><br>让我们使用 <code class="font-semibold text-[#aa8bd5]"><code>herd</code></code> 开启 sshd 服务:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base">herd status sshd
+herd start sshd</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p>在虚拟机中为 root 设置 password: <code class="font-semibold text-[#aa8bd5]"><code>passwd root</code></code><br>在宿主机上用 ssh 连接上在虚拟机中用 <code class="font-semibold text-[#aa8bd5]"><code>ip a</code></code> 得到的 IP 地址:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base">ssh root@192.168.122.14</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p>(可选) 用 tmux 来避免 ssh 意外断开而导致任务退出(推荐这样做, 尤其是在 <code class="font-semibold text-[#aa8bd5]"><code>guix pull</code></code> 的时候, 因为好慢!):<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base"># 用镜像源安装 tmux
+GUIX_BUILD_OPTIONS="--substitute-urls=https://mirror.sjtu.edu.cn/guix" guix install tmux
+
+# 或者这样用镜像源安装 tmux
+guix install tmux --substitute-urls=https://mirror.sjtu.edu.cn/guix
+
+# ssh 成功后用 tmux 开启一个绘会话
+tmux new-session -s guix-session
+
+# ssh 意外断开, 则用 ssh 再次登录后, 通过 tmux 重连已有会话
+tmux attach-session -t guix-session</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><h2 class="flex items-center w-fit my-6" id=ci-pan-fen-qu><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href=#ci-pan-fen-qu>磁盘分区</a></h2><p>我使用 <code class="font-semibold text-[#aa8bd5]"><code>cfdisk</code></code> 进行分区, 是 UEFI + GPT 的组合, 常见于新电脑:<br>(以防有小白不了解, 我们启动模式选的是 UEFI, 所以分区表那里选择 <code class="font-semibold text-[#aa8bd5]"><code>gpt</code></code>)<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base">cfdisk /dev/vda</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><div class="my-4 mx-2 sm:mx-6"><img src=/posts/guix/tutorial/intro/svg-0.avif style=width:593.06665px;height:160.05334px;></div><p>然后分别对其进行初始化:<br><div class="my-4 mx-2 sm:mx-6"><img src=/posts/guix/tutorial/intro/svg-1.avif style=width:446.93335px;height:182.13333px;></div><p>最后进行挂载工作:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base"># 挂载根分区
+mount -L my-root /mnt
+
+# 挂载 ESP 分区 (UEFI)
+mkdir -p /mnt/boot/efi
+mount /dev/vda1 /mnt/boot/efi</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p>(可选) 使用 swap 分区:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base">mkswap /dev/vda3
+swapon /dev/vda3</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p>(可选) 倘若你不想专门设置 swap 分区, 也可使用 swap 文件:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base"># This is 10 GiB of swap space.  Adjust "count" to change the size.
+dd if=/dev/zero of=/mnt/swapfile bs=1MiB count=10240
+
+# For security, make the file readable and writable only by root.
+chmod 600 /mnt/swapfile
+mkswap /mnt/swapfile
+swapon /mnt/swapfile</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><h2 class="flex items-center w-fit my-6" id=ji-xu-an-zhuang><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href=#ji-xu-an-zhuang>继续安装</a></h2><p>此时, 我们的根分区已经挂载到 <code class="font-semibold text-[#aa8bd5]"><code>/mnt</code></code>, 随后执行:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base">herd start cow-store /mnt</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p>这将设置 <code class="font-semibold text-[#aa8bd5]"><code>/gnu/store</code></code> 为写入时复制(copy-on-write), 以便安装时被添加的软件包被写入 <code class="font-semibold text-[#aa8bd5]"><code>/mnt</code></code>, 而非保存在内存中而导致内存不足<br>因为下文中的 <code class="font-semibold text-[#aa8bd5]"><code>guix system init</code></code> 命令, 在第一阶段需向 <code class="font-semibold text-[#aa8bd5]"><code>/gnu/store</code></code>(最初是一个内存文件系统) 下载/构建内容<br><br>接下来我们需要编辑文件, 以提供待安装系统的声明式配置<br>官方的 ISO 中可以使用 <code class="font-semibold text-[#aa8bd5]"><code>nano</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>mg</code></code>(emacs clone), <code class="font-semibold text-[#aa8bd5]"><code>nvi</code></code>(vi clone) 命令进行编辑, 我们下文将使用 <code class="font-semibold text-[#aa8bd5]"><code>nano</code></code>:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-scheme text-sm sm:text-base">mkdir /mnt/etc
+nano /mnt/etc/config.scm</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p>务必记得 <strong>将配置文件存储在目标根目录下</strong>, 比如 <code class="font-semibold text-[#aa8bd5]"><code>/mnt/etc/config.scm</code></code>, 不然当重启到新系统后, 它就丢失了<br><p>以下是一份作为示例的 <code class="font-semibold text-[#aa8bd5]"><code>/mnt/etc/config.scm</code></code>:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-scheme text-sm sm:text-base">;; This is an operating system configuration template
+;; for a "bare bones" setup, with no X11 display server.
+
+(use-modules (gnu) (guix channels))
+(use-service-modules networking ssh)
+(use-package-modules screen ssh)
+
+;; 不推荐启用如下配置, 请配置下一节里面说的用户级别的 channels
+;; 我们可以在系统配置文件中配置 `/etc/guix/chanels.nix`
+;; 目前镜像站中只有 nju 的 channel 可访问的, 但也很不稳定 (我 tm 下到一半报错退出了啊啊啊!!!)
+;; 所以这里直接用后续会成为默认 channel 的 codeberg 了
+;; (define my-channels (list (channel
+;;   (inherit (car %default-channels))
+;;   (url "https://codeberg.org/guix/guix.git"))))
+
+(operating-system
+  (host-name "guix")
+  (timezone "Asia/Shanghai")
+  (locale "en_US.utf8")
+
+  ;; Boot in "legacy" BIOS mode, assuming /dev/sdX is the
+  ;; target hard disk, and "my-root" is the label of the target
+  ;; root file system.
+  (bootloader (bootloader-configuration
+    (bootloader grub-efi-bootloader)
+    (targets '("/boot/efi"))))
+  ;; It's fitting to support the equally bare bones ‘-nographic’
+  ;; QEMU option, which also nicely sidesteps forcing QWERTY.
+  (kernel-arguments (list "console=ttyS0,115200"))
+  (file-systems (cons
+    (file-system
+      (device (file-system-label "my-root"))
+      (mount-point "/")
+      (type "btrfs"))
+    %base-file-systems))
+
+  ;; This is where user accounts are specified.  The "root"
+  ;; account is implicit, and is initially created with the
+  ;; empty password.
+  (users (cons
+    (user-account
+      (name "kawayww")
+      (comment "I am KawaYww!")
+      (group "users")
+      ;; Adding the account to the "wheel" group
+      ;; makes it a sudoer.  Adding it to "audio"
+      ;; and "video" allows the user to play sound
+      ;; and access the webcam.
+      (supplementary-groups '("wheel" "audio" "video" "wheel" "input")))
+     %base-user-accounts))
+
+  ;; Globally-installed packages.
+  (packages (cons screen %base-packages))
+
+  ;; Add services to the baseline: a DHCP client and
+  ;; an SSH server.
+  (services (cons*
+    (service dhcp-client-service-type)
+    (service openssh-service-type
+      (openssh-configuration
+      (openssh openssh-sans-x)
+      (port-number 2222)))
+    ;; 这里注释掉了下面默认的 `%base-services`
+    ;; 其中的 channel 与 substitute-urls 被替换为了镜像地址
+    ;; %base-services)))
+    (modify-services %base-services
+      (guix-service-type config =>
+        (guix-configuration
+          (inherit config)
+          (http-proxy "http://192.168.122.1:7890")
+          ;; 如该配置文件上头所说, 不推荐在这里更改 channels
+          ;; (channels my-channels)
+          ;; (guix (guix-for-channels my-channels))
+          (substitute-urls (cons*
+            "https://mirror.sjtu.edu.cn/guix/"
+            "https://mirror.nju.edu.cn/guix/"
+            "https://mirrors.tuna.tsinghua.edu.cn/guix/"
+            %default-substitute-urls)))))))
+)             </code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p>上面的声明式配置, 其大多地方不言而喻, 而其中 <code class="font-semibold text-[#aa8bd5]"><code>channels</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>substitute-urls</code></code> 的简单概念如下:<br><ul class="list-disc ml-5"><li><code class="font-semibold text-[#aa8bd5]"><code>channels</code></code>: 提供包/服务的定义, 包含软件包的描述, 版本等<li><code class="font-semibold text-[#aa8bd5]"><code>substitute-urls</code></code>: 提供预编译的产物, 避免用户每次都要自己重新编译</ul><p><br>当编辑好配置文件后, 记得初始化系统(目标根目录挂载于 <code class="font-semibold text-[#aa8bd5]"><code>/mnt</code></code> 下):<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base">guix system init /mnt/etc/config.scm /mnt --substitute-urls="https://mirror.sjtu.edu.cn/guix/"</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p>然后记得 <code class="font-semibold text-[#aa8bd5]"><code>passwd &lt;your-user-name></code></code>, 来设置用户的登录密码<br>上面声明的 <code class="font-semibold text-[#aa8bd5]"><code>port-number</code></code> 是 <code class="font-semibold text-[#aa8bd5]"><code>2222</code></code>, 所以装好后如果想 ssh, 应该用端口 2222:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base">ssh -p 2222 kawayww@192.168.122.14</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p>初始安装完毕后, 当你再次修改了 <code class="font-semibold text-[#aa8bd5]"><code>/etc/config.scm</code></code> 并想让配置生效, 请输入如下命令<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base">sudo -E guix system reconfigure /etc/config.scm</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p><strong>注意</strong>:<br><code class="font-semibold text-[#aa8bd5]"><code>sudo guix</code></code> 运行的是当前用户的 <code class="font-semibold text-[#aa8bd5]"><code>guix</code></code> 命令, 而非 root 下的 <code class="font-semibold text-[#aa8bd5]"><code>guix</code></code> (<code class="font-semibold text-[#aa8bd5]"><code>sudo</code></code> 保持环境变量 <code class="font-semibold text-[#aa8bd5]"><code>PATH</code></code> 不变)<br>想显式运行 root 下的 <code class="font-semibold text-[#aa8bd5]"><code>guix</code></code>, 需要使用 <code class="font-semibold text-[#aa8bd5]"><code>sudo -i</code></code><br><br><strong>注意</strong>:<br><code class="font-semibold text-[#aa8bd5]"><code>guix pull</code></code> 仅针对运行它的用户更新 <code class="font-semibold text-[#aa8bd5]"><code>guix</code></code> 命令与包定义<br>若你想在 root 下用 <code class="font-semibold text-[#aa8bd5]"><code>guix system reconfigure</code></code>, 则需单独进行 <code class="font-semibold text-[#aa8bd5]"><code>guix pull</code></code><br><br><strong>注意</strong>:<br><code class="font-semibold text-[#aa8bd5]"><code>guix pull</code></code> 只吃环境变量 <code class="font-semibold text-[#aa8bd5]"><code>http(s)_proxy</code></code>, 不吃配置文件里 <code class="font-semibold text-[#aa8bd5]"><code>guix-configuration</code></code> 下声明式的 <code class="font-semibold text-[#aa8bd5]"><code>http-proxy</code></code>)<br>此时需要 <code class="font-semibold text-[#aa8bd5]"><code>sudo -E</code></code> 使用 user 定义的环境变量, 如 <code class="font-semibold text-[#aa8bd5]"><code>http_proxy</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>https_proxy</code></code><br><h2 class="flex items-center w-fit my-6" id=jing-xiang-yuan-jia-su><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href=#jing-xiang-yuan-jia-su>镜像源加速</a></h2><p><strong>提示: 这一步有点蛋疼, 主要在于 <code class="font-semibold text-[#aa8bd5]"><code>guix pull</code></code> 这块</strong><br><br>可参考官方文档(还有好多网络问题/坑点是自己摸出来的呜呜呜): <a class="underline underline-offset-5 font-medium" href=https://guix.gnu.org/manual/en/html_node/Getting-Substitutes-from-Other-Servers.html>Getting-Substitutes-from-Other-Servers</a><br>可用的镜像源地址如下(写下本文时, 只有 nju 的 channel 与 substituter 是都有效的):<br><ul class="list-disc ml-5"><li><a class="underline underline-offset-5 font-medium" href=https://mirror.nju.edu.cn/git/guix.git>https://mirror.nju.edu.cn/git/guix.git</a><li><a class="underline underline-offset-5 font-medium" href=https://mirror.sjtu.edu.cn/git/guix.git>https://mirror.sjtu.edu.cn/git/guix.git</a><li><a class="underline underline-offset-5 font-medium" href=https://mirrors.tuna.tsinghua.edu.cn/git/guix.git>https://mirrors.tuna.tsinghua.edu.cn/git/guix.git</a></ul><p><br>目前镜像站的 <code class="font-semibold text-[#aa8bd5]"><code>substitute</code></code> 比较完备, 但对 <code class="font-semibold text-[#aa8bd5]"><code>channels</code></code> 的支持很崩, 建议直接用官方迁移至 codeberg.org 上的仓库(后续将成为默认):<br>我们可以直接用环境变量来提供 <code class="font-semibold text-[#aa8bd5]"><code>substitute</code></code>(用国内源安装预编译产物来加快构建), <code class="font-semibold text-[#aa8bd5]"><code>http(s)_proxy</code></code>(为 <code class="font-semibold text-[#aa8bd5]"><code>guix pull</code></code> 准备代理):<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base">export GUIX_BUILD_OPTIONS="--substitute-urls=https://mirror.sjtu.edu.cn/guix"
+export http_proxy="http://192.168.122.1:7890"
+export https_proxy="http://192.168.122.1:7890"</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p>如果我们想更新 <code class="font-semibold text-[#aa8bd5]"><code>channel</code></code>, 那么就需要 <code class="font-semibold text-[#aa8bd5]"><code>guix pull</code></code><br>但 <code class="font-semibold text-[#aa8bd5]"><code>guix pull</code></code> 不吃 <code class="font-semibold text-[#aa8bd5]"><code>guix-daemon</code></code> 设置的 <code class="font-semibold text-[#aa8bd5]"><code>http-proxy</code></code> 设置(但其他命令比如安装包时会用)<br>所以对于 <code class="font-semibold text-[#aa8bd5]"><code>guix pull</code></code>, 我们仍需单独设置环境变量: <code class="font-semibold text-[#aa8bd5]"><code>http_proxy</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>https_proxy</code></code><br><br>而除了 <code class="font-semibold text-[#aa8bd5]"><code>guix pull</code></code> 的其他 <code class="font-semibold text-[#aa8bd5]"><code>guix</code></code> 系列的命令, 都认配置文件里声明式的 <code class="font-semibold text-[#aa8bd5]"><code>http-proxy</code></code><br>(虚拟机连本地代理记得让本机防火墙 allow 一下代理端口, 比如 <code class="font-semibold text-[#aa8bd5]"><code>7890</code></code>)<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base">sudo herd set-http-proxy guix-daemon http://192.168.122.1:7890</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p>我们可以把 <code class="font-semibold text-[#aa8bd5]"><code>guix pull</code></code> 这样写成一行, 但是不推荐:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base">http_proxy=http://192.168.122.1:7890 http_proxy=http://192.168.122.1:7890 guix pull --url=https://codeberg.org/guix/guix --substitute-urls=https://mirror.sjtu.edu.cn/guix</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p>推荐的方式是修改 <code class="font-semibold text-[#aa8bd5]"><code>~/.config/guix/channels.scm</code></code>:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-scheme text-sm sm:text-base">(list (channel
+  (inherit (car %default-channels))
+  (url "https://codeberg.org/guix/guix.git")))</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p>如果直接用默认的 channel(目前并非 codeberg, 而是勾史的 <code class="font-semibold text-[#aa8bd5]"><code>https://git.savannah.gnu.org</code></code>), 则会遇见 <code class="font-semibold text-[#aa8bd5]"><code>Git error: SSL error: xxxxx</code></code><br>等 codeberg 成为默认的了, 只需要添加 <code class="font-semibold text-[#aa8bd5]"><code>http(s)_proxy</code></code> 环境变量后, 即可直接 <code class="font-semibold text-[#aa8bd5]"><code>guix pull</code></code> 了<br><br>在 <code class="font-semibold text-[#aa8bd5]"><code>~/.config/guix/channels.scm</code></code> 里配置的 <code class="font-semibold text-[#aa8bd5]"><code>channels</code></code> 会在 <code class="font-semibold text-[#aa8bd5]"><code>guix pull</code></code> 时被自动读取<br>在写入该文件后, 每次更新 <code class="font-semibold text-[#aa8bd5]"><code>channels</code></code> 与系统配置的标准流程如下(一般并不需频繁调用 <code class="font-semibold text-[#aa8bd5]"><code>guix pull</code></code> 来更新包定义):<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base">guix pull
+sudo -E guix system reconfigure /etc/config.scm</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p>如果在 <code class="font-semibold text-[#aa8bd5]"><code>guix pull</code></code> 期间遇见类似下面这些报错:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base">guix pull: error: directory '/home/kawayww/.cache/guix' is not owned by user kawayww
+hint: You should run this command as root; use `sudo -i' or equivalent if you really want to
+pull as kawayww.</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base">Updating channel 'guix' from Git repository at 'https://codeberg.org/guix/guix.git'...
+guix pull: error: mkdir: Permission denied</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p>那么你可以运行如下命令解决权限问题:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language- text-sm sm:text-base">sudo chown -R $USER ~/.cache/guix</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p>由于需要代理来访问 codeberg.org, <code class="font-semibold text-[#aa8bd5]"><code>sudo -E</code></code> 导入用户定义的 <code class="font-semibold text-[#aa8bd5]"><code>http_proxy</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>https_proxy</code></code> 环境变量是必要的<br>不建议把 <code class="font-semibold text-[#aa8bd5]"><code>channels</code></code> 的配置写在 <code class="font-semibold text-[#aa8bd5]"><code>/etc/config.scm</code></code> 里, 不然无法享用代理<br><br>对于运行单个命令时, 也可以临时覆盖 <code class="font-semibold text-[#aa8bd5]"><code>substitube</code></code> 服务器:<br>(字符串那里你可以添加多个 <code class="font-semibold text-[#aa8bd5]"><code>substitute-url</code></code>, 用空格进行分割)<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-text text-sm sm:text-base">guix package -i &lt;package> --substitute-urls="https://mirror.sjtu.edu.cn/guix/"</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><p>对于使用 Guix 系统的, 请编辑 <code class="font-semibold text-[#aa8bd5]"><code>/etc/config.scm</code></code> 文件<br>将 <code class="font-semibold text-[#aa8bd5]"><code>services</code></code> 中最后的 <code class="font-semibold text-[#aa8bd5]"><code>%base-services</code></code> 替换为下面的 <code class="font-semibold text-[#aa8bd5]"><code>(modify-services $base-services (...))</code></code>:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copyCode(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制!';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }</script><p><code class="language-scheme text-sm sm:text-base">  (services (cons*
+    (service dhcp-client-service-type)
+    (service openssh-service-type
+      (openssh-configuration
+      (openssh openssh-sans-x)
+      (port-number 2222)))
+    ;; 这里注释掉了下面默认的 `%base-services`
+    ;; 其中的 channel 与 substitute-urls 被替换为了镜像地址
+    ;; %base-services)))
+    (modify-services %base-services
+      (guix-service-type config =>
+        (guix-configuration
+          (inherit config)
+          (http-proxy "http://192.168.122.1:7890") ;; 换成你自己的代理服务器
+          ;; 不推荐在这里更改 channels
+          ;; (channels my-channels)
+          ;; (guix (guix-for-channels my-channels))
+          (substitute-urls (cons*
+            "https://mirror.sjtu.edu.cn/guix/"
+            "https://mirror.nju.edu.cn/guix/"
+            "https://mirrors.tuna.tsinghua.edu.cn/guix/"
+            %default-substitute-urls)))))))</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copyCode(this)>复制</button></pre><h2 class="flex items-center w-fit my-6" id=fei-zi-you-ruan-jian><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href=#fei-zi-you-ruan-jian>非自由软件</a></h2><hr class="border-2 border-dashed my-10"><h1 class="flex items-center w-fit my-6" id=pei-zhi><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href=#pei-zhi>配置</a></h1></div>
