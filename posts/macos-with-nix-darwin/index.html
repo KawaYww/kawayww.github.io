@@ -1,0 +1,333 @@
+<!doctype html><html lang=zh-Hans><meta charset=utf-8><meta content="width=device-width,initial-scale=1" name=viewport><title>柳上川</title><meta content=柳上川的博客 name=description><link href=/styles/tailwind.css rel=stylesheet><body><link rel="shortcut icon" href=/images/blog/avatar.avif type=image/x-icon><link href=/styles/highlight.min.css rel=stylesheet><link href=/fonts/MapleMono-NF-CN-Regular/result.css rel=stylesheet><link href=/fonts/MapleMono-NF-CN-Italic/result.css rel=stylesheet><link href=/fonts/MapleMono-NF-CN-Bold/result.css rel=stylesheet><script src=/scripts/highlight.min.js></script><script src=/scripts/rust.min.js></script><script src=/scripts/nix.min.js></script><script src=/scripts/scheme.min.js></script><script>hljs.highlightAll();
+    document.addEventListener('DOMContentLoaded', function(event) {
+      hljs.highlightAll();
+    });
+    window.addEventListener('pageshow', function(event) {
+      // 如果页面是从 bfcache (Back-Forward Cache) 中恢复的
+      if (event.persisted) {
+        hljs.highlightAll();
+      }
+    });
+    document.addEventListener('htmx:afterSwap', function(event) {
+      hljs.highlightAll();
+    });</script><script defer src=/scripts/prefetch.js></script><script>if (!document.querySelector('meta[name="darkreader-lock"]')) {
+      const lock = document.createElement('meta');
+      lock.name = 'darkreader-lock';
+      document.head.appendChild(lock);
+    }</script><link href=/styles/catppuccin-macchiato.css rel=stylesheet><script src=/scripts/htmx.min.js></script><link href=/styles/tailwind.css rel=stylesheet><link href=/iconfonts/iconfont.css rel=stylesheet><div class="flex flex-col mx-4 mb-20 scroll-smooth" id=content lang=zh-Hans><div class="text-2xl sm:text-3xl my-4 w-full text-center">『macos & nix-darwin』</div><div class="font-medium w-fit sm:mx-auto flex flex-col border-l-4 pl-2 sm:flex-row sm:border-l-0 sm:pl-0"><p>写自:2025-08-19<div class="px-2 hidden sm:inline">│</div><p>作者:柳上川</div><div class="flex flex-col items-center m-4"><div class="w-fit mx-auto text-lg font-semibold">摘要</div><div class="w-fit break-keep text-center sm:mx-[25%] *:inline">国补+教育优惠, macbook 的价格减了 4k 多, 香疯啦!<br>本文将介绍如何在 macos 上通过 <a class="underline underline-offset-5 font-medium" href=https://github.com/nix-darwin/nix-darwin>nix-darwin</a> 对系统进行声明式配置<br></div></div><div class="flex flex-col my-10 w-fit border-2 border-slate-500"><p><span class=text-2xl>目录:</span><div class="w-fit pr-2 my-2"><div class=leading-5><span class=pl-2><span class="font-bold text-sm">┌─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#jie-shao>介绍</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#nix>nix</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#flake>flake</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#an-zhuang>安装</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#mu-lu-jie-gou>目录结构</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#pei-zhi>配置</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#darwin>darwin</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#users>users</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#ruan-jian-yuan>软件源</a></span></div><div class=leading-5><span class=pl-2><span class="font-bold text-sm">└───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href=#home-manager>home-manager</a></span></div></div></div><hr class="border-2 border-dashed my-10"><h1 class="flex items-center w-fit my-6" id=jie-shao><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href=#jie-shao>介绍</a></h1><p>本文不打算系统介绍 nix, 目的仅是简单分享下 macos 上的配置, 方便大家参考以节省时间<br>因此, 下面仅提供对基本概念的解释, 当然我也贴了书书链接方便参考<br><h2 class="flex items-center w-fit my-6" id=nix><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href=#nix>nix</a></h2><p>我实在是懒得介绍 nix 到底是啥啦! 网上相比前几年涌现了大量资料<span style="display: inline-block;"><del>(虽然语法与文档还是难绷)</del></span><br>简单来讲的话, nix 就是一个可复现性/声明式的包管理器, 无法避免折腾, 但只要成功一次, 以后就基本不会去折腾了<span style="display: inline-block;"><del>(应该)</del></span><br>与此同时, 社区也提供了大量的模块选项, 方便大家直接去无脑使用<br><br>同时, nix 社区也对 macos 提供了配置系统的支持(<a class="underline underline-offset-5 font-medium" href=https://github.com/nix-darwin/nix-darwin>nix-darwin</a>), 虽然完善度肯定不如 nixos, 但即使这样体验也会好不少<br>举个简单的例子, 我现在打算配置我的 <code class="font-semibold text-[#aa8bd5]"><code>git</code></code>:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }</script><p><code class="language-nix text-sm sm:text-base"># ~/nix-darwin/home/terminal/git.nix
+{ vars, ... }:
+
+{
+  programs.git = {
+    enable = true;
+    userName = "${vars.userName}";
+    userEmail = "${vars.userEmail}";
+    extraConfig = {
+      init.defaultBranch = "main";
+      http.postBuffer = "524288000";
+    };
+  };
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copy_code(this)>复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick=fold_code(this)>折叠</button></pre><p>上面的 <code class="font-semibold text-[#aa8bd5]"><code>vars</code></code> 是我们自己定义的, 然后只要在 <a class="underline underline-offset-5 font-medium" href=https://mynixos.com>mynixos</a> 上查询 <code class="font-semibold text-[#aa8bd5]"><code>git</code></code> 相关的配置, 照猫画虎填空即可<br><h2 class="flex items-center w-fit my-6" id=flake><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href=#flake>flake</a></h2><p>现在是 2025 年了, 明年是 2026, 然后是 2027……<br>哪怕再过 5 年 <code class="font-semibold text-[#aa8bd5]"><code>flake</code></code> 这玩意还是没被官方收编, 但其也早就成为大家心照也宣的标准<br>flake 也懒得介绍了, 这玩意类似 <code class="font-semibold text-[#aa8bd5]"><code>Cargo.lock</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>package-lock.json</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>go.sum</code></code> 等, 锁定依赖版本, 保证可复现性, 提高 purity<br>如果你想更加系统地了解 nix 的语法与使用, 请前往伟大的 <a class="underline underline-offset-5 font-medium" href=https://nixos-and-flakes.thiscute.world>NixOS & Flakes Book</a>, 国人编写, 有中文版<br><br>比如, 一个 <code class="font-semibold text-[#aa8bd5]"><code>flake.nix</code></code> 可以像这样写:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }</script><p><code class="language-nix text-sm sm:text-base"># ~/nix-darwin/flake.nix
+{
+  description = "macos configuration";
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable"; # OR: github:nixos/nixpkgs/nixpkgs-25.05
+    darwin = {
+      url = "github:nix-darwin/nix-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
+  outputs = inputs @ { nixpkgs, darwin ... }:
+  let
+    system = "aarch64-darwin";
+    hostname = "darwin";
+    lib = nixpkgs.lib;
+    vars = rec {
+      inherit system hostname;
+      userName = "kawayww"; # TODO: edit it
+      userEmail = "kawayww@gmail.com"; # TODO: edit it
+    };
+    specialArgs = { inherit inputs vars; };
+  in
+  {
+    darwinConfigurations."${hostname}" = darwin.lib.darwinSystem {
+      inherit system specialArgs;
+      modules = [
+        ./modules/nixconf.nix
+        ./modules/users.nix
+        ./modules/system
+        ./modules/dev
+      ];
+    };
+  };
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copy_code(this)>复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick=fold_code(this)>折叠</button></pre><p>看起来很简单吧! <code class="font-semibold text-[#aa8bd5]"><code>inputs</code></code> 指定了我们需要用到的所有依赖, <code class="font-semibold text-[#aa8bd5]"><code>outputs</code></code> 指定了我们最终输出的配置结果<br><ul class="list-disc ml-5"><li>上面的 <code class="font-semibold text-[#aa8bd5]"><code>specialArgs</code></code> 描述了我们想传递的变量(比如 <code class="font-semibold text-[#aa8bd5]"><code>vars</code></code>), 现在我们可以在其他文件开头, 用 <code class="font-semibold text-[#aa8bd5]"><code>{ vars, ... }</code></code> 引入而不报错<br><li>上面的 <code class="font-semibold text-[#aa8bd5]"><code>inherit</code></code> 可以让我们避免重复输入一些机械化的代码, <code class="font-semibold text-[#aa8bd5]"><code>inherit xxx</code></code> 等价于 <code class="font-semibold text-[#aa8bd5]"><code>xxx = xxx</code></code><br><li>上面的 <code class="font-semibold text-[#aa8bd5]"><code>modules</code></code>, 我们导入了模块的路径, 如果某个目录下有 <code class="font-semibold text-[#aa8bd5]"><code>default.nix</code></code>, 那么可以直接用该目录名, 并省略后面的 <code class="font-semibold text-[#aa8bd5]"><code>default.nix</code></code><br></ul><p><br>由于 flake 的特性, 当你在配置目录中新建了一个文件时, 请确保运行 <code class="font-semibold text-[#aa8bd5]"><code>git add .</code></code>, 不然 flake 会认为文件不存在<br>篇幅太长了, 唉好累, 赶紧步入到大家可以愉快 copy 的正题吧!<br><hr class="border-2 border-dashed my-10"><h1 class="flex items-center w-fit my-6" id=an-zhuang><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href=#an-zhuang>安装</a></h1><p>我直接用的 <a class="underline underline-offset-5 font-medium" href=https://lix.systems/install/>lix</a> 来安装 nix:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }</script><p><code class="language-text text-sm sm:text-base">curl -sSf -L https://install.lix.systems/lix | sh -s -- install</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copy_code(this)>复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick=fold_code(this)>折叠</button></pre><p>跟着走, 安装完后应该在终端输入 <code class="font-semibold text-[#aa8bd5]"><code>nix --version</code></code>, 应该可以看见一个括号, 里面有 <code class="font-semibold text-[#aa8bd5]"><code>Lix</code></code> 的字眼<br>现在, 随便在哪个位置新建一个随便名字的文件夹, 然后新建一个 <code class="font-semibold text-[#aa8bd5]"><code>flake.nix</code></code> 文件, 开始填充我们的配置<br><br>当我们修改配置, 想要让配置生效时, 可以在目录根目录下写一个 <code class="font-semibold text-[#aa8bd5]"><code>switch.sh</code></code> 文件:<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }</script><p><code class="language-bash text-sm sm:text-base">#/usr/bin/env bash
+sudo -H nix run nix-darwin/master#darwin-rebuild -- switch --flake ./#darwin   # 这里的 "darwin" 就是配置中的 `hostname`</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copy_code(this)>复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick=fold_code(this)>折叠</button></pre><hr class="border-2 border-dashed my-10"><h1 class="flex items-center w-fit my-6" id=mu-lu-jie-gou><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href=#mu-lu-jie-gou>目录结构</a></h1><p>仅供参考, 随便你怎么分路径都可以, 全挤在一两个文件里都无所谓<br>像我就懒得分, 直接一个软件分个文件, 要修改时直接 fuzzy-search(模糊搜索) 就光速打开了 :)<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }</script><p><code class="language-text text-sm sm:text-base">.
+├── assets
+│   └── background.png
+├── flake.lock
+├── flake.nix
+├── modules
+│   ├── dev
+│   │   ├── default.nix
+│   │   ├── julia.nix
+│   │   └── rust.nix
+│   ├── home
+│   │   ├── default.nix
+│   │   ├── desktop
+│   │   │   ├── default.nix
+│   │   │   └── zed-editor.nix
+│   │   └── terminal
+│   │       ├── alacritty.nix
+│   │       ├── default.nix
+│   │       ├── fastfetch
+│   │       ├── ghostty.nix
+│   │       ├── git.nix
+│   │       ├── helix
+│   │       ├── jujutsu.nix
+│   │       ├── kitty.nix
+│   │       ├── nushell
+│   │       ├── tmux.nix
+│   │       ├── yazi.nix
+│   │       └── zellij
+│   ├── nixconf.nix
+│   ├── system
+│   │   ├── aerospace.nix
+│   │   ├── auto-start.nix
+│   │   ├── brew.nix
+│   │   ├── default.nix
+│   │   ├── jankyborders.nix
+│   │   ├── settings.nix
+│   │   ├── skhd.nix
+│   │   ├── stylix.nix
+│   │   └── yabai.nix
+│   └── users.nix
+├── README.md
+└── switch.sh</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copy_code(this)>复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick=fold_code(this)>折叠</button></pre><hr class="border-2 border-dashed my-10"><h1 class="flex items-center w-fit my-6" id=pei-zhi><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href=#pei-zhi>配置</a></h1><h2 class="flex items-center w-fit my-6" id=darwin><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href=#darwin>darwin</a></h2><p>我们需要在 <code class="font-semibold text-[#aa8bd5]"><code>flake.nix</code></code> 中添加 <code class="font-semibold text-[#aa8bd5]"><code>nix-darwin</code></code> 来配置系统:<br>(<code class="font-semibold text-[#aa8bd5]"><code>modules</code></code> 也别忘了修改哦~)<br><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }</script><p><code class="language-nix text-sm sm:text-base"># ~/nix-darwin/flake.nix
+{
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    darwin = {
+      url = "github:nix-darwin/nix-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
+  outputs = inputs@{ nixpkgs, darwin, ... }:
+    let
+      system = "aarch64-darwin";
+      hostname = "darwin";
+      lib = nixpkgs.lib;
+      vars = rec {
+        inherit system hostname;
+        userName = "kawayww"; # TODO: edit it
+        userEmail = "kawayww@gmail.com"; # TODO: edit it
+      };
+      specialArgs = { inherit inputs vars; };
+    in
+    {
+      darwinConfigurations."${hostname}" = darwin.lib.darwinSystem {
+        inherit system specialArgs;
+        modules = [
+          # ...
+          # ...
+          # ...
+        ];
+      };
+    };
+
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copy_code(this)>复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick=fold_code(this)>折叠</button></pre><h2 class="flex items-center w-fit my-6" id=users><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href=#users>users</a></h2><pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }</script><p><code class="language-nix text-sm sm:text-base"># ~/nix-darwin/users.nix
+{ vars, ... }:
+
+let
+  hostName = "${vars.hostname}";
+  userName = "${vars.userName}";
+in {
+  networking.hostName = hostName;
+  networking.computerName = hostName;
+  system.defaults.smb.NetBIOSName = hostName;
+
+  users.users."${userName}"= {
+    home = "/Users/${userName}";
+    description = userName;
+  };
+  system.primaryUser = userName;
+
+  nix.settings.trusted-users = [ userName ];
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick=copy_code(this)>复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick=fold_code(this)>折叠</button></pre><h2 class="flex items-center w-fit my-6" id=ruan-jian-yuan><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href=#ruan-jian-yuan>软件源</a></h2><p>为了省心, 咋们还是得安个 homebrew 吧?<br><h2 class="flex items-center w-fit my-6" id=home-manager><span class="text-2xl m-2 text-cyan-500">> </span> <a class="text-2xl hover:underline underline-offset-8" href=#home-manager>home-manager</a></h2><p>首先自然得是</div>
