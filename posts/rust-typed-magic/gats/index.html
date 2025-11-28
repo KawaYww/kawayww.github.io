@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>柳上川</title><meta name="description" content="柳上川的博客"/><link rel="shortcut icon" href="/images/blog/avatar.avif" type="image/avif"/><link rel="stylesheet" href="/styles/highlight.min.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Regular/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Italic/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Bold/result.css"/><link rel="stylesheet" href="/styles/catppuccin-macchiato.css"/><link rel="stylesheet" href="/iconfonts/iconfont.css"/><link rel="stylesheet" href="/styles/tailwind.css"/><script src="/scripts/highlight.min.js"> </script><script src="/scripts/rust.min.js"> </script><script src="/scripts/nix.min.js"> </script><script src="/scripts/scheme.min.js"> </script><script src="/scripts/htmx.min.js"> </script><script src="/scripts/prefetch.js"> </script><script src="/scripts/custom.js"> </script><meta name="darkreader-lock"></head>
+  <body>
+    <div id="content" class="flex flex-col mx-4 mb-20 scroll-smooth" lang="zh-Hans">
+      <div class="text-2xl sm:text-3xl my-4 w-full text-center">『rust-typed-magic: 泛型关联类型(GATs)』</div>
+      <div class="font-medium w-fit sm:mx-auto flex flex-col border-l-4 pl-2 sm:flex-row sm:border-l-0 sm:pl-0">
+        <p>[写自:2024-04-24</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>作者:柳上川</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>系列:<a class="underline underline-offset-5" href="/categories/rust-typed-magic" hx-get="/categories/rust-typed-magic/index.html" hx-target="body" hx-push-url="/categories/rust-typed-magic" hx-swap="innerHTML show:window:top">rust-typed-magic</a>]</p>
+      </div>
+      <div class="flex flex-col items-center m-4">
+        <div class="w-fit mx-auto text-lg font-semibold">摘要</div>
+        <div class="w-fit break-keep text-center sm:mx-[25%] *:inline">学习 rust 中的 gat(泛型关联类型), HKT(高阶类型), type-constructor(类型构造器) 等概念</div>
+      </div>
+      <div class="flex flex-col my-10 w-fit border-2 border-slate-500">
+        <p><span class="text-2xl">目录:</span></p>
+        <div class="w-fit pr-2 my-2">
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">┌─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#guan-lian-lei-xing">关联类型</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#ding-yi">定义</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#shu-ru-yu-shu-chu">输入与输出</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#gong-cheng-xue-you-dian">工程学优点</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#fan-xing-guan-lian-lei-xing">泛型关联类型</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#type-amp-amp-kind">Type &amp;&amp; Kind</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#lei-xing-gou-zao-qi">类型构造器</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#gao-jie-lei-xing-hkt">高阶类型(HKT)</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#li-zi">例子</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#rong-qi-lei-xing">容器类型</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#functor">Functor</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#selffan-xing">Self泛型</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#family-trait">family-trait</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">└───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#jie-dai-die-dai">借贷迭代</a></span></div>
+        </div>
+      </div>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="guan-lian-lei-xing"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#guan-lian-lei-xing">关联类型</a></h1>
+      <p><em>关联类型(associated-type)</em> 非常常见<br></p>
+      <h2 class="flex items-center w-fit my-6" id="ding-yi"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#ding-yi">定义</a></h2>
+      <p>让我们以标准库中的 <a class="underline underline-offset-5 font-medium" href="https://doc.rust-lang.org/std/ops/trait.Add.html">Add</a> 为例开始:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">trait Add&lt;Rhs = Self> {
+    type Output;
+
+    fn add(self, rhs: Rhs) -> Self::Output;
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>该定义中的 <code class="font-semibold text-[#aa8bd5]"><code>Output</code></code> 便是所谓的 <em>关联类型(associated-type)</em>, 而 <code class="font-semibold text-[#aa8bd5]"><code>Rhs</code></code> 则是普通的泛型, 默认值是 <code class="font-semibold text-[#aa8bd5]"><code>Self</code></code><br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">impl Add for i32 {
+    type Output = i32;
+
+    fn add(self, other: i32) -> Self::Output { self + other }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我们在实现中指定 <code class="font-semibold text-[#aa8bd5]"><code>Output</code></code> 的类型, 而 <code class="font-semibold text-[#aa8bd5]"><code>Rhs</code></code> 也已经推导为 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code><br>关联类型的出现是必要的, 在这里, 我们需要先澄清一下 trait 的 <em>输入类型(input)</em> 与 <em>输出类型(output)</em><br></p>
+      <h2 class="flex items-center w-fit my-6" id="shu-ru-yu-shu-chu"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#shu-ru-yu-shu-chu">输入与输出</a></h2>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>input</code></code>: <code class="font-semibold text-[#aa8bd5]"><code>Add</code></code> 中的泛型参数 <code class="font-semibold text-[#aa8bd5]"><code>Rhs</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>output</code></code>: <code class="font-semibold text-[#aa8bd5]"><code>Add</code></code> 中的关联类型 <code class="font-semibold text-[#aa8bd5]"><code>Output</code></code></li>
+      </ul>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">impl Add&lt;i32> for i32 { ... }
+impl Add&lt;Complex> for i32 { ... }</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>考虑这两种 <code class="font-semibold text-[#aa8bd5]"><code>impl</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Add&lt;i32></code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>Add&lt;Complex></code></code> 被视作两个不一样的 trait<br>作为类型参数的 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>Complex</code></code> 都是该 trait 的输入, 通过输入, 才最终确定并形成了这两个不同的 trait<br>但对于关联类型, 它是某个已经确定了的 trait 的输出, 因此它只可能在 impl 的时候由实现者确定, 不参与 trait 的类型推断<br><br>倘若没有关联类型, 我们只能全部写进泛型中当作参数<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">impl Add&lt;i32, i32> for i32 { ... }
+impl Add&lt;Complex, Complex> for i32 { ... }</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>以第一个 impl 为例子, 第一个 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code> 代表 <code class="font-semibold text-[#aa8bd5]"><code>Rhs</code></code>, 第二个 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code> 代表 <code class="font-semibold text-[#aa8bd5]"><code>Output</code></code>, 但现在你还分得清 input 与 output 吗?<br>不仅如此, 原本不该参与 通过泛型列表确认是哪个trait 这一推导过程, 而应由实现者在 impl 内部指定的 Output, 此刻却暴露了出来<br></p>
+      <h2 class="flex items-center w-fit my-6" id="gong-cheng-xue-you-dian"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#gong-cheng-xue-you-dian">工程学优点</a></h2>
+      <p>你可能还是有点懵, 那就再以 <a class="underline underline-offset-5 font-medium" href="https://rust-lang.github.io/rfcs/0195-associated-items.html#associated-types-engineering-benefits-for-generics">rfc-0195</a> 中的代码为例子 (有些地方和真代码不一样, 看得懂即可):<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">trait Graph&lt;N, E> {
+    fn has_edge(&amp;self, &amp;N, &amp;N) -> bool;
+    ...
+}
+
+fn distance&lt;N, E, G: Graph&lt;N, E>>(graph: &amp;G, start: &amp;N, end: &amp;N) -> uint { ... }</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我们有一个 <code class="font-semibold text-[#aa8bd5]"><code>Graph</code></code> trait, 来表示图论算法中的图, 涉及 3 种类型: <em>节点(Node)</em>, <em>边(Edge)</em>, <em>图(Graph)</em><br>如果我们定义了这样的 trait 并为某个具体的类型实现, 按理来说 <em>节点(N)</em> 与 <em>边(E)</em> 也是与该具体类型相关联的具体类型<br>但暴露给用户的却是必须强制写出来后才能使用的泛型参数, 这一点相当令人困惑<br><br>但倘若用关联类型改写:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">trait Graph {
+    type N;
+    type E;
+    fn has_edge(&amp;self, &amp;N, &amp;N) -> bool;
+}
+
+fn distance&lt;G: Graph>(graph: &amp;G, start: &amp;G::N, end: &amp;G::N) -> uint { ... }</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>下游的用户在使用时不再需要被强迫写成泛型, 需要引用 <code class="font-semibold text-[#aa8bd5]"><code>Node</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>Edge</code></code> 代表的具体类型时, 直接通过 <code class="font-semibold text-[#aa8bd5]"><code>G::N</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>G::E</code></code> 来使用即可<br><br>这在工程学上有着相当大的优势, 而且是单纯的泛型绝对替代不了的 (我直接翻译 rfc-0195 中的原文了):<br></p>
+      <ul class="list-disc ml-5">
+        <li>可读性/可扩展性:<br></li>
+      </ul>
+      <p>关联类型可以一次抽象出整个类型系列，而不必单独命名每个类型, 这提高了泛型代码的可读性 (如上面的 <code class="font-semibold text-[#aa8bd5]"><code>distance</code></code> 函数)<br>它还使泛型更具 “可扩展性”: trait 可以包含其他关联类型, 而不会给 “不关心这些类型的客户端” 带来额外的负担<br>相比之下, 在今天的 rust 中，为一个 trait 添加额外的泛型参数, 通常感觉是个非常 “重量级” 的举动<br><br></p>
+      <ul class="list-disc ml-5">
+        <li>易于重构/演进:<br></li>
+      </ul>
+      <p>由于 trait 的用户不必单独对其关联类型进行泛型参数化, 因此可在不破坏现有客户端代码的情况下, 添加新的关联类型<br>(泛型的话, 你每次添加新的代码, 用户也得给每个函数都加上新的泛型参数啦!! 想想刚刚的 <code class="font-semibold text-[#aa8bd5]"><code>distance</code></code>, 这会破坏所有涉及该 trait 的代码)<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="fan-xing-guan-lian-lei-xing"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#fan-xing-guan-lian-lei-xing">泛型关联类型</a></h1>
+      <p>关联类型允许泛型, 就是所谓的泛型关联类型啦! (废话!)<br>(但是这玩意儿让 rust 团队写了七年, 期间重构数次编译器与类型分析系统)<br><br>现在要介绍的, 是 rust 自 1.65 版本后引入的重大特性, 泛型关联类型(GAT/GATs, Generic-Associated-Types)<br>这是个相当重量级的特性, rust 团队为了支持这个特性, 写了整整将近 7 年, 诞生了诸如 <a class="underline underline-offset-5 font-medium" href="https://github.com/rust-lang/chalk">chalk</a> 等项目<br><br>(没错, 将近 7 年, 确切来说是 6.5 年, 而且至今仍在完善)<br><br>但现在(1.79)版本下, gat 仍然有相当多的不完善之处, 对其支持仅仅是最小化支持, 且带有相当多限制<br>但即使如此, 也已经相当够用了<br><br>顾名思义, 泛型关联类型, 也就是在关联类型的基础上添加了泛型, 仍然是关联类型的一种:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">trait Container {
+    type Value&lt;T>;  // Here
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>是的, 你没有看错, 仅仅是使得关联类型的位置能够支持泛型了<br>但这却解决了非常非常多的问题, 让 rust 能模拟一个非常重要的语法特性: <em>HKT(高阶类型, Higher-Kinded-Type)</em><br><br><em>GATs</em> 让我们拥有了使用 <em>type-constructor(类型构造器)</em> 的能力<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="type-amp-amp-kind"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#type-amp-amp-kind">Type &amp;&amp; Kind</a></h1>
+      <p>那么什么是 <em>type-constructor</em> 呢? 介绍它之前, 先让我们了解一下 <em>type(类型)</em> 与 <em>kind(阶)</em> 的概念<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn not(x: bool) -> bool {
+    !x
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>not</code></code> 函数接收一个 type 为 bool 的参数, 返回一个 type 为 <code class="font-semibold text-[#aa8bd5]"><code>bool</code></code> 的值, 因此 <code class="font-semibold text-[#aa8bd5]"><code>not</code></code> 的 type 就是 <code class="font-semibold text-[#aa8bd5]"><code>bool -> bool</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>x</code></code> 这个参数的 type 则是 <code class="font-semibold text-[#aa8bd5]"><code>bool</code></code></li>
+      </ul>
+      <p>type 表示 <em>值的类型</em>, 那么什么是 <em>kind</em> 呢? 其实这也是较好理解的, 是基于 type 再往上抽象了一层的产物:<br></p>
+      <div class="my-4 mx-2 sm:mx-6">
+        <svg class="typst-frame" style="overflow: visible; width: 17em; height: 7.1899999999999995em;" viewBox="0 0 204 86.28" width="204pt" height="86.28pt" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:h5="http://www.w3.org/1999/xhtml"><g><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 0 -0.5)" d="M 0 0v 87.28 "/><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 48.800000000000004 -0.5)" d="M 0 0v 87.28 "/><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 155.2 -0.5)" d="M 0 0v 87.28 "/><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 204 -0.5)" d="M 0 0v 87.28 "/><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 -0.5 0)" d="M 0 0h 205 "/><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 -0.5 28.76)" d="M 0 0h 205 "/><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 -0.5 57.52)" d="M 0 0h 205 "/><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 -0.5 86.28)" d="M 0 0h 205 "/><g class="typst-text" transform="matrix(1 0 0 -1 10 18.76)"><use xlink:href="#gC0CBC844C9898F4CDDE48249BC2DBE44" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g8703BF2C0B20F8F295153A6C1612F667" x="7.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gE08D2B7FC38CF4C67C478EC2FD46B2D4" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g3D3A631581F6C6497D8261FEA8BBFB14" x="21.6" y="0" fill="#ffffff" fill-rule="nonzero"/></g><g class="typst-text" transform="matrix(1 0 0 -1 58.800000000000004 18.76)"><use xlink:href="#g94BB109F7A157A3D5E34D1D0B9745CA2" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gAE7997BA45BBF2190640BC554BD1AAE2" x="7.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gFADC14DCF9929E0D1CD94BC2D9C82869" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g3D3A631581F6C6497D8261FEA8BBFB14" x="21.6" y="0" fill="#ffffff" fill-rule="nonzero"/></g><g class="typst-text" transform="matrix(1 0 0 -1 165.2 18.76)"><use xlink:href="#gAFB47D52B643DEEAE52FF5E275365963" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g7B6620F95266197EF59BBBCE993D1600" x="7.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gC0CBC844C9898F4CDDE48249BC2DBE44" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g482C4740ACAB0B6489A1C884E2A44C67" x="21.6" y="0" fill="#ffffff" fill-rule="nonzero"/></g><g class="typst-group"><g><g class="typst-text" transform="matrix(1 0 0 -1 10 47.52)"><use xlink:href="#gFDE8CC9C4ADCC487EEB8ED9A31BE623F" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g760941EEDB2D189C892DD4261B12877C" x="7.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g9A70F9E8AB24B7ED49B8921BE0068994" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/></g><g class="typst-text" transform="matrix(1 0 0 -1 58.800000000000004 47.52)"><use xlink:href="#gECB27B7B517308B6E14E3136CB8A8D9" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g760941EEDB2D189C892DD4261B12877C" x="7.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g760941EEDB2D189C892DD4261B12877C" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g59B4F3AD6094CFE25F588BE532F9E6C3" x="21.6" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gA8A4C414F26C81019DB72D7A847B9566" x="36" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g2CE61D08B3B16223F5FF9BE9C0D9D983" x="43.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gECB27B7B517308B6E14E3136CB8A8D9" x="57.60000000000001" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g760941EEDB2D189C892DD4261B12877C" x="64.80000000000001" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g760941EEDB2D189C892DD4261B12877C" x="72.00000000000001" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g59B4F3AD6094CFE25F588BE532F9E6C3" x="79.20000000000002" y="0" fill="#ffffff" fill-rule="nonzero"/></g><g class="typst-text" transform="matrix(1 0 0 -1 165.2 47.52)"><use xlink:href="#g5B1C83A598635FF0B92DF3D01B941276" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/></g></g></g><g class="typst-group"><g><g class="typst-text" transform="matrix(1 0 0 -1 10 76.28)"><use xlink:href="#g3159897CD7975D92ADA27F15B584EA64" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/></g><g class="typst-text" transform="matrix(1 0 0 -1 58.800000000000004 76.28)"><use xlink:href="#gECB27B7B517308B6E14E3136CB8A8D9" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g760941EEDB2D189C892DD4261B12877C" x="7.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g760941EEDB2D189C892DD4261B12877C" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g59B4F3AD6094CFE25F588BE532F9E6C3" x="21.6" y="0" fill="#ffffff" fill-rule="nonzero"/></g><g class="typst-text" transform="matrix(1 0 0 -1 165.2 76.28)"><use xlink:href="#g5B1C83A598635FF0B92DF3D01B941276" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/></g></g></g></g><defs id="glyph"><symbol id="gC0CBC844C9898F4CDDE48249BC2DBE44" overflow="visible"><path d="M 0 0m 2.448 0.672 v 3.108 c 0 0.7320001 0.51600003 1.4519999 1.2840002 1.4519999 c 0.7320001 0 1.0199997 -0.64799976 1.0199997 -1.2599998 v -3.3000002 c 0 -0.528 0.26400042 -0.792 0.7920003 -0.792 c 0.53999996 0 0.7919998 0.264 0.7919998 0.792 v 3.6360002 c 0 1.3800001 -0.85199976 2.4120002 -2.328 2.4120002 c -0.8039999 0 -1.356 -0.48000002 -1.6079998 -1.296 v 0.5159998 c 0 0.5279999 -0.31200004 0.7800002 -0.79200006 0.7800002 c -0.49199998 0 -0.744 -0.25200033 -0.744 -0.7800002 v -5.268 c 0 -0.528 0.25200003 -0.792 0.792 -0.792 c 0.528 0 0.79199994 0.264 0.79199994 0.792 Z "/></symbol><symbol id="g8703BF2C0B20F8F295153A6C1612F667" overflow="visible"><path d="M 0 0m 2.808 -0.120000005 c 0.82799983 0 1.4159999 0.396 1.7880001 1.0680001 c 0.04799986 0.08400005 0.09599972 0.15599996 0.13199997 0.23999995 c 0.035999775 -0.20399994 0.07200003 -0.40799993 0.119999886 -0.612 c 0.096000195 -0.47999996 0.45599985 -0.696 0.94799995 -0.696 c 0.4920001 0 0.6240001 0.216 0.5160003 0.696 c -0.22800016 1.044 -0.31200027 1.9560001 -0.31200027 2.832 c -0.012000084 0.86399984 0.07200003 1.7280002 0.204 2.604 c 0.059999943 0.48000002 -0.119999886 0.7080002 -0.612 0.7080002 c -0.48000002 0 -0.77999973 -0.22800016 -0.86399984 -0.7080002 c 0 -0.03600025 0 -0.059999943 -0.012000084 -0.096000195 c -0.27600002 0.46799994 -0.6960001 0.8040004 -1.368 0.8040004 c -0.91199994 0 -1.5960001 -0.43200016 -2.0640001 -1.1400003 c -0.46800005 -0.7079997 -0.69600004 -1.704 -0.69600004 -2.7719998 c 0 -2.112 1.0680001 -2.928 2.22 -2.928 Z m 0.29999995 1.464 c -0.6359999 0 -0.9360001 0.58800006 -0.9360001 1.4640001 c 0 1.3439999 0.5640001 2.448 1.4880002 2.448 c 0.7320001 0 0.8640001 -0.8039999 0.8640001 -1.668 c 0 -1.5 -0.7080002 -2.244 -1.4160001 -2.244 Z "/></symbol><symbol id="gE08D2B7FC38CF4C67C478EC2FD46B2D4" overflow="visible"><path d="M 0 0m 1.224 -0.120000005 c 0.444 0 0.72 0.27600002 0.72 0.804 v 4.092 c 0 0.33599997 0.14400005 0.612 0.46799994 0.612 c 0.34800005 0 0.46800017 -0.2880001 0.46800017 -0.612 v -4.164 c 0 -0.49199998 0.29999995 -0.732 0.72 -0.732 c 0.41999984 0 0.72 0.24000001 0.72 0.732 v 4.164 c 0 0.33599997 0.119999886 0.612 0.44399977 0.612 c 0.33599997 0 0.46799994 -0.2880001 0.46799994 -0.612 v -4.092 c 0 -0.528 0.3000002 -0.804 0.74399996 -0.804 c 0.44400024 0 0.72000027 0.264 0.72000027 0.792 v 4.524 c 0 0.9239998 -0.42000008 1.5240002 -1.2839999 1.5240002 c -0.73200035 0 -1.1040001 -0.43200016 -1.2120004 -0.94800043 c -0.083999634 0.4920001 -0.41999984 0.94800043 -1.1279998 0.94800043 c -0.67199993 0 -0.99600005 -0.36000013 -1.14 -0.94800043 v 0.2880001 c 0 0.42000008 -0.288 0.6600003 -0.732 0.6600003 c -0.39600003 0 -0.72 -0.21600008 -0.72 -0.6600003 v -5.388 c 0 -0.528 0.27599996 -0.792 0.74399996 -0.792 Z "/></symbol><symbol id="g3D3A631581F6C6497D8261FEA8BBFB14" overflow="visible"><path d="M 0 0m 5.52 1.932 c -0.15600014 0 -0.2880001 -0.047999978 -0.44399977 -0.18000007 c -0.204 -0.17999995 -0.72000027 -0.408 -1.2960002 -0.408 c -0.70799994 0 -1.3079998 0.39600003 -1.5 1.452 h 3.372 c 0.44400024 0 0.684 0.2520001 0.684 0.72 c 0 1.668 -0.67199993 3.2040002 -2.628 3.2040002 c -1.0679998 0 -1.8 -0.408 -2.268 -1.0560002 c -0.46800005 -0.64799976 -0.66 -1.5359998 -0.66 -2.412 c 0 -1.9200001 0.97199994 -3.3720002 2.928 -3.3720002 c 0.9600003 0 1.6320002 0.22800002 2.1120002 0.648 c 0.27600002 0.24000001 0.34800005 0.408 0.34800005 0.63600004 c 0 0.39600003 -0.25200033 0.768 -0.64800024 0.768 Z m -0.7319999 2.0759997 h -2.496 c 0.1559999 0.7680001 0.612 1.2480001 1.4159999 1.2480001 c 0.80400014 0 1.2360003 -0.4920001 1.2360003 -1.0079999 c 0 -0.19199991 -0.06000042 -0.24000025 -0.15600014 -0.24000025 Z "/></symbol><symbol id="g94BB109F7A157A3D5E34D1D0B9745CA2" overflow="visible"><path d="M 0 0m 5.688 6.36 h -1.8960001 v 1.3080001 c 0 0.5279999 -0.2520001 0.7919998 -0.79200006 0.7919998 c -0.53999996 0 -0.79200006 -0.26399994 -0.79200006 -0.7919998 v -1.3080001 h -1.0799999 c -0.49200004 0 -0.732 -0.25199986 -0.732 -0.74399996 c 0 -0.46799994 0.22800002 -0.72000027 0.70799994 -0.72000027 h 1.104 v -2.0159998 c 0 -2.0760002 0.7680001 -3 2.1720002 -3 c 0.63600016 0 1.2119999 0.048000008 1.7519999 0.324 c 0.37200022 0.192 0.4920001 0.54 0.24000025 0.972 c -0.204 0.38400006 -0.5040002 0.51600003 -0.9720001 0.31200004 c -0.25199986 -0.10800004 -0.5040002 -0.14400005 -0.75600004 -0.14400005 c -0.5640001 0 -0.852 0.528 -0.852 1.728 v 1.8239999 h 1.8960001 c 0.48000002 0 0.7199998 0.26399994 0.7199998 0.74399996 c 0 0.4680004 -0.23999977 0.72000027 -0.7199998 0.72000027 Z "/></symbol><symbol id="gAE7997BA45BBF2190640BC554BD1AAE2" overflow="visible"><path d="M 0 0m 5.172 6.2400002 l -1.5239999 -4.188 l -1.536 4.2 c -0.08399987 0.22800016 -0.24000001 0.34800005 -0.58799994 0.34800005 c -0.61200005 0 -0.90000004 -0.32399988 -0.63600004 -1.0439997 l 2.028 -5.5200005 l -0.120000124 -0.324 c -0.1559999 -0.48000002 -0.27600002 -0.708 -0.6960001 -1.092 c -0.19199991 -0.15600002 -0.3959999 -0.27600002 -0.67199993 -0.27600002 c -0.43199998 0 -0.62399995 -0.27600002 -0.636 -0.70800006 v -0.02399993 c 0 -0.4920001 0.25200003 -0.70799994 0.76800007 -0.70799994 c 0.4439999 0 1.068 0.16799998 1.6079999 0.5639999 c 0.63600016 0.48000002 1.1159999 1.74 1.3440001 2.4120002 l 1.9320002 5.652 c 0.04799986 0.17999983 0.083999634 0.33599997 0.083999634 0.46799994 c 0 0.42000008 -0.26399994 0.5999999 -0.8279996 0.5999999 c -0.27600002 0 -0.44400024 -0.119999886 -0.52800035 -0.35999966 Z "/></symbol><symbol id="gFADC14DCF9929E0D1CD94BC2D9C82869" overflow="visible"><path d="M 0 0m 1.608 6.7200003 c -0.5400001 0 -0.78000003 -0.25200033 -0.78000003 -0.7800002 v -7.428 c 0 -0.528 0.25200003 -0.79199994 0.792 -0.79199994 c 0.5400001 0 0.79199994 0.26399994 0.79199994 0.79199994 v 2.592 c 0.13199997 -0.756 0.75600004 -1.224 1.5600002 -1.224 c 2.0759997 0 2.5679998 1.896 2.5679998 3.492 c 0 1.8599999 -0.46799994 3.3480003 -2.2919998 3.3480003 c -1.092 0 -1.5840001 -0.6240001 -1.8360002 -1.3920002 v 0.612 c 0 0.5279999 -0.27600002 0.7800002 -0.8039999 0.7800002 Z m 2.196 -1.4640002 c 0.4679997 0 0.7679999 -0.22800016 0.9360001 -0.5879998 c 0.16799974 -0.36000013 0.204 -0.84000015 0.204 -1.3080001 c 0 -0.924 -0.15600014 -2.0160003 -1.2480001 -2.0160003 c -0.7680001 0 -1.2840002 0.8160001 -1.2840002 1.6439999 v 0.7320001 c 0 0.89999986 0.6600001 1.536 1.3920002 1.536 Z "/></symbol><symbol id="gAFB47D52B643DEEAE52FF5E275365963" overflow="visible"><path d="M 0 0m 2.58 0.672 v 1.368 l 0.7080002 0.7680001 l 1.5359998 -2.46 c 0.22800016 -0.384 0.53999996 -0.468 0.96000004 -0.468 c 0.44400024 0 0.888 0.492 0.5640001 1.008 l -1.9559999 3.108 l 1.5359998 1.6439998 c 0.48000002 0.5160003 0.04799986 1.0800004 -0.5279999 1.0800004 c -0.27600002 0 -0.5279999 -0.10800028 -0.7680001 -0.34800005 l -2.052 -2.184 v 3.9 c 0 0.5279999 -0.26399994 0.7919998 -0.79199994 0.7919998 c -0.53999996 0 -0.80399996 -0.26399994 -0.80399996 -0.7919998 v -7.4160004 c 0 -0.528 0.264 -0.792 0.80399996 -0.792 c 0.528 0 0.79199994 0.264 0.79199994 0.792 Z "/></symbol><symbol id="g7B6620F95266197EF59BBBCE993D1600" overflow="visible"><path d="M 0 0m 5.988 1.464 h -1.2839999 v 3.6000001 c 0 0.86399984 -0.42000008 1.296 -1.296 1.296 h -1.5239999 c -0.4920001 0 -0.75600004 -0.25199986 -0.75600004 -0.7319999 c 0 -0.48000002 0.26399994 -0.73200035 0.75600004 -0.73200035 h 0.6359999 c 0.39600015 0 0.60000014 -0.19199991 0.60000014 -0.612 v -2.82 h -1.5120001 c -0.48000002 0 -0.72 -0.25199997 -0.72 -0.732 c 0 -0.48 0.25199997 -0.732 0.732 -0.732 h 4.356 c 0.48000002 0 0.73200035 0.252 0.73200035 0.732 c 0 0.48000002 -0.25200033 0.732 -0.72000027 0.732 Z m -2.1479998 5.988 c 0.6240001 0 1.0079999 0.33599997 1.0079999 0.8759999 c 0 0.53999996 -0.38399982 0.88799953 -1.0079999 0.88799953 c -0.6240001 0 -1.0080001 -0.34799957 -1.0080001 -0.88799953 c 0 -0.53999996 0.38400006 -0.8759999 1.0080001 -0.8759999 Z "/></symbol><symbol id="g482C4740ACAB0B6489A1C884E2A44C67" overflow="visible"><path d="M 0 0m 5.592 -0.120000005 c 0.53999996 0 0.7800002 0.252 0.7800002 0.78000003 v 7.4280005 c 0 0.5279999 -0.25200033 0.7919998 -0.7920003 0.7919998 c -0.53999996 0 -0.7919998 -0.26399994 -0.7919998 -0.7919998 v -2.5920005 c -0.13199997 0.75600004 -0.75600004 1.2240005 -1.5600002 1.2240005 c -2.076 0 -2.5679998 -1.8600001 -2.5679998 -3.4920003 c 0 -1.8599999 0.468 -3.348 2.292 -3.348 c 1.092 0 1.5840001 0.624 1.836 1.392 v -0.6119999 c 0 -0.528 0.27600002 -0.78000003 0.8039999 -0.78000003 Z m -2.1959999 1.464 c -0.46800017 0 -0.7680001 0.24000001 -0.924 0.6 c -0.16800022 0.3599999 -0.21600008 0.82800007 -0.21600008 1.296 c 0 0.924 0.1559999 2.016 1.2479999 2.016 c 0.7679999 0 1.2840002 -0.816 1.2840002 -1.644 v -0.7319999 c 0 -0.9000001 -0.6240001 -1.5360001 -1.392 -1.5360001 Z "/></symbol><symbol id="gFDE8CC9C4ADCC487EEB8ED9A31BE623F" overflow="visible"><path d="M 0 0m 2.22 0.42000002 v 3.372 c 0 0.7679999 0.5999999 1.9080002 1.464 1.9080002 c 0.86399984 0 1.296 -0.74400043 1.296 -1.572 v -3.7080002 c 0 -0.372 0.16800022 -0.54 0.53999996 -0.54 c 0.37200022 0 0.53999996 0.16800001 0.53999996 0.54 v 4.02 c 0 1.3800001 -0.9119997 2.2800002 -2.1959999 2.2800002 c -0.87600017 0 -1.4160001 -0.48000002 -1.644 -1.2480001 v 0.7079997 c 0 0.37200022 -0.16799998 0.54000044 -0.53999996 0.54000044 c -0.3720001 0 -0.5400001 -0.16800022 -0.5400001 -0.54000044 v -5.7599998 c 0 -0.372 0.16799998 -0.54 0.5400001 -0.54 c 0.37199998 0 0.53999996 0.16800001 0.53999996 0.54 Z "/></symbol><symbol id="g760941EEDB2D189C892DD4261B12877C" overflow="visible"><path d="M 0 0m 3.6000001 -0.120000005 c 1.8599999 0 2.7 1.452 2.7 3.4320002 c 0 1.9799998 -0.816 3.4080002 -2.7 3.4080002 c -1.8600001 0 -2.7 -1.4280005 -2.7 -3.4080002 c 0 -1.98 0.84 -3.4320002 2.7 -3.4320002 Z m 0 1.08 c -1.1160002 0 -1.6200001 0.96000004 -1.6200001 2.34 c 0 1.3799999 0.46799994 2.34 1.6200001 2.34 c 1.1519997 0 1.6200001 -0.94799995 1.6200001 -2.3279998 c 0 -1.38 -0.5040002 -2.352 -1.6200001 -2.352 Z "/></symbol><symbol id="g9A70F9E8AB24B7ED49B8921BE0068994" overflow="visible"><path d="M 0 0m 5.748 6.36 h -2.2080002 v 1.56 c 0 0.37199974 -0.16799998 0.53999996 -0.53999996 0.53999996 c -0.37199998 0 -0.53999996 -0.16800022 -0.53999996 -0.53999996 v -1.56 h -1.404 c -0.324 0 -0.49199998 -0.21600008 -0.49199998 -0.53999996 c 0 -0.32400036 0.16799998 -0.53999996 0.49199998 -0.53999996 h 1.404 v -2.7960002 c 0 -1.788 0.7679999 -2.604 1.9200001 -2.604 c 0.67199993 0 1.224 0.048000008 1.704 0.3 c 0.2999997 0.15599999 0.38399982 0.43199998 0.19199991 0.756 c -0.17999983 0.30000007 -0.42000008 0.408 -0.74399996 0.22800004 c -0.37200022 -0.18 -0.64800024 -0.204 -0.9720001 -0.204 c -0.67199993 0 -1.02 0.576 -1.02 1.7279999 v 2.5920002 h 2.2080002 c 0.32399988 0 0.4920001 0.2159996 0.4920001 0.53999996 c 0 0.32399988 -0.16800022 0.53999996 -0.4920001 0.53999996 Z "/></symbol><symbol id="gECB27B7B517308B6E14E3136CB8A8D9" overflow="visible"><path d="M 0 0m 1.62 -0.120000005 c 0.37199998 0 0.5400001 0.18 0.5400001 0.55200005 v 0.768 c 0.28799987 -0.804 0.8399999 -1.32 1.7639999 -1.32 c 1.9560001 0 2.3160002 1.716 2.3160002 3.192 c 0 1.7280002 -0.42000008 3.6480002 -2.436 3.6480002 c -0.87600017 0 -1.5000002 -0.52800035 -1.644 -1.2480001 v 2.868 c 0 0.37199974 -0.1680001 0.53999996 -0.5400001 0.53999996 c -0.37199998 0 -0.53999996 -0.16800022 -0.53999996 -0.53999996 v -7.908 c 0 -0.372 0.16799998 -0.55200005 0.53999996 -0.55200005 Z m 2.196 1.08 c -0.86399984 0 -1.6559999 0.74399996 -1.6559999 1.5120001 v 1.3199999 c 0 0.7679999 0.5999999 1.8479998 1.464 1.8479998 c 1.3800001 0 1.5359998 -1.2839999 1.5359998 -2.4959998 c 0 -1.248 -0.28799963 -2.184 -1.3439999 -2.184 Z "/></symbol><symbol id="g59B4F3AD6094CFE25F588BE532F9E6C3" overflow="visible"><path d="M 0 0m 3.708 2.688 l 0.012000084 5.1120005 c 0 0.65999985 -0.29999995 0.96000004 -0.96000004 0.96000004 h -1.488 c -0.32399994 0 -0.49199992 -0.16800022 -0.49199992 -0.49200058 c 0 -0.3239994 0.16799998 -0.49199963 0.49199992 -0.49199963 h 0.88800013 c 0.32399988 0 0.48000002 -0.15600014 0.48000002 -0.48000002 l -0.012000084 -4.8120003 c 0 -1.788 0.7680001 -2.604 1.9199998 -2.604 c 0.6720004 0 1.224 0.048000008 1.704 0.3 c 0.3000002 0.15599999 0.3840003 0.43199998 0.19200039 0.756 c -0.1800003 0.30000007 -0.42000008 0.408 -0.74399996 0.22800004 c -0.37200022 -0.18 -0.64800024 -0.204 -0.9720001 -0.204 c -0.67199993 0 -1.0200002 0.576 -1.0200002 1.7279999 Z "/></symbol><symbol id="gA8A4C414F26C81019DB72D7A847B9566" overflow="visible"><path d="M 0 0m 1.44 3.42 h 5.76 v 1.0799999 h -5.76 c -0.3720001 0 -0.54 -0.16799974 -0.54 -0.53999996 c 0 -0.37199998 0.16799992 -0.53999996 0.54 -0.53999996 Z "/></symbol><symbol id="g2CE61D08B3B16223F5FF9BE9C0D9D983" overflow="visible"><path d="M 0 0m 3.492 5.64 c 0.10800004 -0.1079998 0.10800004 -0.22799969 0 -0.33599997 l -0.63600016 -0.6359997 c -0.10800004 -0.10800028 -0.25199986 -0.16800022 -0.408 -0.16800022 h -2.448 v -1.0799999 h 2.448 c 0.15600014 0 0.29999995 -0.059999943 0.408 -0.16799998 l 0.63600016 -0.63600016 c 0.10800004 -0.1079998 0.10800004 -0.22799993 0 -0.33599997 l -1.1040001 -1.104 c -0.2520001 -0.25199997 -0.2520001 -0.516 0 -0.768 c 0.2520001 -0.25199997 0.51600003 -0.25199997 0.7680001 0 l 2.868 2.868 c 0.46799994 0.46799994 0.46799994 0.9000001 0 1.368 l -2.868 2.868 c -0.2520001 0.25199986 -0.51600003 0.25199986 -0.7680001 0 c -0.2520001 -0.25199986 -0.2520001 -0.5159998 0 -0.7680001 Z m 1.2719998 -2.0879998 c -0.22799969 -0.22799993 -0.44399977 -0.22799993 -0.67199993 0 l -0.07200003 0.07200003 c -0.24000001 0.24000001 -0.24000001 0.43200016 0 0.67199993 l 0.07200003 0.07200003 c 0.22800016 0.22800016 0.44400024 0.22800016 0.67199993 0 l 0.07200003 -0.07200003 c 0.22800016 -0.22800016 0.22800016 -0.444 0 -0.67199993 Z "/></symbol><symbol id="g5B1C83A598635FF0B92DF3D01B941276" overflow="visible"><path d="M 0 0m 3.6000001 0.84000003 c 0.37199998 0 0.5399997 0.16799998 0.5399997 0.53999996 v 1.6439999 l 1.428 -0.82799983 c 0.19200039 -0.10800004 0.37200022 -0.13199997 0.5160003 -0.036000013 c 0.1079998 0.08399987 0.21600008 0.204 0.27600002 0.3599999 c 0.09599972 0.27600002 0.012000084 0.4560001 -0.25199986 0.612 l -1.4280005 0.82800007 l 1.4280005 0.82800007 c 0.26399994 0.15600014 0.34799957 0.33599997 0.25199986 0.6240001 c -0.059999943 0.14400005 -0.15600014 0.26399994 -0.27600002 0.34800005 c -0.14400005 0.09599972 -0.32399988 0.07200003 -0.5160003 -0.03600025 l -1.428 -0.82800007 v 1.644 c 0 0.37200022 -0.16799974 0.53999996 -0.5399997 0.53999996 c -0.37200022 0 -0.5400002 -0.16799974 -0.5400002 -0.53999996 v -1.644 l -1.428 0.82800007 c -0.19199991 0.10800028 -0.37199998 0.13199997 -0.50399995 0.03600025 c -0.13200003 -0.08400011 -0.22799999 -0.204 -0.27600002 -0.34800005 c -0.10799998 -0.2880001 -0.023999989 -0.46799994 0.24000001 -0.6240001 l 1.428 -0.82800007 l -1.428 -0.82800007 c -0.264 -0.1559999 -0.348 -0.33599997 -0.24000001 -0.612 c 0.048000038 -0.1559999 0.15600002 -0.27600002 0.27600002 -0.3599999 c 0.13199997 -0.095999956 0.31200004 -0.07200003 0.50399995 0.036000013 l 1.428 0.82799983 v -1.6439999 c 0 -0.37199998 0.16799998 -0.53999996 0.5400002 -0.53999996 Z "/></symbol><symbol id="g3159897CD7975D92ADA27F15B584EA64" overflow="visible"><path d="M 0 0m 2.1 0.24000001 l 1.5000002 2.22 l 1.4999998 -2.22 c 0.15600014 -0.24000001 0.36000013 -0.36 0.612 -0.36 c 0.34800005 0 0.74399996 0.264 0.42000008 0.708 l -1.8959999 2.808 l 1.7639999 2.6039999 c 0.32399988 0.48000002 -0.059999943 0.72000027 -0.408 0.72000027 c -0.27600002 0 -0.48000002 -0.12000036 -0.63600016 -0.36000013 l -1.3559997 -2.0160003 l -1.3560002 2.0160003 c -0.1559999 0.22799969 -0.34799993 0.36000013 -0.62399995 0.36000013 c -0.34800005 0 -0.744 -0.24000025 -0.41999996 -0.72000027 l 1.7639999 -2.6039999 l -1.896 -2.808 c -0.32399994 -0.444 0.07200003 -0.708 0.42000008 -0.708 c 0.25199997 0 0.45599997 0.132 0.61199987 0.36 Z "/></symbol></defs></svg>
+      </div>
+      <p>不管是 <code class="font-semibold text-[#aa8bd5]"><code>bool</code></code> 还是 <code class="font-semibold text-[#aa8bd5]"><code>bool -> bool</code></code>, 两者的类型都是一个已经非常具体的类型, 其 kind 则是 <code class="font-semibold text-[#aa8bd5]"><code>*</code></code><br>为了便于理解, 姑且称呼这些类型为 <em>具体类型</em> (你也可以将它们叫作 <em>full-type</em>, <em>actual-type</em>, <em>standalone-type</em>)<br>这些类型都是很具体的, 其 kind 是相同的 <code class="font-semibold text-[#aa8bd5]"><code>*</code></code><br><br>(当我们站在 kind 这个抽象层上看待 type 时, 应该使用 type 指代具体的 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>bool</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>i32 -> i32</code></code>, 它们都是 type)<br>(其实站在 type 这个抽象层看待 value 时, 也是一样的道理)<br><br>一句话, type 用来抽象 value, kind 用于抽象 type<br>倘若你要问 <code class="font-semibold text-[#aa8bd5]"><code>true</code></code> 的 kind 是 <code class="font-semibold text-[#aa8bd5]"><code>*</code></code> 吗? 那不对, 你得说 <code class="font-semibold text-[#aa8bd5]"><code>bool</code></code> 的 kind 是 <code class="font-semibold text-[#aa8bd5]"><code>*</code></code> 才对<br><br>你可能要说了:<br>什么鬼啊, 照你这么说岂不是所有的类型都是 <code class="font-semibold text-[#aa8bd5]"><code>*</code></code> 了, 比如 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>fn(i32) -> i32</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Vec&lt;T></code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Result&lt;T, E></code></code>…<br>这些类型都是具体类型, 其 kind 难道不都是 <code class="font-semibold text-[#aa8bd5]"><code>*</code></code> 吗?<br><br>没错, 在 rust 中的 <code class="font-semibold text-[#aa8bd5]"><code>Vec&lt;T></code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Option&lt;T></code></code>, 它们都是一层的 type, 即其 kind 是 <code class="font-semibold text-[#aa8bd5]"><code>*</code></code><br><strong>但如果是 <code class="font-semibold text-[#aa8bd5]"><code>Vec</code></code> 而不是 <code class="font-semibold text-[#aa8bd5]"><code>Vec&lt;T></code></code> 呢?</strong> 假设这也是某种类型<br><br>你会发现, 你必须提供一个类型 (比如 <code class="font-semibold text-[#aa8bd5]"><code>Vec&lt;i32></code></code> 就是向 <code class="font-semibold text-[#aa8bd5]"><code>Vec</code></code> 提供了 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code> 作为参数), 才能构造出最终的具体类型<br>对于这种特殊类型来说, 其 kind 就是 <code class="font-semibold text-[#aa8bd5]"><code>* -> *</code></code> 了<br></p>
+      <div class="my-4 mx-2 sm:mx-6">
+        <svg class="typst-frame" style="overflow: visible; width: 22.533333333333335em; height: 19.173333333333332em;" viewBox="0 0 270.40000000000003 230.08" width="270.40000000000003pt" height="230.08pt" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:h5="http://www.w3.org/1999/xhtml"><g><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 0 -0.5)" d="M 0 0v 231.08 "/><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 171.20000000000002 -0.5)" d="M 0 0v 231.08 "/><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 270.40000000000003 -0.5)" d="M 0 0v 231.08 "/><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 -0.5 0)" d="M 0 0h 271.4 "/><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 -0.5 28.76)" d="M 0 0h 271.4 "/><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 -0.5 57.52)" d="M 0 0h 271.4 "/><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 -0.5 86.28)" d="M 0 0h 271.4 "/><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 -0.5 115.04)" d="M 0 0h 271.4 "/><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 -0.5 143.79999999999998)" d="M 0 0h 271.4 "/><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 -0.5 172.56)" d="M 0 0h 271.4 "/><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 -0.5 201.32)" d="M 0 0h 271.4 "/><path class="typst-shape" fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" transform="matrix(1 0 0 1 -0.5 230.08)" d="M 0 0h 271.4 "/><g class="typst-text" transform="matrix(1 0 0 -1 10 18.76)"><use xlink:href="#g94BB109F7A157A3D5E34D1D0B9745CA2" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gAE7997BA45BBF2190640BC554BD1AAE2" x="7.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gFADC14DCF9929E0D1CD94BC2D9C82869" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g3D3A631581F6C6497D8261FEA8BBFB14" x="21.6" y="0" fill="#ffffff" fill-rule="nonzero"/></g><g class="typst-text" transform="matrix(1 0 0 -1 181.20000000000002 18.76)"><use xlink:href="#gAFB47D52B643DEEAE52FF5E275365963" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g7B6620F95266197EF59BBBCE993D1600" x="7.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gC0CBC844C9898F4CDDE48249BC2DBE44" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g482C4740ACAB0B6489A1C884E2A44C67" x="21.6" y="0" fill="#ffffff" fill-rule="nonzero"/></g><g class="typst-group"><g><g class="typst-text" transform="matrix(1 0 0 -1 10 47.52)"><use xlink:href="#g1ECA0DAA0671E2D0E1499D963BA32914" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g1C0603F55E0CDC36B5974D04F87A2F60" x="7.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gCC91E1A8A6ED88563541915B44C8EADE" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gC47562FCA477E7FFED3EBA71BAB700D0" x="21.6" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gC8AF8BE6C7B5404EB557E2969EDF5B07" x="28.8" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gAAB383DEC4298D1ADA6E60A07450B4E1" x="36" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gB6FA5ACF57625D80E629EDB5C59C62BA" x="43.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gAFE712DCEB0293A399653473EF14DA83" x="50.400000000000006" y="0" fill="#ffffff" fill-rule="nonzero"/></g><g class="typst-text" transform="matrix(1 0 0 -1 181.20000000000002 47.52)"><use xlink:href="#g5B1C83A598635FF0B92DF3D01B941276" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/></g></g></g><g class="typst-group"><g><g class="typst-text" transform="matrix(1 0 0 -1 10 76.28)"><use xlink:href="#g1ECA0DAA0671E2D0E1499D963BA32914" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g1C0603F55E0CDC36B5974D04F87A2F60" x="7.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gCC91E1A8A6ED88563541915B44C8EADE" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gC47562FCA477E7FFED3EBA71BAB700D0" x="21.6" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g50702B06743F7C7E70018FE56E0F57A0" x="28.8" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gAFE712DCEB0293A399653473EF14DA83" x="36" y="0" fill="#ffffff" fill-rule="nonzero"/></g><g class="typst-text" transform="matrix(1 0 0 -1 181.20000000000002 76.28)"><use xlink:href="#g5B1C83A598635FF0B92DF3D01B941276" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gA8A4C414F26C81019DB72D7A847B9566" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g2CE61D08B3B16223F5FF9BE9C0D9D983" x="21.6" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g5B1C83A598635FF0B92DF3D01B941276" x="36" y="0" fill="#ffffff" fill-rule="nonzero"/></g></g></g><g class="typst-group"><g><g class="typst-text" transform="matrix(1 0 0 -1 10 105.04)"><use xlink:href="#g3244313C875A5BE899BB0C623D1FDD26" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gD3F5F139C6BB703293CDB8A96E3BCC95" x="7.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g9A70F9E8AB24B7ED49B8921BE0068994" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gC8AF8BE6C7B5404EB557E2969EDF5B07" x="21.6" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g760941EEDB2D189C892DD4261B12877C" x="28.8" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gFDE8CC9C4ADCC487EEB8ED9A31BE623F" x="36" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gC47562FCA477E7FFED3EBA71BAB700D0" x="43.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gC8AF8BE6C7B5404EB557E2969EDF5B07" x="50.400000000000006" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gAAB383DEC4298D1ADA6E60A07450B4E1" x="57.60000000000001" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gB6FA5ACF57625D80E629EDB5C59C62BA" x="64.80000000000001" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gAFE712DCEB0293A399653473EF14DA83" x="72.00000000000001" y="0" fill="#ffffff" fill-rule="nonzero"/></g><g class="typst-text" transform="matrix(1 0 0 -1 181.20000000000002 105.04)"><use xlink:href="#g5B1C83A598635FF0B92DF3D01B941276" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/></g></g></g><g class="typst-group"><g><g class="typst-text" transform="matrix(1 0 0 -1 10 133.79999999999998)"><use xlink:href="#g3244313C875A5BE899BB0C623D1FDD26" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gD3F5F139C6BB703293CDB8A96E3BCC95" x="7.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g9A70F9E8AB24B7ED49B8921BE0068994" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gC8AF8BE6C7B5404EB557E2969EDF5B07" x="21.6" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g760941EEDB2D189C892DD4261B12877C" x="28.8" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gFDE8CC9C4ADCC487EEB8ED9A31BE623F" x="36" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gC47562FCA477E7FFED3EBA71BAB700D0" x="43.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g50702B06743F7C7E70018FE56E0F57A0" x="50.400000000000006" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gAFE712DCEB0293A399653473EF14DA83" x="57.60000000000001" y="0" fill="#ffffff" fill-rule="nonzero"/></g><g class="typst-text" transform="matrix(1 0 0 -1 181.20000000000002 133.79999999999998)"><use xlink:href="#g5B1C83A598635FF0B92DF3D01B941276" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gA8A4C414F26C81019DB72D7A847B9566" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g2CE61D08B3B16223F5FF9BE9C0D9D983" x="21.6" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g5B1C83A598635FF0B92DF3D01B941276" x="36" y="0" fill="#ffffff" fill-rule="nonzero"/></g></g></g><g class="typst-group"><g><g class="typst-text" transform="matrix(1 0 0 -1 10 162.56)"><use xlink:href="#g6A400A31CCE7563932524068757C182B" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g1C0603F55E0CDC36B5974D04F87A2F60" x="7.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g5E193FFD3F2EA8C2031A9318F76C5BDC" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gAD3129A20F8FA6DB018D3F4D59B0022B" x="21.6" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g59B4F3AD6094CFE25F588BE532F9E6C3" x="28.8" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g9A70F9E8AB24B7ED49B8921BE0068994" x="36" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gC47562FCA477E7FFED3EBA71BAB700D0" x="43.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g68E2836477E2C5DF8837EFFAB313F2DB" x="50.400000000000006" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g9A70F9E8AB24B7ED49B8921BE0068994" x="57.60000000000001" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g365DAB436524F94C337FBE754E79D926" x="64.80000000000001" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gC8AF8BE6C7B5404EB557E2969EDF5B07" x="72.00000000000001" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gFDE8CC9C4ADCC487EEB8ED9A31BE623F" x="79.20000000000002" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gC026F0A57B91A6953A958F497FE330F" x="86.40000000000002" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g863AE121245C85AE4043954A948039E1" x="93.60000000000002" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gADD6739322829016ABEE16F0D5FC60A5" x="108.00000000000003" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g365DAB436524F94C337FBE754E79D926" x="115.20000000000003" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g365DAB436524F94C337FBE754E79D926" x="122.40000000000003" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g760941EEDB2D189C892DD4261B12877C" x="129.60000000000002" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g365DAB436524F94C337FBE754E79D926" x="136.8" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gAFE712DCEB0293A399653473EF14DA83" x="144" y="0" fill="#ffffff" fill-rule="nonzero"/></g><g class="typst-text" transform="matrix(1 0 0 -1 181.20000000000002 162.56)"><use xlink:href="#g5B1C83A598635FF0B92DF3D01B941276" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/></g></g></g><g class="typst-group"><g><g class="typst-text" transform="matrix(1 0 0 -1 10 191.32)"><use xlink:href="#g6A400A31CCE7563932524068757C182B" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g1C0603F55E0CDC36B5974D04F87A2F60" x="7.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g5E193FFD3F2EA8C2031A9318F76C5BDC" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gAD3129A20F8FA6DB018D3F4D59B0022B" x="21.6" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g59B4F3AD6094CFE25F588BE532F9E6C3" x="28.8" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g9A70F9E8AB24B7ED49B8921BE0068994" x="36" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gC47562FCA477E7FFED3EBA71BAB700D0" x="43.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g68E2836477E2C5DF8837EFFAB313F2DB" x="50.400000000000006" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g9A70F9E8AB24B7ED49B8921BE0068994" x="57.60000000000001" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g365DAB436524F94C337FBE754E79D926" x="64.80000000000001" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gC8AF8BE6C7B5404EB557E2969EDF5B07" x="72.00000000000001" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gFDE8CC9C4ADCC487EEB8ED9A31BE623F" x="79.20000000000002" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gC026F0A57B91A6953A958F497FE330F" x="86.40000000000002" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g863AE121245C85AE4043954A948039E1" x="93.60000000000002" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g50702B06743F7C7E70018FE56E0F57A0" x="108.00000000000003" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gAFE712DCEB0293A399653473EF14DA83" x="115.20000000000003" y="0" fill="#ffffff" fill-rule="nonzero"/></g><g class="typst-text" transform="matrix(1 0 0 -1 181.20000000000002 191.32)"><use xlink:href="#g5B1C83A598635FF0B92DF3D01B941276" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gA8A4C414F26C81019DB72D7A847B9566" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g2CE61D08B3B16223F5FF9BE9C0D9D983" x="21.6" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g5B1C83A598635FF0B92DF3D01B941276" x="36" y="0" fill="#ffffff" fill-rule="nonzero"/></g></g></g><g class="typst-group"><g><g class="typst-text" transform="matrix(1 0 0 -1 10 220.08)"><use xlink:href="#g6A400A31CCE7563932524068757C182B" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g1C0603F55E0CDC36B5974D04F87A2F60" x="7.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g5E193FFD3F2EA8C2031A9318F76C5BDC" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gAD3129A20F8FA6DB018D3F4D59B0022B" x="21.6" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g59B4F3AD6094CFE25F588BE532F9E6C3" x="28.8" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g9A70F9E8AB24B7ED49B8921BE0068994" x="36" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gC47562FCA477E7FFED3EBA71BAB700D0" x="43.2" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g50702B06743F7C7E70018FE56E0F57A0" x="50.400000000000006" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g863AE121245C85AE4043954A948039E1" x="57.60000000000001" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g50702B06743F7C7E70018FE56E0F57A0" x="72.00000000000001" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gAFE712DCEB0293A399653473EF14DA83" x="79.20000000000002" y="0" fill="#ffffff" fill-rule="nonzero"/></g><g class="typst-text" transform="matrix(1 0 0 -1 181.20000000000002 220.08)"><use xlink:href="#g5B1C83A598635FF0B92DF3D01B941276" x="0" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gA8A4C414F26C81019DB72D7A847B9566" x="14.4" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g2CE61D08B3B16223F5FF9BE9C0D9D983" x="21.6" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g5B1C83A598635FF0B92DF3D01B941276" x="36" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#gA8A4C414F26C81019DB72D7A847B9566" x="50.400000000000006" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g2CE61D08B3B16223F5FF9BE9C0D9D983" x="57.60000000000001" y="0" fill="#ffffff" fill-rule="nonzero"/><use xlink:href="#g5B1C83A598635FF0B92DF3D01B941276" x="72.00000000000001" y="0" fill="#ffffff" fill-rule="nonzero"/></g></g></g></g><defs id="glyph"><symbol id="g94BB109F7A157A3D5E34D1D0B9745CA2" overflow="visible"><path d="M 0 0m 5.688 6.36 h -1.8960001 v 1.3080001 c 0 0.5279999 -0.2520001 0.7919998 -0.79200006 0.7919998 c -0.53999996 0 -0.79200006 -0.26399994 -0.79200006 -0.7919998 v -1.3080001 h -1.0799999 c -0.49200004 0 -0.732 -0.25199986 -0.732 -0.74399996 c 0 -0.46799994 0.22800002 -0.72000027 0.70799994 -0.72000027 h 1.104 v -2.0159998 c 0 -2.0760002 0.7680001 -3 2.1720002 -3 c 0.63600016 0 1.2119999 0.048000008 1.7519999 0.324 c 0.37200022 0.192 0.4920001 0.54 0.24000025 0.972 c -0.204 0.38400006 -0.5040002 0.51600003 -0.9720001 0.31200004 c -0.25199986 -0.10800004 -0.5040002 -0.14400005 -0.75600004 -0.14400005 c -0.5640001 0 -0.852 0.528 -0.852 1.728 v 1.8239999 h 1.8960001 c 0.48000002 0 0.7199998 0.26399994 0.7199998 0.74399996 c 0 0.4680004 -0.23999977 0.72000027 -0.7199998 0.72000027 Z "/></symbol><symbol id="gAE7997BA45BBF2190640BC554BD1AAE2" overflow="visible"><path d="M 0 0m 5.172 6.2400002 l -1.5239999 -4.188 l -1.536 4.2 c -0.08399987 0.22800016 -0.24000001 0.34800005 -0.58799994 0.34800005 c -0.61200005 0 -0.90000004 -0.32399988 -0.63600004 -1.0439997 l 2.028 -5.5200005 l -0.120000124 -0.324 c -0.1559999 -0.48000002 -0.27600002 -0.708 -0.6960001 -1.092 c -0.19199991 -0.15600002 -0.3959999 -0.27600002 -0.67199993 -0.27600002 c -0.43199998 0 -0.62399995 -0.27600002 -0.636 -0.70800006 v -0.02399993 c 0 -0.4920001 0.25200003 -0.70799994 0.76800007 -0.70799994 c 0.4439999 0 1.068 0.16799998 1.6079999 0.5639999 c 0.63600016 0.48000002 1.1159999 1.74 1.3440001 2.4120002 l 1.9320002 5.652 c 0.04799986 0.17999983 0.083999634 0.33599997 0.083999634 0.46799994 c 0 0.42000008 -0.26399994 0.5999999 -0.8279996 0.5999999 c -0.27600002 0 -0.44400024 -0.119999886 -0.52800035 -0.35999966 Z "/></symbol><symbol id="gFADC14DCF9929E0D1CD94BC2D9C82869" overflow="visible"><path d="M 0 0m 1.608 6.7200003 c -0.5400001 0 -0.78000003 -0.25200033 -0.78000003 -0.7800002 v -7.428 c 0 -0.528 0.25200003 -0.79199994 0.792 -0.79199994 c 0.5400001 0 0.79199994 0.26399994 0.79199994 0.79199994 v 2.592 c 0.13199997 -0.756 0.75600004 -1.224 1.5600002 -1.224 c 2.0759997 0 2.5679998 1.896 2.5679998 3.492 c 0 1.8599999 -0.46799994 3.3480003 -2.2919998 3.3480003 c -1.092 0 -1.5840001 -0.6240001 -1.8360002 -1.3920002 v 0.612 c 0 0.5279999 -0.27600002 0.7800002 -0.8039999 0.7800002 Z m 2.196 -1.4640002 c 0.4679997 0 0.7679999 -0.22800016 0.9360001 -0.5879998 c 0.16799974 -0.36000013 0.204 -0.84000015 0.204 -1.3080001 c 0 -0.924 -0.15600014 -2.0160003 -1.2480001 -2.0160003 c -0.7680001 0 -1.2840002 0.8160001 -1.2840002 1.6439999 v 0.7320001 c 0 0.89999986 0.6600001 1.536 1.3920002 1.536 Z "/></symbol><symbol id="g3D3A631581F6C6497D8261FEA8BBFB14" overflow="visible"><path d="M 0 0m 5.52 1.932 c -0.15600014 0 -0.2880001 -0.047999978 -0.44399977 -0.18000007 c -0.204 -0.17999995 -0.72000027 -0.408 -1.2960002 -0.408 c -0.70799994 0 -1.3079998 0.39600003 -1.5 1.452 h 3.372 c 0.44400024 0 0.684 0.2520001 0.684 0.72 c 0 1.668 -0.67199993 3.2040002 -2.628 3.2040002 c -1.0679998 0 -1.8 -0.408 -2.268 -1.0560002 c -0.46800005 -0.64799976 -0.66 -1.5359998 -0.66 -2.412 c 0 -1.9200001 0.97199994 -3.3720002 2.928 -3.3720002 c 0.9600003 0 1.6320002 0.22800002 2.1120002 0.648 c 0.27600002 0.24000001 0.34800005 0.408 0.34800005 0.63600004 c 0 0.39600003 -0.25200033 0.768 -0.64800024 0.768 Z m -0.7319999 2.0759997 h -2.496 c 0.1559999 0.7680001 0.612 1.2480001 1.4159999 1.2480001 c 0.80400014 0 1.2360003 -0.4920001 1.2360003 -1.0079999 c 0 -0.19199991 -0.06000042 -0.24000025 -0.15600014 -0.24000025 Z "/></symbol><symbol id="gAFB47D52B643DEEAE52FF5E275365963" overflow="visible"><path d="M 0 0m 2.58 0.672 v 1.368 l 0.7080002 0.7680001 l 1.5359998 -2.46 c 0.22800016 -0.384 0.53999996 -0.468 0.96000004 -0.468 c 0.44400024 0 0.888 0.492 0.5640001 1.008 l -1.9559999 3.108 l 1.5359998 1.6439998 c 0.48000002 0.5160003 0.04799986 1.0800004 -0.5279999 1.0800004 c -0.27600002 0 -0.5279999 -0.10800028 -0.7680001 -0.34800005 l -2.052 -2.184 v 3.9 c 0 0.5279999 -0.26399994 0.7919998 -0.79199994 0.7919998 c -0.53999996 0 -0.80399996 -0.26399994 -0.80399996 -0.7919998 v -7.4160004 c 0 -0.528 0.264 -0.792 0.80399996 -0.792 c 0.528 0 0.79199994 0.264 0.79199994 0.792 Z "/></symbol><symbol id="g7B6620F95266197EF59BBBCE993D1600" overflow="visible"><path d="M 0 0m 5.988 1.464 h -1.2839999 v 3.6000001 c 0 0.86399984 -0.42000008 1.296 -1.296 1.296 h -1.5239999 c -0.4920001 0 -0.75600004 -0.25199986 -0.75600004 -0.7319999 c 0 -0.48000002 0.26399994 -0.73200035 0.75600004 -0.73200035 h 0.6359999 c 0.39600015 0 0.60000014 -0.19199991 0.60000014 -0.612 v -2.82 h -1.5120001 c -0.48000002 0 -0.72 -0.25199997 -0.72 -0.732 c 0 -0.48 0.25199997 -0.732 0.732 -0.732 h 4.356 c 0.48000002 0 0.73200035 0.252 0.73200035 0.732 c 0 0.48000002 -0.25200033 0.732 -0.72000027 0.732 Z m -2.1479998 5.988 c 0.6240001 0 1.0079999 0.33599997 1.0079999 0.8759999 c 0 0.53999996 -0.38399982 0.88799953 -1.0079999 0.88799953 c -0.6240001 0 -1.0080001 -0.34799957 -1.0080001 -0.88799953 c 0 -0.53999996 0.38400006 -0.8759999 1.0080001 -0.8759999 Z "/></symbol><symbol id="gC0CBC844C9898F4CDDE48249BC2DBE44" overflow="visible"><path d="M 0 0m 2.448 0.672 v 3.108 c 0 0.7320001 0.51600003 1.4519999 1.2840002 1.4519999 c 0.7320001 0 1.0199997 -0.64799976 1.0199997 -1.2599998 v -3.3000002 c 0 -0.528 0.26400042 -0.792 0.7920003 -0.792 c 0.53999996 0 0.7919998 0.264 0.7919998 0.792 v 3.6360002 c 0 1.3800001 -0.85199976 2.4120002 -2.328 2.4120002 c -0.8039999 0 -1.356 -0.48000002 -1.6079998 -1.296 v 0.5159998 c 0 0.5279999 -0.31200004 0.7800002 -0.79200006 0.7800002 c -0.49199998 0 -0.744 -0.25200033 -0.744 -0.7800002 v -5.268 c 0 -0.528 0.25200003 -0.792 0.792 -0.792 c 0.528 0 0.79199994 0.264 0.79199994 0.792 Z "/></symbol><symbol id="g482C4740ACAB0B6489A1C884E2A44C67" overflow="visible"><path d="M 0 0m 5.592 -0.120000005 c 0.53999996 0 0.7800002 0.252 0.7800002 0.78000003 v 7.4280005 c 0 0.5279999 -0.25200033 0.7919998 -0.7920003 0.7919998 c -0.53999996 0 -0.7919998 -0.26399994 -0.7919998 -0.7919998 v -2.5920005 c -0.13199997 0.75600004 -0.75600004 1.2240005 -1.5600002 1.2240005 c -2.076 0 -2.5679998 -1.8600001 -2.5679998 -3.4920003 c 0 -1.8599999 0.468 -3.348 2.292 -3.348 c 1.092 0 1.5840001 0.624 1.836 1.392 v -0.6119999 c 0 -0.528 0.27600002 -0.78000003 0.8039999 -0.78000003 Z m -2.1959999 1.464 c -0.46800017 0 -0.7680001 0.24000001 -0.924 0.6 c -0.16800022 0.3599999 -0.21600008 0.82800007 -0.21600008 1.296 c 0 0.924 0.1559999 2.016 1.2479999 2.016 c 0.7679999 0 1.2840002 -0.816 1.2840002 -1.644 v -0.7319999 c 0 -0.9000001 -0.6240001 -1.5360001 -1.392 -1.5360001 Z "/></symbol><symbol id="g1ECA0DAA0671E2D0E1499D963BA32914" overflow="visible"><path d="M 0 0m 0.768 8.2560005 l 2.0760002 -7.8000007 c 0.10800004 -0.384 0.3599999 -0.576 0.75600004 -0.576 c 0.41999984 0 0.648 0.192 0.7559998 0.576 l 2.0760002 7.8000007 c 0.08400011 0.3239994 0.012000084 0.6239996 -0.45600033 0.6239996 c -0.32399988 0 -0.53999996 -0.14400005 -0.6239996 -0.42000008 l -1.5720003 -6.24 c -0.095999956 -0.37199998 -0.26399994 -0.37199998 -0.3599999 0 l -1.572 6.24 c -0.08399999 0.27600002 -0.30000007 0.42000008 -0.6240001 0.42000008 c -0.468 0 -0.53999996 -0.3000002 -0.45599997 -0.6239996 Z "/></symbol><symbol id="g1C0603F55E0CDC36B5974D04F87A2F60" overflow="visible"><path d="M 0 0m 5.508 1.584 c -0.13199997 0 -0.17999983 -0.036000013 -0.3119998 -0.14399993 c -0.24000025 -0.19200003 -0.63600016 -0.48000002 -1.356 -0.48000002 c -1.0200002 0 -1.7280002 0.6359999 -1.8600001 1.9200001 h 3.6360002 c 0.33599997 0 0.56399965 0.27600002 0.56399965 0.5639999 c 0 1.8840001 -0.5999999 3.2760003 -2.5199997 3.2760003 c -2.052 0 -2.7840002 -1.6320004 -2.7840002 -3.4560003 c 0 -2.076 1.092 -3.3839998 2.9520001 -3.3839998 c 0.8039999 0 1.44 0.24000001 1.9559999 0.72 c 0.19199991 0.19199997 0.25200033 0.31199998 0.25200033 0.45599997 c 0 0.27600002 -0.22800016 0.528 -0.52800035 0.528 Z m -0.5999999 2.256 h -2.928 c 0.13199997 1.0559998 0.684 1.7999997 1.6800001 1.7999997 c 0.89999986 0 1.4399998 -0.7319999 1.4399998 -1.4039998 c 0 -0.33599997 -0.1079998 -0.3959999 -0.19199991 -0.3959999 Z "/></symbol><symbol id="gCC91E1A8A6ED88563541915B44C8EADE" overflow="visible"><path d="M 0 0m 0.96000004 3.288 c 0 -2.3400002 1.2360001 -3.408 3 -3.408 c 0.7080002 0 1.4520001 0.060000002 1.8720002 0.576 c 0.32399988 0.38400003 0.27600002 0.67200005 0.083999634 0.8640001 c -0.27600002 0.22799993 -0.57599974 0.16799998 -0.76799965 -0.024000049 c -0.24000025 -0.24000001 -0.74400043 -0.33599997 -1.1640003 -0.33599997 c -1.092 0 -1.944 0.816 -1.944 2.388 c 0 1.5359998 0.80400014 2.2919998 1.9560001 2.2919998 c 0.70799994 0 1.128 -0.26399994 1.3079998 -0.53999996 c 0.14400005 -0.23999977 0.42000008 -0.2999997 0.7080002 -0.119999886 c 0.27600002 0.15600014 0.34800005 0.43200016 0.119999886 0.8039999 c -0.2880001 0.48000002 -0.9959998 0.93600035 -2.208 0.93600035 c -1.596 0 -2.964 -0.9720001 -2.964 -3.4320002 Z "/></symbol><symbol id="gC47562FCA477E7FFED3EBA71BAB700D0" overflow="visible"><path d="M 0 0m 1.5600001 3.096 l 3.7319999 -1.872 c 0.5880003 -0.29999995 0.888 -0.08399999 0.888 0.48000002 c 0 0.32400012 -0.1079998 0.48000002 -0.2999997 0.576 l -3.048 1.464 c -0.22799993 0.10800004 -0.22799993 0.32399988 0 0.43200016 l 3.048 1.5 c 0.19199991 0.09599972 0.2999997 0.25199986 0.2999997 0.57599974 c 0 0.5640001 -0.2999997 0.74400043 -0.888 0.44400024 l -3.7319999 -1.8720002 c -0.3720001 -0.17999983 -0.5400001 -0.44399977 -0.5400001 -0.86399984 c 0 -0.42000008 0.16799998 -0.684 0.5400001 -0.8640001 Z "/></symbol><symbol id="gC8AF8BE6C7B5404EB557E2969EDF5B07" overflow="visible"><path d="M 0 0m 6.144 1.08 h -1.704 v 4.32 c 0 0.65999985 -0.3000002 0.96000004 -0.96000004 0.96000004 h -1.692 c -0.324 0 -0.528 -0.21600008 -0.528 -0.53999996 c 0 -0.32400036 0.204 -0.53999996 0.528 -0.53999996 h 1.0920001 c 0.32399988 0 0.48000002 -0.15600014 0.48000002 -0.48000002 v -3.7200003 h -1.8240001 c -0.324 0 -0.51600003 -0.21600002 -0.51600003 -0.54 c 0 -0.324 0.19200003 -0.54 0.51600003 -0.54 h 4.608 c 0.32399988 0 0.5159998 0.216 0.5159998 0.54 c 0 0.324 -0.19199991 0.54 -0.5159998 0.54 Z m -2.304 6.468 c 0.5279999 0 0.85199976 0.2880001 0.85199976 0.75600004 c 0 0.4800005 -0.32399988 0.77999973 -0.85199976 0.77999973 c -0.5280001 0 -0.85200024 -0.29999924 -0.85200024 -0.77999973 c 0 -0.46799994 0.32400012 -0.75600004 0.85200024 -0.75600004 Z "/></symbol><symbol id="gAAB383DEC4298D1ADA6E60A07450B4E1" overflow="visible"><path d="M 0 0m 1.212 0.252 c 0.53999996 -0.24000001 1.3679999 -0.372 2.052 -0.372 c 1.9200001 0 2.9760003 1.0320001 2.9760003 2.5679998 c 0 1.2120001 -0.5160003 2.184 -1.7280002 2.2800002 c 0.9239998 0.15599966 1.3319998 1.0439997 1.3319998 1.9679999 c 0 1.632 -1.3799996 2.184 -2.784 2.184 c -0.67199993 0 -1.3319999 -0.119999886 -1.6559999 -0.34799957 c -0.30000007 -0.20400047 -0.37199998 -0.51600075 -0.24000001 -0.7560005 c 0.14399993 -0.2880001 0.45599997 -0.3959999 0.696 -0.26399994 c 0.3720001 0.204 0.7440001 0.2880001 1.1880001 0.2880001 c 0.7679999 0 1.7159998 -0.25200033 1.7159998 -1.2120004 c 0 -1.152 -1.332 -1.4639997 -2.1599998 -1.4639997 c -0.48000002 0 -0.684 -0.15600014 -0.684 -0.5279999 c 0 -0.42000008 0.25199986 -0.5880003 0.53999996 -0.55200005 c 1.02 0.059999943 2.6999998 -0.08400011 2.6999998 -1.332 c 0 -1.1640002 -0.74399996 -1.7520001 -1.8959999 -1.7520001 c -0.51600003 0 -1.1039999 0.13199997 -1.5359999 0.31199992 c -0.42000008 0.18000007 -0.696 0.024000049 -0.828 -0.26399994 c -0.14400005 -0.324 -0.012000024 -0.624 0.31199998 -0.75600004 Z "/></symbol><symbol id="gB6FA5ACF57625D80E629EDB5C59C62BA" overflow="visible"><path d="M 0 0m 1.632 0 h 4.2720003 c 0.37199974 0 0.53999996 0.168 0.53999996 0.54 c 0 0.37199998 -0.16800022 0.54 -0.53999996 0.54 h -3.0840003 c -0.27600002 0 -0.28799987 0.13199997 -0.204 0.21599996 l 2.1240003 2.256 c 0.8039999 0.86399984 1.4759998 1.8959999 1.4759998 2.8920002 c 0 1.9200001 -1.2480001 2.4359999 -2.7480001 2.4359999 c -0.91199994 0 -1.512 -0.13199997 -2.0279999 -0.5039997 c -0.24000001 -0.1800003 -0.34800005 -0.4800005 -0.204 -0.73200035 c 0.1559999 -0.27600002 0.46799994 -0.43200016 0.7559999 -0.25199986 c 0.39600003 0.23999977 0.804 0.408 1.4399999 0.408 c 0.9600003 0 1.7040002 -0.37200022 1.7040002 -1.4879999 c 0 -0.8040004 -0.7920003 -1.6680002 -1.3080001 -2.2080002 l -2.664 -2.7600002 c -0.18 -0.17999995 -0.25200003 -0.39599997 -0.25200003 -0.648 c 0 -0.468 0.25200003 -0.696 0.71999997 -0.696 Z "/></symbol><symbol id="gAFE712DCEB0293A399653473EF14DA83" overflow="visible"><path d="M 0 0m 5.64 3.096 c 0.37200022 0.18000007 0.53999996 0.444 0.53999996 0.8640001 c 0 0.42000008 -0.16799974 0.684 -0.53999996 0.86399984 l -3.7319999 1.8720002 c -0.58799994 0.3000002 -0.888 0.119999886 -0.888 -0.44400024 c 0 -0.32399988 0.10800004 -0.48000002 0.30000007 -0.57599974 l 3.0479999 -1.5 c 0.22800016 -0.10800028 0.22800016 -0.32400012 0 -0.43200016 l -3.0479999 -1.464 c -0.19200003 -0.095999956 -0.30000007 -0.25199986 -0.30000007 -0.576 c 0 -0.564 0.30000007 -0.78 0.888 -0.48000002 Z "/></symbol><symbol id="g5B1C83A598635FF0B92DF3D01B941276" overflow="visible"><path d="M 0 0m 3.6000001 0.84000003 c 0.37199998 0 0.5399997 0.16799998 0.5399997 0.53999996 v 1.6439999 l 1.428 -0.82799983 c 0.19200039 -0.10800004 0.37200022 -0.13199997 0.5160003 -0.036000013 c 0.1079998 0.08399987 0.21600008 0.204 0.27600002 0.3599999 c 0.09599972 0.27600002 0.012000084 0.4560001 -0.25199986 0.612 l -1.4280005 0.82800007 l 1.4280005 0.82800007 c 0.26399994 0.15600014 0.34799957 0.33599997 0.25199986 0.6240001 c -0.059999943 0.14400005 -0.15600014 0.26399994 -0.27600002 0.34800005 c -0.14400005 0.09599972 -0.32399988 0.07200003 -0.5160003 -0.03600025 l -1.428 -0.82800007 v 1.644 c 0 0.37200022 -0.16799974 0.53999996 -0.5399997 0.53999996 c -0.37200022 0 -0.5400002 -0.16799974 -0.5400002 -0.53999996 v -1.644 l -1.428 0.82800007 c -0.19199991 0.10800028 -0.37199998 0.13199997 -0.50399995 0.03600025 c -0.13200003 -0.08400011 -0.22799999 -0.204 -0.27600002 -0.34800005 c -0.10799998 -0.2880001 -0.023999989 -0.46799994 0.24000001 -0.6240001 l 1.428 -0.82800007 l -1.428 -0.82800007 c -0.264 -0.1559999 -0.348 -0.33599997 -0.24000001 -0.612 c 0.048000038 -0.1559999 0.15600002 -0.27600002 0.27600002 -0.3599999 c 0.13199997 -0.095999956 0.31200004 -0.07200003 0.50399995 0.036000013 l 1.428 0.82799983 v -1.6439999 c 0 -0.37199998 0.16799998 -0.53999996 0.5400002 -0.53999996 Z "/></symbol><symbol id="g50702B06743F7C7E70018FE56E0F57A0" overflow="visible"><path d="M 0 0m 1.416 7.416 c -0.17999995 -0.65999985 0.07200003 -0.8759999 0.49199998 -0.8759999 c 0.34800005 0 0.53999996 0.15600014 0.6359999 0.48000002 c 0.15600014 0.48000002 0.5640001 0.7800002 1.2720001 0.7800002 c 0.816 0 1.3080001 -0.3840003 1.3080001 -1.1880002 c 0 -0.8039999 -0.48000002 -1.0679998 -1.152 -1.5120001 c -0.5400002 -0.37199974 -0.9000001 -0.9119997 -0.96000004 -1.5239999 c -0.048000097 -0.49199986 0.13199997 -0.69599986 0.55200005 -0.69599986 c 0.37199998 0 0.53999996 0.16799998 0.6240001 0.53999996 c 0.083999634 0.49199986 0.34800005 0.816 0.76799965 1.1160002 c 0.5760002 0.44399977 1.2480001 0.97199965 1.2480001 2.0879998 c 0 1.6200004 -0.9120002 2.256 -2.388 2.256 c -1.2119999 0 -2.112 -0.42000008 -2.4 -1.4640002 Z m 1.272 -6.612 c 0 -0.51600003 0.39600015 -0.924 0.9120002 -0.924 c 0.51600003 0 0.924 0.408 0.924 0.924 c 0 0.51600003 -0.408 0.91199994 -0.924 0.91199994 c -0.51600003 0 -0.9120002 -0.3959999 -0.9120002 -0.91199994 Z "/></symbol><symbol id="gA8A4C414F26C81019DB72D7A847B9566" overflow="visible"><path d="M 0 0m 1.44 3.42 h 5.76 v 1.0799999 h -5.76 c -0.3720001 0 -0.54 -0.16799974 -0.54 -0.53999996 c 0 -0.37199998 0.16799992 -0.53999996 0.54 -0.53999996 Z "/></symbol><symbol id="g2CE61D08B3B16223F5FF9BE9C0D9D983" overflow="visible"><path d="M 0 0m 3.492 5.64 c 0.10800004 -0.1079998 0.10800004 -0.22799969 0 -0.33599997 l -0.63600016 -0.6359997 c -0.10800004 -0.10800028 -0.25199986 -0.16800022 -0.408 -0.16800022 h -2.448 v -1.0799999 h 2.448 c 0.15600014 0 0.29999995 -0.059999943 0.408 -0.16799998 l 0.63600016 -0.63600016 c 0.10800004 -0.1079998 0.10800004 -0.22799993 0 -0.33599997 l -1.1040001 -1.104 c -0.2520001 -0.25199997 -0.2520001 -0.516 0 -0.768 c 0.2520001 -0.25199997 0.51600003 -0.25199997 0.7680001 0 l 2.868 2.868 c 0.46799994 0.46799994 0.46799994 0.9000001 0 1.368 l -2.868 2.868 c -0.2520001 0.25199986 -0.51600003 0.25199986 -0.7680001 0 c -0.2520001 -0.25199986 -0.2520001 -0.5159998 0 -0.7680001 Z m 1.2719998 -2.0879998 c -0.22799969 -0.22799993 -0.44399977 -0.22799993 -0.67199993 0 l -0.07200003 0.07200003 c -0.24000001 0.24000001 -0.24000001 0.43200016 0 0.67199993 l 0.07200003 0.07200003 c 0.22800016 0.22800016 0.44400024 0.22800016 0.67199993 0 l 0.07200003 -0.07200003 c 0.22800016 -0.22800016 0.22800016 -0.444 0 -0.67199993 Z "/></symbol><symbol id="g3244313C875A5BE899BB0C623D1FDD26" overflow="visible"><path d="M 0 0m 3.6000001 0.96000004 c -0.7680001 0 -1.2120001 0.576 -1.4520001 1.296 c -0.25199997 0.70799994 -0.31200004 1.56 -0.31200004 2.1360002 c 0 0.56399965 0.060000062 1.4039998 0.31200004 2.124 c 0.24000001 0.7079997 0.684 1.2839999 1.4520001 1.2839999 c 1.536 0 1.7639997 -2.2800002 1.7639997 -3.3960004 c 0 -1.1519997 -0.22799969 -3.4439998 -1.7639997 -3.4439998 Z m 0 -1.08 c 1.2 0 1.8959997 0.648 2.3159997 1.548 c 0.42000008 0.9000001 0.52800035 2.028 0.52800035 2.988 c 0 1.8840003 -0.44400024 4.464 -2.844 4.464 c -2.436 0 -2.844 -2.6160002 -2.844 -4.4760003 c 0 -1.9199998 0.44400007 -4.5239997 2.844 -4.5239997 Z "/></symbol><symbol id="gD3F5F139C6BB703293CDB8A96E3BCC95" overflow="visible"><path d="M 0 0m 1.62 6.7200003 c -0.37199998 0 -0.53999996 -0.1800003 -0.53999996 -0.55200005 v -7.908 c 0 -0.37199998 0.16799998 -0.53999996 0.53999996 -0.53999996 c 0.37199998 0 0.5400001 0.16799998 0.5400001 0.53999996 v 2.868 c 0.14399981 -0.72 0.7679999 -1.248 1.644 -1.248 c 2.016 0 2.436 1.9200001 2.436 3.6480002 c 0 1.4999998 -0.36000013 3.1920002 -2.3160002 3.1920002 c -0.924 0 -1.4760001 -0.5160003 -1.7639999 -1.3200002 v 0.7680001 c 0 0.37199974 -0.1680001 0.55200005 -0.5400001 0.55200005 Z m 2.196 -1.0800004 c 1.0560002 0 1.3439999 -0.9359999 1.3439999 -2.1839998 c 0 -1.2120001 -0.15599966 -2.496 -1.5359998 -2.496 c -0.8640001 0 -1.464 1.0799999 -1.464 1.848 v 1.3200002 c 0 0.76799965 0.79200006 1.5119996 1.6559999 1.5119996 Z "/></symbol><symbol id="g9A70F9E8AB24B7ED49B8921BE0068994" overflow="visible"><path d="M 0 0m 5.748 6.36 h -2.2080002 v 1.56 c 0 0.37199974 -0.16799998 0.53999996 -0.53999996 0.53999996 c -0.37199998 0 -0.53999996 -0.16800022 -0.53999996 -0.53999996 v -1.56 h -1.404 c -0.324 0 -0.49199998 -0.21600008 -0.49199998 -0.53999996 c 0 -0.32400036 0.16799998 -0.53999996 0.49199998 -0.53999996 h 1.404 v -2.7960002 c 0 -1.788 0.7679999 -2.604 1.9200001 -2.604 c 0.67199993 0 1.224 0.048000008 1.704 0.3 c 0.2999997 0.15599999 0.38399982 0.43199998 0.19199991 0.756 c -0.17999983 0.30000007 -0.42000008 0.408 -0.74399996 0.22800004 c -0.37200022 -0.18 -0.64800024 -0.204 -0.9720001 -0.204 c -0.67199993 0 -1.02 0.576 -1.02 1.7279999 v 2.5920002 h 2.2080002 c 0.32399988 0 0.4920001 0.2159996 0.4920001 0.53999996 c 0 0.32399988 -0.16800022 0.53999996 -0.4920001 0.53999996 Z "/></symbol><symbol id="g760941EEDB2D189C892DD4261B12877C" overflow="visible"><path d="M 0 0m 3.6000001 -0.120000005 c 1.8599999 0 2.7 1.452 2.7 3.4320002 c 0 1.9799998 -0.816 3.4080002 -2.7 3.4080002 c -1.8600001 0 -2.7 -1.4280005 -2.7 -3.4080002 c 0 -1.98 0.84 -3.4320002 2.7 -3.4320002 Z m 0 1.08 c -1.1160002 0 -1.6200001 0.96000004 -1.6200001 2.34 c 0 1.3799999 0.46799994 2.34 1.6200001 2.34 c 1.1519997 0 1.6200001 -0.94799995 1.6200001 -2.3279998 c 0 -1.38 -0.5040002 -2.352 -1.6200001 -2.352 Z "/></symbol><symbol id="gFDE8CC9C4ADCC487EEB8ED9A31BE623F" overflow="visible"><path d="M 0 0m 2.22 0.42000002 v 3.372 c 0 0.7679999 0.5999999 1.9080002 1.464 1.9080002 c 0.86399984 0 1.296 -0.74400043 1.296 -1.572 v -3.7080002 c 0 -0.372 0.16800022 -0.54 0.53999996 -0.54 c 0.37200022 0 0.53999996 0.16800001 0.53999996 0.54 v 4.02 c 0 1.3800001 -0.9119997 2.2800002 -2.1959999 2.2800002 c -0.87600017 0 -1.4160001 -0.48000002 -1.644 -1.2480001 v 0.7079997 c 0 0.37200022 -0.16799998 0.54000044 -0.53999996 0.54000044 c -0.3720001 0 -0.5400001 -0.16800022 -0.5400001 -0.54000044 v -5.7599998 c 0 -0.372 0.16799998 -0.54 0.5400001 -0.54 c 0.37199998 0 0.53999996 0.16800001 0.53999996 0.54 Z "/></symbol><symbol id="g6A400A31CCE7563932524068757C182B" overflow="visible"><path d="M 0 0m 2.184 4.92 v 2.2800002 c 0 0.32399988 0.1559999 0.48000002 0.48000002 0.48000002 h 1.26 c 0.8640001 0 1.5600002 -0.45600033 1.5600002 -1.3800001 c 0 -0.44400024 -0.1800003 -0.8040004 -0.45600033 -1.0320001 c -0.28799963 -0.22800016 -0.67199993 -0.34800005 -1.1039999 -0.34800005 Z m 0 -1.0799999 h 1.4160001 l 1.7520001 -3.6000001 c 0.13199997 -0.24000001 0.3119998 -0.36 0.64799976 -0.36 c 0.46799994 0 0.612 0.22800002 0.37200022 0.708 l -1.644 3.348 c 1.092 0.2520001 1.8719997 1.0800002 1.8719997 2.364 c 0 1.572 -1.1759996 2.46 -2.6759999 2.46 h -1.8599999 c -0.6600001 0 -0.96000016 -0.3000002 -0.96000016 -0.96000004 v -7.38 c 0 -0.372 0.16799998 -0.54 0.5400001 -0.54 c 0.37199998 0 0.53999996 0.16800001 0.53999996 0.54 Z "/></symbol><symbol id="g5E193FFD3F2EA8C2031A9318F76C5BDC" overflow="visible"><path d="M 0 0m 3.612 -0.120000005 c 1.4040003 0 2.6280003 0.504 2.6280003 1.908 c 0 1.5360001 -1.428 1.932 -2.64 2.184 c -0.51600003 0.09599972 -1.2960002 0.27600002 -1.2960002 0.9119997 c 0 0.54000044 0.58800006 0.75600004 1.2960002 0.75600004 c 0.7320001 0 1.1159999 -0.25199986 1.4999998 -0.6359997 c 0.1800003 -0.1800003 0.3840003 -0.21600008 0.52800035 -0.21600008 c 0.32399988 0 0.48000002 0.22800016 0.48000002 0.48000002 c 0 0.1079998 -0.03600025 0.25199986 -0.14400005 0.43200016 c -0.42000008 0.67199993 -1.3200002 1.02 -2.364 1.02 c -1.2840002 0 -2.3760002 -0.5040002 -2.3760002 -1.848 c 0 -1.4400003 1.2840002 -1.7640002 2.3760002 -1.9920001 c 0.5399997 -0.096000195 1.5599997 -0.37199998 1.5599997 -1.08 c 0 -0.7320001 -1.02 -0.84000003 -1.5599997 -0.84000003 c -0.7680001 0 -1.1760001 0.324 -1.6920002 0.768 c -0.17999995 0.15600002 -0.29999995 0.21599996 -0.48000002 0.21599996 c -0.22799993 0 -0.45599997 -0.10800004 -0.45599997 -0.45599997 c 0 -0.22800004 0.08399999 -0.45599997 0.24000001 -0.63600004 c 0.63600004 -0.732 1.4399999 -0.972 2.4 -0.972 Z "/></symbol><symbol id="gAD3129A20F8FA6DB018D3F4D59B0022B" overflow="visible"><path d="M 0 0m 4.98 6.18 v -3.3719997 c 0 -0.7680001 -0.5999999 -1.908 -1.464 -1.908 c -0.8640001 0 -1.296 0.744 -1.296 1.572 v 3.7079997 c 0 0.37200022 -0.16799998 0.54000044 -0.53999996 0.54000044 c -0.3720001 0 -0.5400001 -0.16800022 -0.5400001 -0.54000044 v -4.0199995 c 0 -1.3800001 0.91200006 -2.2800002 2.196 -2.2800002 c 0.8759999 0 1.4159999 0.48000002 1.644 1.248 v -0.708 c 0 -0.372 0.16800022 -0.54 0.53999996 -0.54 c 0.37200022 0 0.53999996 0.16800001 0.53999996 0.54 v 5.7599998 c 0 0.37200022 -0.16799974 0.54000044 -0.53999996 0.54000044 c -0.37199974 0 -0.53999996 -0.16800022 -0.53999996 -0.54000044 Z "/></symbol><symbol id="g59B4F3AD6094CFE25F588BE532F9E6C3" overflow="visible"><path d="M 0 0m 3.708 2.688 l 0.012000084 5.1120005 c 0 0.65999985 -0.29999995 0.96000004 -0.96000004 0.96000004 h -1.488 c -0.32399994 0 -0.49199992 -0.16800022 -0.49199992 -0.49200058 c 0 -0.3239994 0.16799998 -0.49199963 0.49199992 -0.49199963 h 0.88800013 c 0.32399988 0 0.48000002 -0.15600014 0.48000002 -0.48000002 l -0.012000084 -4.8120003 c 0 -1.788 0.7680001 -2.604 1.9199998 -2.604 c 0.6720004 0 1.224 0.048000008 1.704 0.3 c 0.3000002 0.15599999 0.3840003 0.43199998 0.19200039 0.756 c -0.1800003 0.30000007 -0.42000008 0.408 -0.74399996 0.22800004 c -0.37200022 -0.18 -0.64800024 -0.204 -0.9720001 -0.204 c -0.67199993 0 -1.0200002 0.576 -1.0200002 1.7279999 Z "/></symbol><symbol id="g68E2836477E2C5DF8837EFFAB313F2DB" overflow="visible"><path d="M 0 0m 4.9440002 7.02 c 0.13199997 -0.32399988 0.28799963 -0.45599985 0.612 -0.45599985 c 0.38399982 0 0.56399965 0.204 0.48000002 0.53999996 c -0.22800016 1.0559998 -1.1520004 1.776 -2.436 1.776 c -1.5000002 0 -2.52 -0.9359999 -2.52 -2.3400002 c 0 -1.6919999 1.14 -2.1360002 2.52 -2.52 c 0.924 -0.25199986 1.6559999 -0.48000002 1.6559999 -1.632 c 0 -0.924 -0.63600016 -1.428 -1.6559999 -1.428 c -0.80400014 0 -1.3080001 0.324 -1.536 0.98399997 c -0.13200009 0.34800005 -0.3720001 0.4560001 -0.6960001 0.4560001 c -0.33599997 0 -0.504 -0.24000001 -0.45600003 -0.5400001 c 0.22799999 -1.248 1.2480001 -1.98 2.6880002 -1.98 c 1.6919997 0 2.7359998 0.972 2.7359998 2.508 c 0 1.8839998 -1.1999998 2.328 -2.7359998 2.7480001 c -0.80400014 0.22799969 -1.44 0.43199968 -1.44 1.428 c 0 0.684 0.53999996 1.2360001 1.44 1.2360001 c 0.61199975 0 1.1159999 -0.204 1.3440001 -0.7800002 Z "/></symbol><symbol id="g365DAB436524F94C337FBE754E79D926" overflow="visible"><path d="M 0 0m 1.86 -0.120000005 c 0.3720001 0 0.5400001 0.16800001 0.5400001 0.54 v 3.7799997 c 0 0.9960003 1.0079999 1.44 1.836 1.44 c 0.86399984 0 1.0440001 -0.56399965 1.0440001 -1.296 v -0.14400005 c 0 -0.37199974 0.16799974 -0.5399997 0.53999996 -0.5399997 c 0.37199974 0 0.53999996 0.16799998 0.53999996 0.5399997 v 0.14400005 c 0 1.2840004 -0.31200027 2.3760004 -1.7520003 2.3760004 c -0.9239998 0 -1.9559999 -0.48000002 -2.2079997 -1.2480001 v 0.7079997 c 0 0.37200022 -0.16799998 0.54000044 -0.5400001 0.54000044 c -0.37199998 0 -0.53999996 -0.16800022 -0.53999996 -0.54000044 v -5.7599998 c 0 -0.372 0.16799998 -0.54 0.53999996 -0.54 Z "/></symbol><symbol id="gC026F0A57B91A6953A958F497FE330F" overflow="visible"><path d="M 0 0m 5.04 1.44 v -1.44 c 0 -1.38 -0.816 -1.8000001 -1.392 -1.8000001 c -0.67199993 0 -1.224 0.39600003 -1.572 0.81600004 c -0.10799992 0.144 -0.22799993 0.21600002 -0.408 0.21600002 c -0.26399994 0 -0.45599997 -0.21600002 -0.528 -0.45599997 c -0.07200003 -0.26400006 -0.047999978 -0.444 0.13199997 -0.648 c 0.444 -0.53999996 1.116 -1.0080001 2.2319999 -1.0080001 c 1.4400003 0 2.616 0.8640001 2.616 2.88 v 6.18 c 0 0.37200022 -0.16799974 0.54000044 -0.53999996 0.54000044 c -0.37199974 0 -0.53999996 -0.16800022 -0.53999996 -0.54000044 v -0.7079997 c -0.22799969 0.7680001 -0.7680001 1.2480001 -1.6439998 1.2480001 c -2.0160003 0 -2.436 -1.848 -2.436 -3.3480003 c 0 -0.7319999 0.10799992 -1.56 0.444 -2.184 c 0.33599997 -0.62399995 0.91199994 -1.068 1.872 -1.068 c 0.82800007 0 1.4759998 0.36 1.7639999 1.32 Z m -1.6559999 -0.30000007 c -1.152 0 -1.3440001 1.284 -1.3440001 2.304 c 0 0.4920001 0.048000097 1.056 0.26399994 1.5000002 c 0.20400023 0.43199968 0.58800006 0.75600004 1.2720001 0.75600004 c 0.8640001 0 1.464 -1.1400003 1.464 -1.9080002 v -1.0799999 c 0 -0.7680001 -0.7919998 -1.5720001 -1.6559999 -1.5720001 Z "/></symbol><symbol id="g863AE121245C85AE4043954A948039E1" overflow="visible"><path d="M 0 0m 1.8000001 -2.676 c 2.304 0.51600003 2.868 1.6680001 2.868 2.9520001 c 0 0.732 -0.27600002 1.584 -1.1040001 1.584 c -0.67200017 0 -1.0440001 -0.41999996 -1.0440001 -1.056 c 0 -0.51600003 0.32400012 -0.81600004 0.816 -0.912 c 0.34800005 -0.084 0.444 -0.204 0.36000013 -0.48 c -0.18000007 -0.54 -0.96000004 -1.164 -2.172 -1.464 c -0.18000007 -0.04799986 -0.2520001 -0.26399994 -0.16799998 -0.444 c 0.08399999 -0.19199991 0.25199997 -0.22799993 0.444 -0.18000007 Z "/></symbol><symbol id="gADD6739322829016ABEE16F0D5FC60A5" overflow="visible"><path d="M 0 0m 2.28 5.124 v 2.0760002 c 0 0.32399988 0.15600014 0.48000002 0.48000002 0.48000002 h 2.9880002 c 0.32399988 0 0.4920001 0.2159996 0.4920001 0.53999996 c 0 0.3239994 -0.16800022 0.53999996 -0.4920001 0.53999996 h -3.588 c -0.6600001 0 -0.96000004 -0.3000002 -0.96000004 -0.96000004 v -6.84 c 0 -0.66 0.29999995 -0.96000004 0.96000004 -0.96000004 h 3.588 c 0.32399988 0 0.4920001 0.216 0.4920001 0.54 c 0 0.324 -0.16800022 0.54 -0.4920001 0.54 h -2.9880002 c -0.32399988 0 -0.48000002 0.15600002 -0.48000002 0.48000002 v 2.4840002 h 3.0600002 c 0.32399988 0 0.53999996 0.21600008 0.53999996 0.53999996 c 0 0.32399988 -0.21600008 0.53999996 -0.53999996 0.53999996 Z "/></symbol></defs></svg>
+      </div>
+      <p><code class="font-semibold text-[#aa8bd5]"><code>Vec&lt;?></code></code> 就表示前文的 <code class="font-semibold text-[#aa8bd5]"><code>Vec</code></code>, 需要向其中提供一个参数, 当你看到这, 类型构造器的概念其实也已经了解差不多了<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="lei-xing-gou-zao-qi"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#lei-xing-gou-zao-qi">类型构造器</a></h1>
+      <p>虽然前面已经讲了, 但这里还是写点具体的 rust 代码吧?<br><br>如下代码中的 <code class="font-semibold text-[#aa8bd5]"><code>Trait::Type</code></code> 便如同前文的 <code class="font-semibold text-[#aa8bd5]"><code>not</code></code> 函数, 不过 <code class="font-semibold text-[#aa8bd5]"><code>not</code></code> 是参数接收一个值, 并返回一个值, 其参数是 type 为 <code class="font-semibold text-[#aa8bd5]"><code>bool</code></code> 的 value<br>而此时的 <code class="font-semibold text-[#aa8bd5]"><code>Trait::Type</code></code> 却是接收一个类型, 并返回一个新类型, 即参数是 kind 为 <code class="font-semibold text-[#aa8bd5]"><code>*</code></code> 的 type, 返回值是个新的 type<br>像这样接收 type, 以 type 作为参数并创建新的 type 的玩意儿, 我们将其称为 类型构造器<br><br>因此, <code class="font-semibold text-[#aa8bd5]"><code>Trait::Type</code></code> 的 kind 可以表示为 <code class="font-semibold text-[#aa8bd5]"><code>* -> *</code></code><br>(或者 <code class="font-semibold text-[#aa8bd5]"><code>type -> type</code></code>, 都表达了只在乎 kind, 就像是不管是 <code class="font-semibold text-[#aa8bd5]"><code>true</code></code> 还是 <code class="font-semibold text-[#aa8bd5]"><code>false</code></code>, 都可以用 <code class="font-semibold text-[#aa8bd5]"><code>bool</code></code> 来表示, 表达了只在乎 type)<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">trait Trait {
+    type Type&lt;T>;
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我们可以通过将类型作为 <code class="font-semibold text-[#aa8bd5]"><code>Type&lt;T></code></code> 中的泛型参数 <code class="font-semibold text-[#aa8bd5]"><code>T</code></code> 传入, 然后在 <code class="font-semibold text-[#aa8bd5]"><code>impl</code></code> 块里面指定新的类型, 比如如下我们指定了类型构造器是 <code class="font-semibold text-[#aa8bd5]"><code>X -> Option&lt;X></code></code><br>在使用时, 我们只需要给类型构造器传入一个类型, 比如 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code> 后就能得到 <code class="font-semibold text-[#aa8bd5]"><code>Option&lt;i32></code></code> 了<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">trait Trait {
+    type Type&lt;T>;
+}
+
+impl Trait for () {
+    type Type&lt;X> = Option&lt;X>;
+}
+
+fn main() {
+    let a = &lt;() as Trait>::Type::&lt;i32>::default();  // Option::&lt;i32>::default()
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p><em>GATs</em> 其实就是让 <em>关联类型</em> 允许成为 <em>类型构造器</em><br>之前这玩意也被叫作 <em>ACT(Associated-Type-Constructors, 关联类型构造器)</em>, 差不多的意思, 无须在意<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="gao-jie-lei-xing-hkt"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#gao-jie-lei-xing-hkt">高阶类型(HKT)</a></h1>
+      <p>你可能听到过许多次 <em>高阶类型(Higher-Kinded-Type, HKT)</em> 的名字, 其实这与 <em>高阶函数(Higner-Ordered-Function, HOF)</em> 是一个道理:<br><br></p>
+      <ul class="list-disc ml-5">
+        <li><em>高阶函数(HOF)</em>: 某种参数可以是 <em>函数与变量</em> 的 <em>函数</em><br></li>
+        <li><em>高阶类型(HKT)</em>: 某种参数可以是 <em>类型构造器与类型</em> 的 <em>类型构造器</em><br></li>
+      </ul>
+      <p><br>当然, 就像是 <em>HOF(高阶函数)</em> 不仅可以接收 <em>函数</em> 作为参数, 也可以如同 <em>普通的函数</em> 那样接收 <em>变量</em> 作为参数<br>HKT(高阶类型) 也一样, 不仅可以接收 类型构造器 作为参数, 也可以如同 普通的类型构造器 那样接收 类型 作为参数<br><br>继续类比进行理解, 对于 <em>高阶函数</em> 来讲, 什么 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>foreach</code></code> 之类的函数你肯定已经用过了, 这些函数都需要你手动传入闭包<br>换句话说, 这赋予了让用户选择怎么做的权利, 你传入 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code> 里面的闭包可以是让数组全部加 <code class="font-semibold text-[#aa8bd5]"><code>10</code></code>, 可以是全部变成 <code class="font-semibold text-[#aa8bd5]"><code>0</code></code><br><br><em>高阶类型(HKT)</em> 也是一样的道理, 比如我们在设计某个容器类型时:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// 一个包装容器的类型
+// 伪代码中的 `C[_]` 表示一个类型构造器
+struct Container&lt;C[_] {
+    data: C&lt;i32>
+    // ...
+    // ...
+}
+
+Container&lt;Vec>
+Container&lt;LinkedList></code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>你可以用 <code class="font-semibold text-[#aa8bd5]"><code>Container&lt;Vec></code></code> 或者 <code class="font-semibold text-[#aa8bd5]"><code>Container&lt;LinkedList></code></code> 让用户决定该以何种形式去存储数据<br>但很可惜的是, 前文也说过 rust 中并不存在 HKT, 仅仅只有 <code class="font-semibold text-[#aa8bd5]"><code>Vec&lt;i32></code></code>, <code class="font-semibold text-[#aa8bd5]"><code>LinkedList&lt;i32></code></code> 这些具体类型, 只能通过 GATs 去模拟<br>HKT 就是类似这样的类型, 只是它提供了 <em>根据传入的类型构造器(或者类型), 构造某个新类型</em> 的能力<br><br>再多举一点类似的例子, 比如下面这段伪代码, 来自于 <a class="underline underline-offset-5 font-medium" href="https://docs.rs/lending-iterator/latest/lending_iterator/">lending_iterator</a> 中对 HKT 的说明:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// ArrayKind 是一个类型构造器
+struct Container&lt;ArrayKind[_]> {
+    array_i32s: ArrayKind&lt;i32>,
+    array_strings: ArrayKind&lt;String>,
+}
+
+
+type StructOfVecs = Container&lt;Vec>;
+// Equals to
+struct StructOfVecs {
+    array_i32s: Vec&lt;i32>,
+    array_strings: Vec&lt;String>,
+}
+
+
+type StructOfVecDeques = Container&lt;LinkedList>;
+// Equals to
+struct StructOfVecDeques {
+    array_i32s: LinkedList&lt;i32>,
+    array_strings: LinkedList&lt;String>,
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我们甚至可以更加灵活一点, 通过临时构造一个类型, 来取代上面作为参数的 <code class="font-semibold text-[#aa8bd5]"><code>Vec</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>LinkedList</code></code>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// 假设 `HKT!` 是一个魔法宏, 人为临时地构造了一个 `类型构造器`, 如同向 `map` 函数传入闭包一样
+type StructOfPairs = StructOfArrays&lt; HKT!(T => [T; 2]) >;
+// Equals to
+struct StructOfPairs {
+    array_i32s: [i32; 2],
+    array_strings: [String; 2],
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>当然, rust 中并没有这种语法, 在 rust 中存在的是 <code class="font-semibold text-[#aa8bd5]"><code>Vec&lt;i32></code></code>, <code class="font-semibold text-[#aa8bd5]"><code>LinkedList&lt;i32></code></code> 这样的具体类型<br>但是, rust 中存在 GATs, 也就是上一节中介绍的那个 <em>泛型关联类型</em> 哩 :)<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="li-zi"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#li-zi">例子</a></h1>
+      <p>来点小例子吧, 随便瞎扯一些, 想到了啥就扯点啥<br></p>
+      <h2 class="flex items-center w-fit my-6" id="rong-qi-lei-xing"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#rong-qi-lei-xing">容器类型</a></h2>
+      <p>我将如何抽象某个容器类型放到第一个地方讲, 因为这部分比较经典与有趣 <span style="display: inline-block"><del>(其实是因为比较简单啦, 太难直接把读者劝退了咋办)</del></span><br>得益于 rust 中 GATs 的存在, 我们可以如上面的伪代码中那样抽象容器类型:<br><br>在 <code class="font-semibold text-[#aa8bd5]"><code>iterate</code></code> 方法中, 我们返回了集合迭代时的具体类型, 但因为不同集合类型的迭代器具体类型是不一样的, 所以我们需要进行抽象:<br><br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>Vec&lt;T></code></code> 对应的迭代器具体类型 <code class="font-semibold text-[#aa8bd5]"><code>std::slice::Iter&lt;'a, T></code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>LinkedList&lt;T></code></code> 对应的迭代器具体类型是 <code class="font-semibold text-[#aa8bd5]"><code>std::collections::linked_list::Iter&lt;'a, T></code></code></li>
+      </ul>
+      <p><br>因此我们可以通过 GATs 来表述, 无非就是多了个生命周期 (生命周期也是泛型的一种), 然后为各种集合类型实现该 trait:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// Vec
+impl&lt;T> Collection&lt;T> for Vec&lt;T> {
+    type Iter&lt;'iter> = std::slice::Iter&lt;'iter, T> 
+    where
+        T: 'iter;
+
+    fn empty() -> Self {
+        vec![]
+    }
+
+    fn add(&amp;mut self, value: T) {
+        self.push(value);
+    }
+
+    fn iterate(&amp;self) -> Self::Iter&lt;'_> {
+        self.iter()
+    }
+}
+
+// LinkedList
+impl&lt;T> Collection&lt;T> for LinkedList&lt;T> {
+    type Iter&lt;'iter> = std::collections::linked_list::Iter&lt;'iter, T>
+    where
+        T: 'iter;
+
+    fn empty() -> Self {
+        LinkedList::new()
+    }
+
+    fn add(&amp;mut self, value: T) {
+        self.push_back(value);
+    }
+
+    fn iterate(&amp;self) -> Self::Iter&lt;'_> {
+        self.iter()
+    }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>以 trait 为基调的实现比较符合 rust 常见的编码风格<br>你可以把你脑子里那些什么 <em>HKT</em>, <em>GATs</em> 等名词, <em>类型构造器</em>, <em>kind</em>, <em>type</em> 等概念全删掉, 然后仅简单将上述代码看作关联类型<br>(这也是语言特性的开发团队为了一致性与兼容性所深思熟虑过的事情捏)<br><br>然后我们可以拥有像这样的方法, 比如让元素是整数类型的集合转换为浮点数的集合:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn floatify&lt;Input, Output>(ints: &amp;Input) -> Output
+where 
+    Input: Collection&lt;i32>,
+    Output: Collection&lt;f32>
+{
+    let mut floats = Output::empty();
+    for &amp;i in ints.iterate() {
+        floats.add(i as f32);
+    }
+    floats
+}
+
+fn main() {
+    let v = vec![1, 2, 3];
+    let v: Vec&lt;_> = floatify(&amp;v);
+
+    let l = LinkedList::from_iter([4, 5, 6]);
+    let l: LinkedList&lt;_> = floatify(&amp;l);
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>同时需要注意类型推断, 这让迭代器被 <code class="font-semibold text-[#aa8bd5]"><code>collect</code></code> 成某个具体的集合类型时同理, 毕竟有许多实现了 <code class="font-semibold text-[#aa8bd5]"><code>Collection&lt;f32></code></code>, 编译器怎么知道是哪个呢?<br>我们希望不会改变集合的类型, 仅改变集合元素的类型, 但当故意手动添加不同集合的类型作为注解时, 能导致集合的类型改变:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let l = LinkedList::from_iter([4, 5, 6]);
+let l: Vec&lt;_> = floatify(&amp;l);</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这是因为 rust 通过我们提供的类型推导出了 <code class="font-semibold text-[#aa8bd5]"><code>Output</code></code> 类型, 而 <code class="font-semibold text-[#aa8bd5]"><code>Input</code></code> 的类型则是根据我们传入的参数, 已经固定推导出来了<br>有没有什么办法从类型的关系上, 让 rust 不必通过用户提供的类型进行推导, 而是直接从参数进行推导, 从而限制住用户这种太过自由的行为呢?<br><br>当然! 这里可以让编译器自动推导出 <code class="font-semibold text-[#aa8bd5]"><code>Input</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>Output</code></code> 是相同的集合类型(除了元素的类型不同) 这一我们想要的事实<br>其实就是加个关联类型成员, 再将其添加一个 trait-bound 即可:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">trait Collection&lt;T> {
+    type Output&lt;M>: Collection&lt;M>;
+    // ...
+}
+
+impl&lt;T> Collection&lt;T> for Vec&lt;T> {
+    type Output&lt;M> = Vec&lt;M>;
+    // ...
+}
+
+fn floatify&lt;Input>(ints: &amp;Input) -> Input::Output&lt;f32>
+where 
+    Input: Collection&lt;i32>,
+{
+    let mut floats = Input::Output::&lt;f32>::empty();
+    // ...
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我们不想使用用户提供的类型注解, 所以直接用跟参数一起的关联类型, 避免了集合的类型能从 <code class="font-semibold text-[#aa8bd5]"><code>Vec</code></code> 变成 <code class="font-semibold text-[#aa8bd5]"><code>LinkedList</code></code><br>值得注意的是, 有时候我们想要的是将选择的权力交给调用方, 也就是用户, 在下文中的 family-trait 部分中会提到<br></p>
+      <h2 class="flex items-center w-fit my-6" id="functor"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#functor">Functor</a></h2>
+      <p>(倘若你已经理解了先前的知识点, 这里理解起来应该也不算太难)<br><br>相信大家肯定用过 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code> 函数吧, 不管是 <code class="font-semibold text-[#aa8bd5]"><code>std::iter::Iterator</code></code> 这个 trait 里面的 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code>, 还是为 <code class="font-semibold text-[#aa8bd5]"><code>array</code></code> 类型单独实现的 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code>, 反正你肯定用过就对了<br>那么你有没有想过, 为什么 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code> 函数的实现就得分离开来呢? 能否有个统一的 trait, 比如 <code class="font-semibold text-[#aa8bd5]"><code>Mapable</code></code>, 能够抽象这样的行为, 统一规范所有的实现呢?<br><br>在各种各样以函数式编程为主的语言中, 就存在着这样一个概念, 不过它不叫 <code class="font-semibold text-[#aa8bd5]"><code>Mapable</code></code>, 而叫 <code class="font-semibold text-[#aa8bd5]"><code>Functor</code></code><br>让我们尝试利用 rust 中的 GATs 来实现这样一个抽象了 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code> 行为的 trait:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">trait Functor {
+    type Inner;      // Unwrapped/Unplugged (代表容器内部值的类型)
+    type Output&lt;T>;  // Wrapper/Plugged (代表容器本身的类型, 其实是个接收类型创建新类型的类型构造器)
+
+    // 为了与原本的 `map` 区分开来, 我们将方法取名为 `fmap`  
+    fn fmap&lt;F, B>(self, f: F) -> Self::Output&lt;B>
+    where
+        F: FnMut(Self::Inner) -> B;
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>倘若你把 <code class="font-semibold text-[#aa8bd5]"><code>Output&lt;T></code></code> 改成 <code class="font-semibold text-[#aa8bd5]"><code>Output</code></code>, 意图根据此来指代整个容器类型的概念…你可以自己试一试, 无法编译通过<br>以 <code class="font-semibold text-[#aa8bd5]"><code>Option</code></code> 类型为例 (<code class="font-semibold text-[#aa8bd5]"><code>Result</code></code> 类型同理):<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">impl&lt;T> Functor for Option&lt;T> {
+    type Inner = T;
+    type Output&lt;U> = Option&lt;U>;
+
+    fn fmap&lt;F, U>(self, mut f: F) -> Self::Output&lt;U>
+    where
+        F: FnMut(Self::Inner) -> U,
+    {
+        #[allow(clippy::manual_map)]
+        match self {
+            None => None,
+            Some(t) => Some(f(t)),
+        }
+
+        // // 你也可以直接复用标准库中已经实现的 `map`  
+        // self.map(f)
+    }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>照猫画虎为 <code class="font-semibold text-[#aa8bd5]"><code>array</code></code> 类型实现一下:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">impl&lt;T, const N: usize> Functor for [T; N] {
+    type Inner = T;
+    type Output&lt;U> = [U; N];
+    fn fmap&lt;F, B>(self, f: F) -> Self::Output&lt;B>
+    where
+        F: FnMut(Self::Inner) -> B,
+    {
+        self.map(f)
+    }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>倘若没有 GATs, 也就是没有 <code class="font-semibold text-[#aa8bd5]"><code>type Output&lt;T></code></code> 这里的类型构造器的情况下, 我们将只可能拥有同态的 functor<br>也就是说 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code> 函数必须返回相同的类型, 即只能 <code class="font-semibold text-[#aa8bd5]"><code>T -> T</code></code>, 而无法 <code class="font-semibold text-[#aa8bd5]"><code>T -> U</code></code>, 我们此刻的是多态的 functor, 对应后者<br><br>还有其他非常多的来自函数式编程中的一些概念, 不过 Functor 算是其中最经典最简单的一个了<br>其余在 rust 中的实现, 就请自行查阅与思考吧!<br><br><span style="display: inline-block"><del>(我是不会告诉你其实是因为有些概念我也看不懂所以才不继续讲的)</del></span><br></p>
+      <h2 class="flex items-center w-fit my-6" id="selffan-xing"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#selffan-xing">Self泛型</a></h2>
+      <p>众所周知, rust 中的 <code class="font-semibold text-[#aa8bd5]"><code>Self</code></code> 是一个类型别名, 指示你正在 impl 的那个类型, 如 <code class="font-semibold text-[#aa8bd5]"><code>impl i32 { ... }</code></code> 时, <code class="font-semibold text-[#aa8bd5]"><code>Self</code></code> 就指代 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code><br>同样众所周知的一点, 那就是 <code class="font-semibold text-[#aa8bd5]"><code>Self</code></code> 是不能够添加泛型的, 你只能 <code class="font-semibold text-[#aa8bd5]"><code>Self</code></code>, 而不能 <code class="font-semibold text-[#aa8bd5]"><code>Self&lt;T></code></code><br><br>让 <code class="font-semibold text-[#aa8bd5]"><code>Self</code></code> 能够泛型化有什么用呢? 让我们以之前的 <code class="font-semibold text-[#aa8bd5]"><code>Functor</code></code> 为例, 倘若其可以支持泛型:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">trait Functor&lt;T>: HKT1 {
+    fn map&lt;U, F>(self, f: F) -> Self::With&lt;U>
+    where
+        F: FnMut(T) -> U;
+}
+
+impl&lt;T> Functor&lt;T> for Option&lt;T> {
+    fn map&lt;U, F>(self, f: F) -> Self&lt;U> 
+    where
+        F: FnMut(T) -> U
+    {
+        self.map(f)
+    }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>倘若用模式匹配的思想看待上述伪代码, 你会发现返回值的类型 <code class="font-semibold text-[#aa8bd5]"><code>Self&lt;U></code></code> 对应 <code class="font-semibold text-[#aa8bd5]"><code>Option&lt;U></code></code>, 则 <code class="font-semibold text-[#aa8bd5]"><code>Self</code></code> 就自然对应了 <code class="font-semibold text-[#aa8bd5]"><code>Option</code></code><br>这在今天的 rust 中可能吗? 不, 这不可能, rust 中的类型都是具体类型, 比如 <code class="font-semibold text-[#aa8bd5]"><code>M&lt;T, U, Z></code></code>, 而不可能是 <code class="font-semibold text-[#aa8bd5]"><code>M</code></code> 这种没写全的<br><br>哭唧唧, 要是能够像这样写岂不是会写得很爽? (虽然本质上一样, 无非是先前那套 Functor 的关联类型给你隐藏起来了而已)<br>但鉴于 GATs 的存在, 我们确实可以模拟出来:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">trait HKT1 {
+    type Inner1;
+    type With&lt;T>;
+}
+
+impl&lt;T> HKT1 for Option&lt;T> {
+    type Inner1 = T;
+    type With&lt;A> = Option&lt;A>;
+}
+
+impl&lt;T> Functor&lt;T> for Option&lt;T> {
+    fn map&lt;U, F>(self, f: F) -> Self::With&lt;U>
+    where
+        F: FnMut(T) -> U,
+    {
+        self.map(f)
+    }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>本质上和先前的 <code class="font-semibold text-[#aa8bd5]"><code>Functor</code></code> 是一样的, 只是我们包装起来稍微舒服点, 通过 <code class="font-semibold text-[#aa8bd5]"><code>Self::With&lt;U></code></code> 来模拟 <code class="font-semibold text-[#aa8bd5]"><code>Self&lt;U></code></code> 了<br>你也可以模仿上面的 <code class="font-semibold text-[#aa8bd5]"><code>HKT1</code></code>, 定义 <code class="font-semibold text-[#aa8bd5]"><code>HKT2</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>HKT3</code></code> 等 trait, 并且实现:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">trait HKT2 {
+    type Inner1;
+    type Inner2;
+    type With&lt;T, U>;
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>如果使用宏的话, 这些重复的定义都能够自动生成, 且自动为你指定的类型实现, 不过我懒得继续讲宏了, 就这样吧, 略过略过!!<br>(你可以把宏理解为操控字符串, 只要你懂得怎么自动生成这些代码, 就可以通过声明宏喂给编译器进行解析)<br></p>
+      <h2 class="flex items-center w-fit my-6" id="family-trait"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#family-trait">family-trait</a></h2>
+      <p><code class="font-semibold text-[#aa8bd5]"><code>family-trait</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>type-family</code></code> 是种技巧, 也可以说是设计模式, 你能暴露出部分内部的实现, 然后让用户自行选择使用哪部分<br><br>其实理解起来很简单, 让我们看看下面几个类型:<br><br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>Rc&lt;RefCell&lt;T>></code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>Rc&lt;Cell&lt;T>></code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>Arc&lt;Mutex&lt;T>></code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>Arc&lt;RwLock&lt;T>></code></code></li>
+      </ul>
+      <p><br>这些都是 <em>智能指针(smart-pointer)</em>, 且提供了内部可变性, 但是分为了单/多线程的情况<br><br>让我们再具体一点, 并且将问题只放在 <code class="font-semibold text-[#aa8bd5]"><code>Rc</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>Arc</code></code> 上, 倘若你正在编写树状的数据结构, 用 <code class="font-semibold text-[#aa8bd5]"><code>Rc</code></code> 或 <code class="font-semibold text-[#aa8bd5]"><code>Arc</code></code> 来包裹树的结点<br>如果你只用了 <code class="font-semibold text-[#aa8bd5]"><code>Rc</code></code> 作为结点的类型, 那么你的用户就会开始吵闹: “喂, 为什么用的不是 <code class="font-semibold text-[#aa8bd5]"><code>Arc</code></code> 啊? 你让我多线程情况下怎么用啊?”<br>如果你只用了 <code class="font-semibold text-[#aa8bd5]"><code>Arc</code></code> 作为结点的类型, 那么你的用户就会开始吵闹: “喂, 为什么用的不是 <code class="font-semibold text-[#aa8bd5]"><code>Rc</code></code> 啊? 单线程情况下速度也太慢了吧?”<br><br>你汗流浃背, 为了满足两大需求不同的群体, 你选择…写两份代码! 粘贴, 复制, 将 <code class="font-semibold text-[#aa8bd5]"><code>Rc</code></code> 替换为 <code class="font-semibold text-[#aa8bd5]"><code>Arc</code></code>, 一气呵成<br>(但面对天灾(指暴怒且嗷嗷待哺的用户们), 我们并非无计可施)<br><br>(其实写两份代码也是非常简单的正确方法捏, 比如 <code class="font-semibold text-[#aa8bd5]"><code>im-rc</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>im</code></code> 这两个 crate 就是这种情况)<br><br>倘若我们可以定义一个 reference-counted(引用计数) 的 family<br>但通过 GATs, 我们就可以先内部进行抽象, 然后再暴露出去让用户自己选择到底是 <code class="font-semibold text-[#aa8bd5]"><code>Rc</code></code> 还是 <code class="font-semibold text-[#aa8bd5]"><code>Arc</code></code> 了:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">trait RefCountedFamily {
+    type Pointer&lt;T>;
+    fn new&lt;T>(value: T) -> Self::Pointer&lt;T>;
+    // ...
+    // ...
+}
+
+struct RcFamily;
+impl RefCountedFamily for RcFamily {
+    type Pointer&lt;T> = Rc&lt;T>;
+    fn new&lt;T>(value: T) -> Self::Pointer&lt;T> {
+        Rc::new(value)
+    }
+    // ...
+    // ...
+}
+
+struct ArcFamily;
+impl RefCountedFamily for ArcFamily {
+    type Pointer&lt;T> = Arc&lt;T>;
+    fn new&lt;T>(value: T) -> Self::Pointer&lt;T> {
+        Arc::new(value)
+    }
+    // ...
+    // ...
+}
+
+struct Container&lt;P: RefCountedFamily> {
+    data: P::Pointer&lt;i32>,
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>用户使用的时候可以通过传入诸如 <code class="font-semibold text-[#aa8bd5]"><code>RcFamily</code></code> 这种实现了 family-trait 的具体类型, 以此选择了使用 <code class="font-semibold text-[#aa8bd5]"><code>Rc</code></code>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let c = Container::&lt;RcFamily> {
+    data: RcFamily::new(1),
+};</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>对于最开始的 <code class="font-semibold text-[#aa8bd5]"><code>Rc&lt;RefCell&lt;T>></code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Rc&lt;Cell&lt;T>></code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Arc&lt;Mutex&lt;T>></code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Arc&lt;RwLock&lt;T>></code></code> 也是同理<br>你可以组合这些类型, 暴露出来, 然后交给用户进行选择, 抽象了 线程安全/智能指针 的选择<br></p>
+      <h2 class="flex items-center w-fit my-6" id="jie-dai-die-dai"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#jie-dai-die-dai">借贷迭代</a></h2>
+      <p>(以下部分代码来自 <a class="underline underline-offset-5 font-medium" href="https://rust-lang.github.io/generic-associated-types-initiative/explainer/motivation.html">https://rust-lang.github.io/generic-associated-types-initiative/explainer/motivation.html</a>)<br><br><code class="font-semibold text-[#aa8bd5]"><code>streaming-iterator</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>lending-iterator</code></code>, 这两个都是同一个东西, 请注意, 这和 <em>async(异步)</em> 生态中的 <code class="font-semibold text-[#aa8bd5]"><code>Stream</code></code> 不是一个概念<br>因为前者的名字可能会与 async 生态中的 <code class="font-semibold text-[#aa8bd5]"><code>Stream</code></code> 一起造成困扰, 所以我个人更偏向于使用后者的名词<br><br><em>lending-iterator(借贷迭代器)</em>, 概念上来讲就是 GATs 版的 <code class="font-semibold text-[#aa8bd5]"><code>std::iter::Iterator</code></code>, 并且关联类型的泛型参数是个 lifetime<br><br>先让我们重温下 <code class="font-semibold text-[#aa8bd5]"><code>std::iter::Iterator</code></code> 相关的内容:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">pub trait Iterator {
+    type Item;
+    fn next(&amp;mut self) -> Option&lt;Self::Item>;
+    // ...
+    // ...
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>里面有一个非泛型的关联类型 <code class="font-semibold text-[#aa8bd5]"><code>Item</code></code>, 我们可以调用 <code class="font-semibold text-[#aa8bd5]"><code>next</code></code> 方法进行迭代, 因此我们可以写出类似这样的代码:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">struct Iter&lt;'a, T> {
+    data: &amp;'a [T],
+}
+
+impl&lt;'a, T> Iterator for Iter&lt;'a, T> {
+    type Item = &amp;'a T;
+
+    fn next(&amp;mut self) -> Option&lt;Self::Item> {
+        self.data.split_first().map(|(prefix_elem, suffix)| {
+            self.data = suffix;
+            prefix_elem
+        })
+    }
+}
+
+fn main() {
+    let mut iter = Iter { data: &amp;[1, 2, 3] };
+    assert_eq!(iter.next(), Some(&amp;1));
+    assert_eq!(iter.next(), Some(&amp;2));
+    assert_eq!(iter.next(), Some(&amp;3));
+    assert_eq!(iter.next(), None);
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>在这里, <code class="font-semibold text-[#aa8bd5]"><code>Item</code></code> 的类型被指定为 <code class="font-semibold text-[#aa8bd5]"><code>&amp;'a T</code></code>, sd<br></p>
+      <p>(写累了, 鸽了, 什么时候想起来了再继续吧)<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <div class="flex flex-col sm:mx-2 *:my-2"><a class="flex items-center border-2 border-slate-500 w-full sm:rounded-md hover:border-white  justify-start " href="/posts/rust-typed-magic/curried-function" hx-get="/posts/rust-typed-magic/curried-function/index.html" hx-target="body" hx-push-url="/posts/rust-typed-magic/curried-function" hx-swap="innerHTML show:window:top"><span class="text-2xl sm:text-4xl sm:p-2 pl-2 pr-1 order-first ">&lt;</span> <span class="text-xl sm:text-2xl sm:p-2">柯里化柯里化与过程过程宏</span></a> <a class="flex items-center border-2 border-slate-500 w-full sm:rounded-md hover:border-white  justify-end " href="/posts/rust-typed-magic/heterogeneous-list" hx-get="/posts/rust-typed-magic/heterogeneous-list/index.html" hx-target="body" hx-push-url="/posts/rust-typed-magic/heterogeneous-list" hx-swap="innerHTML show:window:top"><span class="text-2xl sm:text-4xl sm:p-2 pr-2 pl-1 order-last ">></span> <span class="text-xl sm:text-2xl sm:p-2">异构列表</span></a></div>
+    </div>
+  </body>
+</html>

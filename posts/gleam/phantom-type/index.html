@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>柳上川</title><meta name="description" content="柳上川的博客"/><link rel="shortcut icon" href="/images/blog/avatar.avif" type="image/avif"/><link rel="stylesheet" href="/styles/highlight.min.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Regular/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Italic/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Bold/result.css"/><link rel="stylesheet" href="/styles/catppuccin-macchiato.css"/><link rel="stylesheet" href="/iconfonts/iconfont.css"/><link rel="stylesheet" href="/styles/tailwind.css"/><script src="/scripts/highlight.min.js"> </script><script src="/scripts/rust.min.js"> </script><script src="/scripts/nix.min.js"> </script><script src="/scripts/scheme.min.js"> </script><script src="/scripts/htmx.min.js"> </script><script src="/scripts/prefetch.js"> </script><script src="/scripts/custom.js"> </script><meta name="darkreader-lock"></head>
+  <body>
+    <div id="content" class="flex flex-col mx-4 mb-20 scroll-smooth" lang="zh-Hans">
+      <div class="text-2xl sm:text-3xl my-4 w-full text-center">『gleam: phantom-type』</div>
+      <div class="font-medium w-fit sm:mx-auto flex flex-col border-l-4 pl-2 sm:flex-row sm:border-l-0 sm:pl-0">
+        <p>[写自:2024-05-20</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>作者:柳上川 ]</p>
+      </div>
+      <div class="flex flex-col items-center m-4">
+        <div class="w-fit mx-auto text-lg font-semibold">摘要</div>
+        <div class="w-fit break-keep text-center sm:mx-[25%] *:inline">了解下 gleam 语言中的幽灵类型(phantom-type)吧</div>
+      </div>
+      <div class="flex flex-col my-10 w-fit border-2 border-slate-500">
+        <p><span class="text-2xl">目录:</span></p>
+        <div class="w-fit pr-2 my-2">
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">┌─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#shen-me-shi-you-ling-lei-xing">什么是幽灵类型</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#chu-li-id">处理ID</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#chu-li-huo-bi">处理货币</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#yan-zheng-shu-ju">验证数据</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#ti-gong-shang-xia-wen">提供上下文</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">└─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#bing-fei-ling-dan-miao-yao">并非灵丹妙药</a></span></div>
+        </div>
+      </div>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="shen-me-shi-you-ling-lei-xing"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#shen-me-shi-you-ling-lei-xing">什么是幽灵类型</a></h1>
+      <p>gleam 是门 <em>类型安全(type-safe)</em> 的语言, <em>幽灵类型(phantom-type)</em> 便是构成了此概念的部分技巧之一<br><em>phantom-type(幽灵类型)</em>, 是指出现在类型定义中, 但不会用任何构造器会使用到它的类型参数:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">pub type Xxx(phantom) {
+  Xxx
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>在 <code class="font-semibold text-[#aa8bd5]"><code>Xxx</code></code> 类型中, 我们有一个类型参数 <code class="font-semibold text-[#aa8bd5]"><code>phantom</code></code>, 该参数未在任何地方被使用, 但是这种幽灵类型却可用于提供额外的安全性/上下文<br>幽灵类型无需支付任何运行时成本, 全都在编译期被处理!<br><br>在某些语言中, 当类型具有未使用的类型参数时, 编译器可能会发出警告(或直接拒绝编译)<br>通常有特定于语言的解决方案, 例如 rust 中的 <code class="font-semibold text-[#aa8bd5]"><code>PhantomData</code></code> 或 typeScript 中的 <code class="font-semibold text-[#aa8bd5]"><code>impossible-fields</code></code><br><br>以下是一些使用到了该技巧的例子:<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="chu-li-id"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#chu-li-id">处理ID</a></h1>
+      <p>为了理解幽灵类型的用处, 让我们先从一个常见场景开始, 假设我们正在构建像 <a class="underline underline-offset-5 font-medium" href="https://dev.to/">dev.to</a> 或 <a class="underline underline-offset-5 font-medium" href="https://medium.com/">medium.com</a> 这样的社交博客平台<br>我们希望支持不同的用户和博客, 因此为它们分配了唯一的 ID<br><br>我们是家斗志昂扬, 快速发展的初创公司, 因此仅实施了最简单的 ID 管理系统: 只需为 Int 起一个类型别名, 即可让事情顺利进行:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">type Id = Int</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>平台支持 reddit 风格的操作对帖子进行 up-voting/liking(点赞), 我们有个函数 <code class="font-semibold text-[#aa8bd5]"><code>upvote</code></code>, 它接受被点赞的帖子与点赞者的 ID:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn upvote(user_id: Id, post_id: Id) {
+  // 操作数据库, 更新谁谁谁点赞了那一篇帖子
+  // ...
+  // ...
+}
+
+let user_id: Int = 114514
+let post_id: Int = 1919810
+
+upvote(user_id, post_id)</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这可以工作, 不过代价非常致命, 因为这里的代码并不存在任何的类型辅助, 也可以说这是个类型不安全的问题<br>我们都知道 <code class="font-semibold text-[#aa8bd5]"><code>114514</code></code> 是 <code class="font-semibold text-[#aa8bd5]"><code>user_id</code></code>, 而 <code class="font-semibold text-[#aa8bd5]"><code>1919810</code></code> 是 <code class="font-semibold text-[#aa8bd5]"><code>post_id</code></code>, 所以连起来就是 <code class="font-semibold text-[#aa8bd5]"><code>1145141919810</code></code>……<br>倘若有一天你敲代码时, 脑子不小心昏了, 把两个参数传递错了位置:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let user_id: Int = 114514
+let post_id: Int = 1919810
+
+upvote(post_id, user_id)</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>你让帖子对用户进行了点赞! 你让 <code class="font-semibold text-[#aa8bd5]"><code>1145141919810</code></code> 变成了 <code class="font-semibold text-[#aa8bd5]"><code>1919810114514</code></code>! 你真该死啊!<br>解决问题的方法之一是定义两个独立的类型, 而不是依靠类型别名:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">type PostId { PostId(Int) }
+type UserId { UserId(Int) }
+
+fn upvote(user_id: UserId, post_id: PostId) {
+  // ...
+  // ...
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>但这会导致你需要为每个类型编写重复的代码, 比如 <code class="font-semibold text-[#aa8bd5]"><code>next</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>to_int</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>from_string</code></code>……<br>实际上, 无论我们如何使用它, Id 的基本表示的形式都保持不变, 我们更希望在 Id 的上下文中进行指定, 以此检验类型的合法性<br>依靠前文所述的幽灵类型, 我们可以这样做:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">type Id(kind) {  // &lt;--- `kind` is a phantom type
+  Id(id: Int)
+}
+
+type User
+type Post
+
+fn upvote(user_id: Id(User), post_id: Id(Post)){
+  // ...
+  // ...
+}
+
+pub fn example() {
+  let user_id: Id(User) = Id(114514)
+  let post_id: Id(Post) = Id(1919810)
+  upvote(user_id, post_id)
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>现在的操作是类型安全的了, 当你交换两个参数的位置时便会报 <em>Type-mismatched</em> 的错误<br>并且, 现在我们为 <code class="font-semibold text-[#aa8bd5]"><code>Id</code></code> 类型实现一大堆通用的方法时, <code class="font-semibold text-[#aa8bd5]"><code>Id</code></code> 仍然是个足够通用的概念:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn new() -> Id(kind) {
+  Id(0)
+}
+
+fn next(id: Id(kind)) -> Id(kind) {
+  Id(id.id + 1)
+}
+
+fn from_int(id) -> Id(kind) {
+  Id(id)
+}
+
+fn show(id: Id(kind)) -> String {
+  id.id |> int.to_string
+}
+
+let a: Id(Float) = 1
+show(a)  // 1
+
+let b: Id(String) = 2
+show(b)  // 2
+
+let c: Id(Bool) = 3
+show(c)  // 3</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我们不用再写 <code class="font-semibold text-[#aa8bd5]"><code>UserId</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>PostId</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>IntId</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>FloatId</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>StringId</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>BoolId</code></code> 等类型了<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="chu-li-huo-bi"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#chu-li-huo-bi">处理货币</a></h1>
+      <p>让我们考虑另一种情况:<br>我们想要构建一个应用, 可以交易不同币种的货币(美元, 人民币, 日元, 欧元等), 且需要通过汇率, 在使用它们前转换为相同单位的货币<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">type Currency(a) {
+  Currency(Float)
+}
+
+fn from_float(n: Float) -> Currency(a) {
+  Currency(n)
+}
+
+type USD
+type GBP
+
+fn example() {
+  let dollars: Currency(USD) = from_float(2.5)
+  let pennies: Currency(GBP) = from_float(0.55)
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>现在我们有一些货币, 但无法对它们做些什么<br>虽然数值已经被包含在 <code class="font-semibold text-[#aa8bd5]"><code>Currency</code></code> 类型中, 但我们无法进行运算, 或将被包裹的值传递给以 <code class="font-semibold text-[#aa8bd5]"><code>Float</code></code> 作为参数的函数<br><br>让我们编写两个函数来解决该问题: 编写 <code class="font-semibold text-[#aa8bd5]"><code>update</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>combine</code></code> 来处理被包裹的内部的 <code class="font-semibold text-[#aa8bd5]"><code>Float</code></code> 值<br>我们将用 <code class="font-semibold text-[#aa8bd5]"><code>update</code></code> 处理一个 <code class="font-semibold text-[#aa8bd5]"><code>Currency</code></code>, 用 <code class="font-semibold text-[#aa8bd5]"><code>combine</code></code> 处理两个相同币种的 <code class="font-semibold text-[#aa8bd5]"><code>Currency</code></code><br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn from_float(n: Float) -> Currency(kind) {
+  Currency(n)
+}
+
+fn update(a: Currency(a), f: fn (Float) -> Float) -> Currency(a) {
+  let Currency(x) = a
+  x |> f |> from_float
+}
+
+fn combine(a: Currency(a), b: Currency(a), f: fn (Float, Float) -> Float) -> Currency(a) {
+  let Currency(x) = a
+  let Currency(y) = b
+  f(x, y) |> from_float
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>因为 <code class="font-semibold text-[#aa8bd5]"><code>Currency</code></code> 的类型参数不会改变(这些函数接受 <code class="font-semibold text-[#aa8bd5]"><code>Currency(a)</code></code> 并返回 <code class="font-semibold text-[#aa8bd5]"><code>Currency(a)</code></code>, 所以它们始终操作并返回相同币种的货币<br>这就是幽灵类型在这里发挥的作用<br><br>对于其他数据结构, 这些函数可以叫作 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>map2</code></code>, 意味着类型可以更改: <code class="font-semibold text-[#aa8bd5]"><code>list.map</code></code> 可用于将 <code class="font-semibold text-[#aa8bd5]"><code>List(a)</code></code> 转换为 <code class="font-semibold text-[#aa8bd5]"><code>List(b)</code></code><br>因为我们在这里拒绝将 <code class="font-semibold text-[#aa8bd5]"><code>Currency(USD)</code></code> 转换为 <code class="font-semibold text-[#aa8bd5]"><code>Currency(GBP)</code></code>, 始终保持 <code class="font-semibold text-[#aa8bd5]"><code>Currency(a)</code></code>, 所以这些函数被起了不同的名称 :)<br><br>我们可以使用这两个函数来定义更多的函数, 比如将 <code class="font-semibold text-[#aa8bd5]"><code>Currency</code></code> 加倍, 或将两种不同币种的 <code class="font-semibold text-[#aa8bd5]"><code>Currency</code></code> 相加:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">pub fn double(a: Currency(a)) -> Currency(a) {
+  update(a, fn (x) { x * 2 })
+}
+
+pub fn add(a: Currency(a), b: Currency(a)) -> Currency(a) {
+  combine(a, b, fn (x, y) { x + y })
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>上面的代码, 我们始终只对相同币种(<code class="font-semibold text-[#aa8bd5]"><code>Currency(a)</code></code>) 进行操作, 但如果我们想将两种货币加在一起呢?<br>为此, 我们需通过汇率, 将一种货币转换为另一种货币, 我们可以在这里再次使用幽灵类型<br><code class="font-semibold text-[#aa8bd5]"><code>Exchange</code></code> 类型描述了从某种货币到另一种货币的汇率:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">type Exchange(from, to) {
+  Exchange(Float)
+}
+
+fn exchange_rate(r: Float) -> Exchange(from, to) {
+  Exchange(r)
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>现在, 就像我们对 <code class="font-semibold text-[#aa8bd5]"><code>Currency</code></code> 所做的那样, 我们可以定义一些 <code class="font-semibold text-[#aa8bd5]"><code>Exchange</code></code> 的实例:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let gbp_to_usd: Exchange(GBP, USD) = exchange_rate(1.41)
+let usd_to_gbp: Exchange(USD, GBP) = exchange_rate(0.71)</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我们利用所知道的关于幽灵类型的信息, 可以定义一个 <code class="font-semibold text-[#aa8bd5]"><code>convert</code></code> 函数, 它是类型安全的, 因为我们永远无法输入错误的汇率, 所有幽灵类型都必须匹配!<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">pub fn convert(a: Currency(from), e: Exchange(from, to)) -> Currency(to) {
+  let Currency(x) = a
+  let Exchange(r) = e
+  x *. r |> from_float
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我们编写的函数对所有货币都是通用的, 并且这是类型安全的<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="yan-zheng-shu-ju"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#yan-zheng-shu-ju">验证数据</a></h1>
+      <p>到目前为止, 我们已经看到 <code class="font-semibold text-[#aa8bd5]"><code>Id</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Currency</code></code> 这两个使用了幽灵类型作为技巧的类型, 调用者只需提供类型注释即可向编译器断言某物的类型<br>这样做时, 编译器将停止在错误的位置, 拒绝使用两个类型不安全的值<br><br>我们也可以将幽灵类型用于相反的目的, 以限制用户可以创建的类型, 并通过我们的代码进行验证, 然后推动用户做些事情<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">pub opaque type Password(kind) {
+  Password(String)
+}
+
+pub type Invalid
+pub type Valid
+
+pub fn from_string(s: String) -> Password(Invalid) {
+  Password(s)
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>与前面的实例不同, 之前是由用户来指定断言类型, 比如 <code class="font-semibold text-[#aa8bd5]"><code>Id(User)</code></code>, 而我们自然也可以在库中使用<br>在这段代码中, <code class="font-semibold text-[#aa8bd5]"><code>Password</code></code> 是个 <code class="font-semibold text-[#aa8bd5]"><code>opaque-type</code></code>(不透明类型), 意味着只有定义了该类型的模块(同文件下), 才能构造与模式匹配该类型的值<br>因此当用户使用了这个类型想要创建密码时, 只能通过 <code class="font-semibold text-[#aa8bd5]"><code>from_string</code></code> 函数<br><br>由用户传入的字符串所创建的密码, 默认未经验证, 所以在类型上是非法(Invalid)的, 用户需通过我们提供的验证手段来获得合法密码<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">pub type InvalidReason{
+  TooLong
+  TooShort
+  NoNumber
+  NoLetter
+  // ...
+  // ...
+}
+
+pub fn validate(password: Password(Invalid)) -> Result(Password(Valid), InvalidReason) {
+  // ...
+}
+
+pub fn suggest(passwor: Password(Invalid)) -> String {
+  // ...
+}
+
+pub fn create_user(username: String, password: Password(Valid)) -> User {
+  // ...
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>上面再次呈现了一段类型安全的代码, 因为 <code class="font-semibold text-[#aa8bd5]"><code>Password</code></code> 是 opaque 的, 所以用户必须通过 <code class="font-semibold text-[#aa8bd5]"><code>validate</code></code> 来获取合法的密码<br><code class="font-semibold text-[#aa8bd5]"><code>suggest</code></code> 函数为非法密码给出了一些建议, <code class="font-semibold text-[#aa8bd5]"><code>create_user</code></code> 只接收合法密码并创建用户<br><br>因为只有 <code class="font-semibold text-[#aa8bd5]"><code>validate</code></code> 检验成功, 才能获得 <code class="font-semibold text-[#aa8bd5]"><code>Password(Valid)</code></code><br>所以在其他使用了 <code class="font-semibold text-[#aa8bd5]"><code>Password(Valid)</code></code> 的地方, 接收的密码一定是合法的<br>对比以下这段代码:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">pub type Password {
+  // ...
+}
+
+pub fn is_valid(Pasword) -> Bool {
+  // ...
+}
+
+pub fn create_user(username: String, password: Password) -> User {
+  // ...
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>显而易见, 这段代码不是类型安全的: 你如何确保用户就一定会乖乖调用 <code class="font-semibold text-[#aa8bd5]"><code>is_valid</code></code>, 而不是直接传入非法的代码呢?<br>因此只好由库作者多做一些工作, 由我们来为用户调用 <code class="font-semibold text-[#aa8bd5]"><code>is_valid</code></code>, 然后设计一些其他的 api 确保工作顺利……<br>相比之下, 前一段代码直接将这些暴露出来交给了用户: 你爱调不调, 反正你不调用 <code class="font-semibold text-[#aa8bd5]"><code>validate</code></code> 函数就永远得不到类型上合法的密码<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="ti-gong-shang-xia-wen"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#ti-gong-shang-xia-wen">提供上下文</a></h1>
+      <p>在 gleam 中, 可能引发错误的函数通常使用 <code class="font-semibold text-[#aa8bd5]"><code>Result</code></code> 类型与特定的 <code class="font-semibold text-[#aa8bd5]"><code>Error</code></code> 类型进行包装, 后者描述了所有失败的可能原因<br>当两个函数(假设是 <code class="font-semibold text-[#aa8bd5]"><code>accept</code></code> 和 <code class="font-semibold text-[#aa8bd5]"><code>listen</code></code>)可能引发不同错误时, 我们想为这两个函数创建对应的 <code class="font-semibold text-[#aa8bd5]"><code>Error</code></code> 类型<br><br>但两个函数之间共享部分错误时, 就会出现一个问题, 假设存在以下代码:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">pub type AcceptError = {
+  SystemLimit       // &lt;-- Here
+  Closed
+  Timeout
+  Posix(inet.Posix) // &lt;-- Here
+}
+
+pub type ListenError = {
+  SystemLimit        // &lt;-- Here
+  Posix(inet.Posix)  // &lt;-- Here
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>同一模块中的不同类型, 不可能具有相同名称的变体, 否则编译器怎么知道 <code class="font-semibold text-[#aa8bd5]"><code>SystemLimit</code></code> 到底是 <code class="font-semibold text-[#aa8bd5]"><code>AcceptError</code></code> 还是 <code class="font-semibold text-[#aa8bd5]"><code>ListenError</code></code><br>(…嗯, 这里其他语言的读者可能会觉得有些反直觉, 建议习惯适应一下)<br><br>我们当然可以给每个变体添加特定的前缀, 或为它们创建单独的模块<br>我们亦可以放弃特定于函数的 <code class="font-semibold text-[#aa8bd5]"><code>Error</code></code> 类型而创建整个模块下的单一 <code class="font-semibold text-[#aa8bd5]"><code>Error</code></code> 类型<br><br>这些解决方案要么看起来太繁琐, 要么当需要共享类型时变得复杂, 要么失去了表达特定于某个函数的错误类型的能力<br>但如果我们可以使用幽灵类型, 就可以启用一个新的选项:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">pub type Error(from) {
+  SystemLimit
+  Closed
+  Timeout
+  Posix(inet.Posix)
+}
+
+pub opaque type AcceptFn { AcceptFn }
+pub opaque type ListenFn { ListenFn }
+
+pub fn accept() -> Error(AcceptFn) {
+  // ...
+}
+
+pub fn listen() -> Error(ListenFn) {
+  // ...
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>虽然这种方法无法带来额外的安全性, 但它确实为使用此功能的开发人员提供了上下文线索<br>在处理与抛出 <code class="font-semibold text-[#aa8bd5]"><code>listen</code></code> 的错误时, 他们知道他们可以安全地忽略 <code class="font-semibold text-[#aa8bd5]"><code>Closed</code></code> 和 <code class="font-semibold text-[#aa8bd5]"><code>Timeout</code></code> 错误, 只关注相关的错误<br><br>通过幽灵类型来提供上下文线索, 这可能并不总是最好的设计决策, 但它确实在某些情况下在简单性和表现力之间取得了适当的平衡<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="bing-fei-ling-dan-miao-yao"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#bing-fei-ling-dan-miao-yao">并非灵丹妙药</a></h1>
+      <p>你可能渴望将幽灵类型应用于所有代码, 并利用额外的编译时安全性, 但在代码中使用它有一个注意点:<br>我们不能基于幽灵类型对函数的行为进行分支<br><br>为了举例说明这一点，请考虑 <code class="font-semibold text-[#aa8bd5]"><code>Currency</code></code> 类型的 <code class="font-semibold text-[#aa8bd5]"><code>to_string</code></code> 函数的不可能实现:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">pub fn to_string (a: Currency(a)) -> String {
+  let Currency(val) = a
+  case a.phantom_type {
+    USD -> string.concat("$", float.to_string(val))
+    GBP -> string.concat("£", float.to_string(val))
+    // ...
+    // ...
+  }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这是不可能的, 因为 <code class="font-semibold text-[#aa8bd5]"><code>to_string</code></code> 函数必须保证对所有 <code class="font-semibold text-[#aa8bd5]"><code>Currency(a)</code></code> 都是通用的, 我们无法根据 <code class="font-semibold text-[#aa8bd5]"><code>a</code></code> 的实际类型来改变行为<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <div class="flex flex-col sm:mx-2 *:my-2"><a class="flex items-center border-2 border-slate-500 w-full sm:rounded-md hover:border-white  justify-start " href="/posts/gleam/use-expression" hx-get="/posts/gleam/use-expression/index.html" hx-target="body" hx-push-url="/posts/gleam/use-expression" hx-swap="innerHTML show:window:top"><span class="text-2xl sm:text-4xl sm:p-2 pl-2 pr-1 order-first ">&lt;</span> <span class="text-xl sm:text-2xl sm:p-2">gleam: use-expression</span></a></div>
+    </div>
+  </body>
+</html>

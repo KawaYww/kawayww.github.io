@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>柳上川</title><meta name="description" content="柳上川的博客"/><link rel="shortcut icon" href="/images/blog/avatar.avif" type="image/avif"/><link rel="stylesheet" href="/styles/highlight.min.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Regular/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Italic/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Bold/result.css"/><link rel="stylesheet" href="/styles/catppuccin-macchiato.css"/><link rel="stylesheet" href="/iconfonts/iconfont.css"/><link rel="stylesheet" href="/styles/tailwind.css"/><script src="/scripts/highlight.min.js"> </script><script src="/scripts/rust.min.js"> </script><script src="/scripts/nix.min.js"> </script><script src="/scripts/scheme.min.js"> </script><script src="/scripts/htmx.min.js"> </script><script src="/scripts/prefetch.js"> </script><script src="/scripts/custom.js"> </script><meta name="darkreader-lock"></head>
+  <body>
+    <div id="content" class="flex flex-col mx-4 mb-20 scroll-smooth" lang="zh-Hans">
+      <div class="text-2xl sm:text-3xl my-4 w-full text-center">『编程』</div>
+      <div class="flex flex-col items-center m-4">
+        <div class="w-fit mx-auto text-lg font-semibold">摘要</div>
+        <div class="w-fit break-keep text-center sm:mx-[25%] *:inline">本页面记载一些计算机方面的文章</div>
+      </div>
+      <div class="flex flex-col my-10 w-fit border-2 border-slate-500">
+        <p><span class="text-2xl">目录:</span></p>
+        <div class="w-fit pr-2 my-2">
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">┌─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#que-shi-de-yi-ke">缺失的一课</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#bian-cheng-yu-yan">编程语言</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#c">C</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#rust">rust</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#julia">julia</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#ocaml">ocaml</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#gleam">gleam</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#lisp-scheme">lisp/scheme</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#yin-shi-pin-chu-li">音视频处理</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#unix">UNIX</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#xi-tong-pei-zhi">系统配置</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#zhuo-mian-pei-zhi">桌面配置</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#wen-ben-de-yi-shu">文本的艺术</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#shu-ru-fa">输入法</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#bian-ji-yuan-li">编辑原理</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#bian-ji-qi">编辑器</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#pai-ban-ruan-jian">排版软件</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#shu-ji">书籍</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#plt">编程语言理论(PLT)</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#la-ji-hui-shou">垃圾回收</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#zu-cheng-yuan-li">组成原理</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#cao-zuo-xi-tong">操作系统</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#bo-ke-da-jian">博客搭建</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">└─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#qi-ta">其他</a></span></div>
+        </div>
+      </div>
+      <p>我是会咕咕叫的肥美鸽子!!<br>写博客好麻烦欸, 但我还是尽量保持更新吧? 只要有空? <span style="display: inline-block"><del>应该吧</del></span> :)<br><br>有一些文章难度比较大, 资料也缺乏, 整理起来费时费力, 鉴于个人能力正在缓慢学习ing<br>目前, 以下大部分文章还是我高中时期写的, 很多系列因为没有精力编写, 都理所当然地被鸽掉了!!!<br><br>关于每行前面框框类型的说明: 没勾勾就是没写完, 有勾勾就是真写完了或者是随缘更新<br></p>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200 after:inline-block after:content-['L'] after:text-cyan-200 after:-translate-x-[0.4px] after:-translate-y-[11px] after:rotate-40 after:-scale-x-65 after:scale-y-70">
+        <div><code class="font-semibold text-[#aa8bd5]"><code>&lt;-- 这是单篇</code></code></div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><code class="font-semibold text-[#aa8bd5]"><code>&lt;-- 这是系列</code></code></div>
+      </div>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="que-shi-de-yi-ke"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#que-shi-de-yi-ke">缺失的一课</a></h1>
+      <p>灵感来源于 MIT 的 <a class="underline underline-offset-5 font-medium" href="https://youtu.be/Z56Jmr9Z34Q">计算机教育中缺失的一课(The Missing Semester of Your CS Education)</a><br>不过我想提供点现代工具链(充斥个人偏爱), 如 <code class="font-semibold text-[#aa8bd5]"><code>bash</code></code> -> <code class="font-semibold text-[#aa8bd5]"><code>nu</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>vim</code></code> -> <code class="font-semibold text-[#aa8bd5]"><code>helix</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>git</code></code> -> <code class="font-semibold text-[#aa8bd5]"><code>jujutsu</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>yazi</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>fd</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>rg</code></code> ……<br><strong>这是缺失的一课, 所以你看不见它</strong> <span style="display: inline-block"><del>其实是我还没想好该怎么写…像是密码学等我也想去学习下…</del></span><br><br></p>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/modern-missing-semester/vpn" hx-get="/posts/modern-missing-semester/vpn/index.html" hx-target="body" hx-push-url="/posts/modern-missing-semester/vpn" hx-swap="innerHTML show:window:top">梯子, 梯子, 梯子! !</a></div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/modern-missing-semester/system-installation" hx-get="/posts/modern-missing-semester/system-installation/index.html" hx-target="body" hx-push-url="/posts/modern-missing-semester/system-installation" hx-swap="innerHTML show:window:top">操作系统的安装</a></div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/modern-missing-semester/package-manager" hx-get="/posts/modern-missing-semester/package-manager/index.html" hx-target="body" hx-push-url="/posts/modern-missing-semester/package-manager" hx-swap="innerHTML show:window:top">软件包与包管理工具</a></div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/modern-missing-semester/terminal-shell-script" hx-get="/posts/modern-missing-semester/terminal-shell-script/index.html" hx-target="body" hx-push-url="/posts/modern-missing-semester/terminal-shell-script" hx-swap="innerHTML show:window:top">终端, shell, 脚本</a> (shell: <code class="font-semibold text-[#aa8bd5]"><code>bash</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>nushell</code></code>)</div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/modern-missing-semester/text-editor" hx-get="/posts/modern-missing-semester/text-editor/index.html" hx-target="body" hx-push-url="/posts/modern-missing-semester/text-editor" hx-swap="innerHTML show:window:top">文本编辑器</a> (编辑器: <code class="font-semibold text-[#aa8bd5]"><code>nano</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>helix</code></code>)</div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/modern-missing-semester/command-line-environment" hx-get="/posts/modern-missing-semester/command-line-environment/index.html" hx-target="body" hx-push-url="/posts/modern-missing-semester/command-line-environment" hx-swap="innerHTML show:window:top">命令行环境</a> (终端工具: <code class="font-semibold text-[#aa8bd5]"><code>yazi</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>fd</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>rg</code></code>)</div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/modern-missing-semester/version-control" hx-get="/posts/modern-missing-semester/version-control/index.html" hx-target="body" hx-push-url="/posts/modern-missing-semester/version-control" hx-swap="innerHTML show:window:top">版本控制 &amp; jujutsu</a> (版本控制系统: <code class="font-semibold text-[#aa8bd5]"><code>jujutsu</code></code>)</div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/modern-missing-semester/security" hx-get="/posts/modern-missing-semester/security/index.html" hx-target="body" hx-push-url="/posts/modern-missing-semester/security" hx-swap="innerHTML show:window:top">密码学与安全</a></div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/modern-missing-semester/meta-programming" hx-get="/posts/modern-missing-semester/meta-programming/index.html" hx-target="body" hx-push-url="/posts/modern-missing-semester/meta-programming" hx-swap="innerHTML show:window:top">语言的元编程</a></div>
+      </div>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="bian-cheng-yu-yan"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#bian-cheng-yu-yan">编程语言</a></h1>
+      <h2 class="flex items-center w-fit my-6" id="c"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#c">C</a></h2>
+      <p>直接学习最新的(码出这行字时) <code class="font-semibold text-[#aa8bd5]"><code>C23</code></code> 标准吧! <a class="underline underline-offset-5 font-medium" href="https://inria.hal.science/hal-02383654v2/file/modernC.pdf">Modern C</a> 这本教材就很不错, 里面甚至还实现了泛型!<br><strong>Modern C is all you need!(狂热状)</strong><br><br></p>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/modern-c" hx-get="/categories/modern-c/index.html" hx-target="body" hx-push-url="/categories/modern-c" hx-swap="innerHTML show:window:top">modern C</a> (我已新建文件夹!)</div>
+      </div>
+      <p><br></p>
+      <h2 class="flex items-center w-fit my-6" id="rust"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#rust">rust</a></h2>
+      <p>一门高性能, 工具链极其友善, 类型严格显式, 面向未来的编程语言<br><strong>原神, 启动! 启动! 启动! R门! !</strong><br><br></p>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300 after:inline-block after:content-['L'] after:-translate-x-[0.4px] after:-translate-y-[11px] after:rotate-40 after:-scale-x-65 after:scale-y-70">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/rust-tui" hx-get="/categories/rust-tui/index.html" hx-target="body" hx-push-url="/categories/rust-tui" hx-swap="innerHTML show:window:top">TUI 编程</a> (ratatui-rs)</div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300 after:inline-block after:content-['L'] after:-translate-x-[0.4px] after:-translate-y-[11px] after:rotate-40 after:-scale-x-65 after:scale-y-70">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/rust-typed-magic" hx-get="/categories/rust-typed-magic/index.html" hx-target="body" hx-push-url="/categories/rust-typed-magic" hx-swap="innerHTML show:window:top">rust 中的类型魔法</a> (随缘更新ing)</div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200 after:inline-block after:content-['L'] after:text-cyan-200 after:-translate-x-[0.4px] after:-translate-y-[11px] after:rotate-40 after:-scale-x-65 after:scale-y-70">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/rust-clap" hx-get="/posts/rust-clap/index.html" hx-target="body" hx-push-url="/posts/rust-clap" hx-swap="innerHTML show:window:top">clap-rs 简介</a> (命令行)</div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200 after:inline-block after:content-['L'] after:text-cyan-200 after:-translate-x-[0.4px] after:-translate-y-[11px] after:rotate-40 after:-scale-x-65 after:scale-y-70">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/rust-super-let" hx-get="/posts/rust-super-let/index.html" hx-target="body" hx-push-url="/posts/rust-super-let" hx-swap="innerHTML show:window:top">rust 中的 “临时值生命周期” 与 “super-let”</a> (译)</div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/rust-atomics-and-locks" hx-get="/categories/rust-atomics-and-locks/index.html" hx-target="body" hx-push-url="/categories/rust-atomics-and-locks" hx-swap="innerHTML show:window:top">并发中的原子与锁</a> (翻译了两篇 &amp; 但还未迁移)</div>
+      </div>
+      <h2 class="flex items-center w-fit my-6" id="julia"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#julia">julia</a></h2>
+      <p>一门高性能, 动态类型, 支持并行化, 多重派发的多范式的编程语言<br><strong>啊勒? 啊勒? <span style="display: inline-block"><del>(真有理的怀表怎么又停了?)</del></span> Julia 的 pre-compilation 怎么又失败啦?</strong><br></p>
+      <h2 class="flex items-center w-fit my-6" id="ocaml"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#ocaml">ocaml</a></h2>
+      <p>一门简洁, 易于学习, 友善的工业级函数式编程语言<br><strong>Jane Street 大哥! 快来救救啊! ! 有你在想必这语言有着光明的未来吧!</strong><br><br></p>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/cs3110" hx-get="/categories/cs3110/index.html" hx-target="body" hx-push-url="/categories/cs3110" hx-swap="innerHTML show:window:top">cs3110</a> (康奈尔大学的 ocaml 入门公开课)</div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/ocaml-exercises" hx-get="/posts/ocaml-exercises/index.html" hx-target="body" hx-push-url="/posts/ocaml-exercises" hx-swap="innerHTML show:window:top">ocaml-exercises</a> (官网上的几十道练习题)</div>
+      </div>
+      <h2 class="flex items-center w-fit my-6" id="gleam"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#gleam">gleam</a></h2>
+      <p>一门构建于 BEAM 平台(Erlang/Elixir 那个), 想要赋予 <a class="underline underline-offset-5 font-medium" href="https://www.erlang.org/">Erlang/OTP</a> 静态类型的编程语言<br><strong>呃, 又一门小众的新语言罢了</strong><br><br></p>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200 after:inline-block after:content-['L'] after:text-cyan-200 after:-translate-x-[0.4px] after:-translate-y-[11px] after:rotate-40 after:-scale-x-65 after:scale-y-70">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/gleam/use-expression" hx-get="/posts/gleam/use-expression/index.html" hx-target="body" hx-push-url="/posts/gleam/use-expression" hx-swap="innerHTML show:window:top">gleam 中的 use 表达式</a></div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200 after:inline-block after:content-['L'] after:text-cyan-200 after:-translate-x-[0.4px] after:-translate-y-[11px] after:rotate-40 after:-scale-x-65 after:scale-y-70">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/gleam/phantom-type" hx-get="/posts/gleam/phantom-type/index.html" hx-target="body" hx-push-url="/posts/gleam/phantom-type" hx-swap="innerHTML show:window:top">gleam 中的幽灵类型</a></div>
+      </div>
+      <h2 class="flex items-center w-fit my-6" id="lisp-scheme"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#lisp-scheme">lisp/scheme</a></h2>
+      <p>一门, 呃, 或许是很多门? 反正看着像长着也像 lisp 的, 哪怕没括号了也能叫 lisp!<br><strong><span style="display: inline-block"><del>原谅我把 lisp 与 scheme 混在一起, 就不区分了</del></span></strong><br><br></p>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/scheme-in-15-minutes" hx-get="/posts/scheme-in-15-minutes/index.html" hx-target="body" hx-push-url="/posts/scheme-in-15-minutes" hx-swap="innerHTML show:window:top">15 分钟快速上手 scheme ! !</a></div>
+      </div>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="yin-shi-pin-chu-li"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#yin-shi-pin-chu-li">音视频处理</a></h1>
+      <p><strong>题外话</strong>: B站自2025.6月开始, 从原先的50粉才可以直播 -> 1000粉丝才可以直播 -> 5000粉丝才可以直播<br><strong>题外话</strong>: 如果只是朋友之间瞅瞅, 也不想用那个辣鸡直播姬, 那么完全可以搭建一个自己的个人直播间!<br><strong>下面的链接地址仍处于暂定中</strong><br><br></p>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/audio-video-processing" hx-get="/categories/audio-video-processing/index.html" hx-target="body" hx-push-url="/categories/audio-video-processing" hx-swap="innerHTML show:window:top">音视频处理</a></div>
+      </div>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="unix"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#unix">UNIX</a></h1>
+      <h2 class="flex items-center w-fit my-6" id="xi-tong-pei-zhi"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#xi-tong-pei-zhi">系统配置</a></h2>
+      <p>先放两位大原神 guix &amp;&amp; nixos, 然后再放个小原神 void, 最后来个 macos(with nix-darwin) 吧<br><br></p>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/macos-with-nix-darwin" hx-get="/posts/macos-with-nix-darwin/index.html" hx-target="body" hx-push-url="/posts/macos-with-nix-darwin" hx-swap="innerHTML show:window:top">macos &amp; nix-darwin</a></div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/guix" hx-get="/categories/guix/index.html" hx-target="body" hx-push-url="/categories/guix" hx-swap="innerHTML show:window:top">guix 专题</a> (guix介绍 &amp; 系统配置 &amp; 杂七杂八)</div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/nixos" hx-get="/categories/nixos/index.html" hx-target="body" hx-push-url="/categories/nixos" hx-swap="innerHTML show:window:top">nixos 专题</a> (nix介绍 &amp; 系统配置 &amp; 杂七杂八)</div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/void-linux" hx-get="/posts/void-linux/index.html" hx-target="body" hx-push-url="/posts/void-linux" hx-swap="innerHTML show:window:top">void-linx 备忘录</a></div>
+      </div>
+      <h2 class="flex items-center w-fit my-6" id="zhuo-mian-pei-zhi"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#zhuo-mian-pei-zhi">桌面配置</a></h2>
+      <p>传统桌面中, 我个人比较喜欢 <a class="underline underline-offset-5 font-medium" href="https://www.gnome.org/">GNOME</a>, 它是对平板等触碰设备适配最好的<br>平铺式的话比较喜欢 <a class="underline underline-offset-5 font-medium" href="https://github.com/YaLTeR/niri">niri</a>, 因为 <strong>无限卷轴</strong>, 太 TM 爽了!<br><strong>你最喜欢的桌面是……</strong><br><br></p>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/gnome" hx-get="/posts/gnome/index.html" hx-target="body" hx-push-url="/posts/gnome" hx-swap="innerHTML show:window:top">GNOME 入坑指南</a> (<strong>已完成/但尚未迁移</strong>)</div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/niri" hx-get="/posts/niri/index.html" hx-target="body" hx-push-url="/posts/niri" hx-swap="innerHTML show:window:top">niri-wm 入坑指南</a></div>
+      </div>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="wen-ben-de-yi-shu"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#wen-ben-de-yi-shu">文本的艺术</a></h1>
+      <p>关于文本(代码)的编辑(器)方面的一些东东<br>安利自己喜欢的编辑器, 翻译些其他人的博客, 介绍点输入法与排版软件<br><strong>编辑器圣战就此爆发!</strong><br></p>
+      <h2 class="flex items-center w-fit my-6" id="shu-ru-fa"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#shu-ru-fa">输入法</a></h2>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/rime" hx-get="/posts/rime/index.html" hx-target="body" hx-push-url="/posts/rime" hx-swap="innerHTML show:window:top">RIME: 中州韵输入法引擎</a></div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200 after:inline-block after:content-['L'] after:text-cyan-200 after:-translate-x-[0.4px] after:-translate-y-[11px] after:rotate-40 after:-scale-x-65 after:scale-y-70">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/double-pinyin-flypy" hx-get="/posts/double-pinyin-flypy/index.html" hx-target="body" hx-push-url="/posts/double-pinyin-flypy" hx-swap="innerHTML show:window:top">小鹤双拼</a></div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/tiger-code" hx-get="/posts/tiger-code/index.html" hx-target="body" hx-push-url="/posts/tiger-code" hx-swap="innerHTML show:window:top">虎码</a></div>
+      </div>
+      <h2 class="flex items-center w-fit my-6" id="bian-ji-yuan-li"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#bian-ji-yuan-li">编辑原理</a></h2>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300 after:inline-block after:content-['L'] after:-translate-x-[0.4px] after:-translate-y-[11px] after:rotate-40 after:-scale-x-65 after:scale-y-70">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/zed-blog-translation" hx-get="/categories/zed-blog-translation/index.html" hx-target="body" hx-push-url="/categories/zed-blog-translation" hx-swap="innerHTML show:window:top">Zed’s blog</a> (译, 商业吹捧和水文基本不翻译, 尽量译涉及技术的)</div>
+      </div>
+      <h2 class="flex items-center w-fit my-6" id="bian-ji-qi"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#bian-ji-qi">编辑器</a></h2>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/emacs" hx-get="/categories/emacs/index.html" hx-target="body" hx-push-url="/categories/emacs" hx-swap="innerHTML show:window:top">emacs 从入门到入土</a></div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/helix-editor" hx-get="/posts/helix-editor/index.html" hx-target="body" hx-push-url="/posts/helix-editor" hx-swap="innerHTML show:window:top">helix-editor 介绍</a></div>
+      </div>
+      <h2 class="flex items-center w-fit my-6" id="pai-ban-ruan-jian"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#pai-ban-ruan-jian">排版软件</a></h2>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/typst" hx-get="/categories/typst/index.html" hx-target="body" hx-push-url="/categories/typst" hx-swap="innerHTML show:window:top">typst: 现代化的排版软件</a></div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/latex" hx-get="/categories/latex/index.html" hx-target="body" hx-push-url="/categories/latex" hx-swap="innerHTML show:window:top">latex: 当今排版的标准</a></div>
+      </div>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="shu-ji"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#shu-ji">书籍</a></h1>
+      <p>这里不是教程, 仅仅是关于几本书的个人学习记录与总结心得, 有些已经看过了, 有些是还在学<br>暂时先做个目录, 预计以年为单位进行更新, 也可能永远没时间更了, 悲<br><br><strong>关于如下格式的说明:</strong><br><code class="font-semibold text-[#aa8bd5]"><code>&lt;简称> -> &lt;书籍原名> (书籍译名)</code></code><br></p>
+      <h2 class="flex items-center w-fit my-6" id="plt"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#plt">编程语言理论(PLT)</a></h2>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/sicp" hx-get="/categories/sicp/index.html" hx-target="body" hx-push-url="/categories/sicp" hx-swap="innerHTML show:window:top">SICP -> Structure and Interpretation of Computer Programs</a></div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/plai" hx-get="/categories/plai/index.html" hx-target="body" hx-push-url="/categories/plai" hx-swap="innerHTML show:window:top">PLAI -> Programming Languages: Application and Interpretation</a></div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/tapl" hx-get="/categories/tapl/index.html" hx-target="body" hx-push-url="/categories/tapl" hx-swap="innerHTML show:window:top">TAPL -> Types and Programming Language</a></div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/cwc" hx-get="/categories/cwc/index.html" hx-target="body" hx-push-url="/categories/cwc" hx-swap="innerHTML show:window:top">CWC -> Compiling with Continuations</a></div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/slpj-book-1987" hx-get="/categories/slpj-book-1987/index.html" hx-target="body" hx-push-url="/categories/slpj-book-1987" hx-swap="innerHTML show:window:top">slpj-book-1987 -> The Implementation Of Functional Programming Language</a></div>
+      </div>
+      <h2 class="flex items-center w-fit my-6" id="la-ji-hui-shou"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#la-ji-hui-shou">垃圾回收</a></h2>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/gc-handbook" hx-get="/categories/gc-handbook/index.html" hx-target="body" hx-push-url="/categories/gc-handbook" hx-swap="innerHTML show:window:top">gc-handbook -> The Garbage Collection Handbook, 2rd</a></div>
+      </div>
+      <h2 class="flex items-center w-fit my-6" id="zu-cheng-yuan-li"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#zu-cheng-yuan-li">组成原理</a></h2>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/csapp" hx-get="/categories/csapp/index.html" hx-target="body" hx-push-url="/categories/csapp" hx-swap="innerHTML show:window:top">CSAPP第1-6章 -> Computer Systems A Programmer’s perspective</a></div>
+      </div>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/computer-organization-and-design" hx-get="/categories/computer-organization-and-design/index.html" hx-target="body" hx-push-url="/categories/computer-organization-and-design" hx-swap="innerHTML show:window:top">Computer Organization and Design: The Hardware/Software Interface</a> (计算机组成与设计-软硬件接口)</div>
+      </div>
+      <h2 class="flex items-center w-fit my-6" id="cao-zuo-xi-tong"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#cao-zuo-xi-tong">操作系统</a></h2>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-green-300">
+        <div><a class="underline underline-offset-5 font-medium" href="/categories/csapp" hx-get="/categories/csapp/index.html" hx-target="body" hx-push-url="/categories/csapp" hx-swap="innerHTML show:window:top">CSAPP第7-12章 -> Computer Systems A Programmer’s perspective</a></div>
+      </div>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="bo-ke-da-jian"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#bo-ke-da-jian">博客搭建</a></h1>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/blog-setup/tola-ssg-docs" hx-get="/posts/blog-setup/tola-ssg-docs/index.html" hx-target="body" hx-push-url="/posts/blog-setup/tola-ssg-docs" hx-swap="innerHTML show:window:top">tola-ssg 使用文档</a></div>
+      </div>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="qi-ta"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#qi-ta">其他</a></h1>
+      <div class="flex felx-row items-center my-1">
+        <input type="checkbox" class="w-5! h-5! text-4xl! mx-3 align-middle shrink-0 appearance-none outline-2 outline-solid outline-offset-1 outline-sky-200 after:inline-block after:content-['L'] after:text-cyan-200 after:-translate-x-[0.4px] after:-translate-y-[11px] after:rotate-40 after:-scale-x-65 after:scale-y-70">
+        <div><a class="underline underline-offset-5 font-medium" href="/posts/other/linux-arknights" hx-get="/posts/other/linux-arknights/index.html" hx-target="body" hx-push-url="/posts/other/linux-arknights" hx-swap="innerHTML show:window:top">在 Linux 下畅玩明日方舟</a></div>
+      </div>
+    </div>
+  </body>
+</html>

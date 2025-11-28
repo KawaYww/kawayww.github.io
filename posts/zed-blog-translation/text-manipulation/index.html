@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>柳上川</title><meta name="description" content="柳上川的博客"/><link rel="shortcut icon" href="/images/blog/avatar.avif" type="image/avif"/><link rel="stylesheet" href="/styles/highlight.min.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Regular/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Italic/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Bold/result.css"/><link rel="stylesheet" href="/styles/catppuccin-macchiato.css"/><link rel="stylesheet" href="/iconfonts/iconfont.css"/><link rel="stylesheet" href="/styles/tailwind.css"/><script src="/scripts/highlight.min.js"> </script><script src="/scripts/rust.min.js"> </script><script src="/scripts/nix.min.js"> </script><script src="/scripts/scheme.min.js"> </script><script src="/scripts/htmx.min.js"> </script><script src="/scripts/prefetch.js"> </script><script src="/scripts/custom.js"> </script><meta name="darkreader-lock"></head>
+  <body>
+    <div id="content" class="flex flex-col mx-4 mb-20 scroll-smooth" lang="zh-Hans">
+      <div class="text-2xl sm:text-3xl my-4 w-full text-center">『文本处理功夫 の 黑带进阶之路』</div>
+      <div class="font-medium w-fit sm:mx-auto flex flex-col border-l-4 pl-2 sm:flex-row sm:border-l-0 sm:pl-0">
+        <p>[写自:2025-08-05</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>作者:柳上川</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>系列:<a class="underline underline-offset-5" href="/categories/zed-blog-translation" hx-get="/categories/zed-blog-translation/index.html" hx-target="body" hx-push-url="/categories/zed-blog-translation" hx-swap="innerHTML show:window:top">zed-blog-translation</a>]</p>
+      </div>
+      <div class="flex flex-col items-center m-4">
+        <div class="w-fit mx-auto text-lg font-semibold">摘要</div>
+        <div class="w-fit break-keep text-center sm:mx-[25%] *:inline">对博客 <a class="underline underline-offset-5 font-medium" href="https://zed.dev/blog/text-manipulation">Text Manipulation Kung Fu for the Aspiring Black Belt</a> 的翻译</div>
+      </div>
+      <div class="flex flex-col my-10 w-fit border-2 border-slate-500">
+        <p><span class="text-2xl">目录:</span></p>
+        <div class="w-fit pr-2 my-2">
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">┌─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#bu-fa-ding-wei-amp-xuan-qu">步法: 定位 &amp; 选区</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#fang-xiang-jian">方向键</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#xiu-shi-fu">修饰符</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#bai-dai-tiao-zhan">白带挑战</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#ji-fa">技法</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#pou-xi">剖析</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#mo-lian-wo-li">磨练握力</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#lu-dai-tiao-zhan">绿带挑战</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#ji-fa">技法</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#pou-xi">剖析</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#mo-lian-wo-li">磨练握力</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#zong-dai-tiao-zhan">棕带挑战</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#ji-fa">技法</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#pou-xi">剖析</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#hei-dai-tiao-zhan">黑带挑战</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#ji-fa">技法</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#pou-xi">剖析</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#hui-gu-suo-xuan">回顾所选</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">└─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#jie-lun">结论</a></span></div>
+        </div>
+      </div>
+      <p>在软件开发领域, 文本编辑器不仅是一件工具, 更是程序员双手的延伸!<br>如同以精准优雅之姿挥剑的武术家, 程序员挥舞着他们的编辑器, 以凝练意志剖开层层文本行<br>此处即是道场! 在这里, 磨练你的技艺, 精炼文本处理的艺术!<br><br>我们将从基础操作中的 navigation(定位) 与 selection(选择) 开始, 随后展开一系列实践练习<br>您将获得原始文本, 文本转换目标, 以及如何调用相关命令处理文本的指引<br>参考答案将以视频形式提供, 并附有分步的详解, 方便您跟随操作并深入理解<br><br>让我们先了解关于 navigating 与 selecting 的基础知识<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="bu-fa-ding-wei-amp-xuan-qu"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#bu-fa-ding-wei-amp-xuan-qu">步法: 定位 &amp; 选区</a></h1>
+      <p>命令面板(command palette)是您探索新命令并学习对应快捷键的最佳资源之一: 用 <code class="font-semibold text-[#aa8bd5]"><code>ctrl+shift+p</code></code> 打开它<br>它允许模糊搜索, 因此您可以键入待查找命令中的几个字符, 以快速找到它<br></p>
+      <figure class="p-2 mb-2">
+        <img class=" sm:w-[60%] mx-auto w-full rounded-lg" src="https://zed.dev/img/post/text-manipulation/command-palette.png">
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">command palette</figcaption>
+      </figure>
+      <p>在面板中, 如果您搜索 <code class="font-semibold text-[#aa8bd5]"><code>editor: move</code></code> 或 <code class="font-semibold text-[#aa8bd5]"><code>editor: select</code></code>, 您将发现大量命令: 跳转到文件开头/行尾/单词开头等, 选择下一个单词/下一行/下一段等<br>直接技艺所有所有这些命令既令人生畏也无必要, 我们将专注于学习光标定位和选择的基本功, 这些基础块可以直观地组合起来, 以实现更复杂的操作<br></p>
+      <h2 class="flex items-center w-fit my-6" id="fang-xiang-jian"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#fang-xiang-jian">方向键</a></h2>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>left</code></code>: 向左移动光标</li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>right</code></code>: 向右移动光标</li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>up</code></code>: 向上移动光标</li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>down</code></code>: 向下移动光标</li>
+      </ul>
+      <h2 class="flex items-center w-fit my-6" id="xiu-shi-fu"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#xiu-shi-fu">修饰符</a></h2>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>cmd</code></code>: 跳转到编辑器中的某个 “边缘”<br>例如: <code class="font-semibold text-[#aa8bd5]"><code>cmd-left</code></code> 跳转到当前行的开头, <code class="font-semibold text-[#aa8bd5]"><code>cmd-up</code></code> 跳转到文件的开头, 你能猜出 <code class="font-semibold text-[#aa8bd5]"><code>cmd-right</code></code> 和 <code class="font-semibold text-[#aa8bd5]"><code>cmd-down</code></code> 是做什么的吗?</li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>alt</code></code>: 在被以 “单词” 为分割单位的文本间跳转<br>当遇到 non-alphanumeric(非字母与数字) 的字符(如空格/标点), 通常会出现单词边界<br>例如: <code class="font-semibold text-[#aa8bd5]"><code>alt-left</code></code> 跳转到当前单词开头, <code class="font-semibold text-[#aa8bd5]"><code>alt-right</code></code> 跳转到当前单词末尾, <code class="font-semibold text-[#aa8bd5]"><code>alt</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>ctrl</code></code> 组合时可在 subword(子词) 间跳转, 这对驼峰或 snake_case 命名的变量很有用<br></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>shift</code></code>: 将 “选择” 置换为 “选择”<br>例如: <code class="font-semibold text-[#aa8bd5]"><code>shift+left</code></code> 向左选择, 而不是简单移动, 其可与其他修饰符组合使用, <code class="font-semibold text-[#aa8bd5]"><code>cmd-shift-left</code></code> 以选择行首<br></li>
+      </ul>
+      <p><br>现在您已经掌握了光标定位和选择命令的基本功, 现在开始练习吧!<br>解决挑战时, 请将 “命令面板的使用” 与 “对基础操作的直觉” 结合起来, 并尽量避免使用鼠标!<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="bai-dai-tiao-zhan"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#bai-dai-tiao-zhan">白带挑战</a></h1>
+      <p>目标:<br>当你仔细审查队友的拉取请求时, 发现某个 json 文件中的 key 名不符合命名规范<br>你的任务时将所有的 key 都统一为相同的命名规范<br><br>Tips:<br></p>
+      <ul class="list-disc ml-5">
+        <li>复习最开始一小节的知识</li>
+        <li>在命令面板中搜索 <code class="font-semibold text-[#aa8bd5]"><code>convert case</code></code></li>
+      </ul>
+      <p><br></p>
+      <h2 class="flex items-center w-fit my-6" id="ji-fa"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#ji-fa">技法</a></h2>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://customer-snccc0j9v3kfzkif.cloudflarestream.com/ed5343d34f61d91f6e61c292d5dbea69/downloads/default.mp4"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">白带挑战的解决方案</figcaption>
+      </figure>
+      <h2 class="flex items-center w-fit my-6" id="pou-xi"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#pou-xi">剖析</a></h2>
+      <ol class="list-decimal ml-9">
+        <li>定位到 <code class="font-semibold text-[#aa8bd5]"><code>isMasterLevelCertified</code></code> 的开头</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: select to next word end</code></code> 选中 <code class="font-semibold text-[#aa8bd5]"><code>isMasterLevelCertified</code></code></li>
+        <li>运行 <code class="font-semibold text-[#aa8bd5]"><code>editor: convert to snake case</code></code></li>
+      </ol>
+      <h2 class="flex items-center w-fit my-6" id="mo-lian-wo-li"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#mo-lian-wo-li">磨练握力</a></h2>
+      <p>Zed 附带了一些非常有用的文本处理命令, 其中许多在不同编程语言的命名规范间转换时可以派上用处:<br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: convert to lower camel case</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: convert to upper camel case</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: convert to lower case</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: convert to upper case</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: convert to kebab case</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: convert to snake case</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: convert to title case</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: convert to opposite case</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: toggle case</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: transpose</code></code></li>
+      </ul>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="lu-dai-tiao-zhan"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#lu-dai-tiao-zhan">绿带挑战</a></h1>
+      <p>目标:<br>你正在开发一个 python 程序, 注意到 <code class="font-semibold text-[#aa8bd5]"><code>train_fighter</code></code> 函数中有个 local 的只读变量 <code class="font-semibold text-[#aa8bd5]"><code>power_increase_factor</code></code>, 其可提升为全局常量<br>根据 python 的全局常量命名惯例, <code class="font-semibold text-[#aa8bd5]"><code>power_increase_factor</code></code> 变量提升至全局作用域, 其所有实例也应重命名为 <code class="font-semibold text-[#aa8bd5]"><code>POWER_INCREASE_FACTOR</code></code><br><br>Tips:<br></p>
+      <ul class="list-disc ml-5">
+        <li>复习最开始一小节的知识</li>
+        <li>在命令面板中搜索 <code class="font-semibold text-[#aa8bd5]"><code>move line</code></code></li>
+        <li>在命令面板中搜索 <code class="font-semibold text-[#aa8bd5]"><code>select all matches</code></code></li>
+        <li>在命令面板中搜索 <code class="font-semibold text-[#aa8bd5]"><code>convert case</code></code></li>
+      </ul>
+      <p><br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-python text-sm sm:text-base">def train_fighter(fighter_name, current_power):
+    power_increase_factor = 1.15
+    new_power = current_power * power_increase_factor
+    print(f"After arduous training, {fighter_name} has increased their power to {new_power:.2f}!")
+    return new_power
+ 
+ 
+def display_fighter_stats(fighter_name, fighter_power):
+    print(f"{fighter_name}'s Current Power: {fighter_power}")
+ 
+ 
+if __name__ == "__main__":
+    fighter_name = "Iron Fist"
+    initial_power = 100
+ 
+    display_fighter_stats(fighter_name, initial_power)
+    new_power_level = train_fighter(fighter_name, initial_power)
+    display_fighter_stats(fighter_name, new_power_level)</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <h2 class="flex items-center w-fit my-6" id="ji-fa"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#ji-fa">技法</a></h2>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://customer-snccc0j9v3kfzkif.cloudflarestream.com/7f75c1255fc784ab09311648294e7ba9/downloads/default.mp4"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">绿带挑战的解决方案</figcaption>
+      </figure>
+      <h2 class="flex items-center w-fit my-6" id="pou-xi"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#pou-xi">剖析</a></h2>
+      <ol class="list-decimal ml-9">
+        <li>在文件开头添加 2 个换行符</li>
+        <li>将光标向下移动到 <code class="font-semibold text-[#aa8bd5]"><code>power_increase_factor</code></code> 行的开头</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: move line up</code></code> 将行向上移动到文件开头</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: tab prev</code></code> 删除行的缩进</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: select to next word end</code></code> 选择 <code class="font-semibold text-[#aa8bd5]"><code>power_increase_factor</code></code></li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: select all matches</code></code> 选择所有 <code class="font-semibold text-[#aa8bd5]"><code>power_increase_factor</code></code> 的实例</li>
+        <li>运行 <code class="font-semibold text-[#aa8bd5]"><code>editor: convert to upper snake case</code></code></li>
+      </ol>
+      <h2 class="flex items-center w-fit my-6" id="mo-lian-wo-li"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#mo-lian-wo-li">磨练握力</a></h2>
+      <p>Zed 中有许多可用的行处理命令, 当您有一个列表, 对其进行排序, 删除重复的项, 都是常见的任务, 只需按几下键即可完成:<br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: delete line</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: duplicate line up</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: duplicate line down</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: join lines</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: move line up</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: move line down</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: reverse lines</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: shuffle lines</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: sort lines case insensitive</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: sort lines case sensitive</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: unique lines case insensitive</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: unique lines case sensitive</code></code></li>
+      </ul>
+      <p><br>有很多方法可以设置多个光标, 尝试以下命令, 它们在不同场景中都蛮有用:<br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>search: select all matches</code></code> (可以用 <code class="font-semibold text-[#aa8bd5]"><code>buffer search filters</code></code> 进行配置)</li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: select all matches</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: select next</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: split selection into lines</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: add selection above</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: add selection below</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>editor: undo selection</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>column-based selection - alt-shift-mouse-drag</code></code></li>
+      </ul>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="zong-dai-tiao-zhan"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#zong-dai-tiao-zhan">棕带挑战</a></h1>
+      <p>目标:<br>你发现了一份上古卷轴(csv 文件), 其中记录了历史上武术大师的信息<br>这个文件存在不一致的地方需要进行修正, 你必须清理该文件, 移除里面出现的引号, 并将所有字符串的首字母大写<br><br>Tips:<br></p>
+      <ul class="list-disc ml-5">
+        <li>复习最开始一小节的知识</li>
+        <li>查看行处理的命令</li>
+        <li>查看多光标的命令</li>
+      </ul>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-csv text-sm sm:text-base">id,first_name,last_name,style,birth,death,country
+1,"Miyamoto","Musashi","Swordsmanship",1584,1645,"japan"
+2,yamamoto,tsunetomo,"Hagakure",1659,1719,"Japan"
+3,"Ip","Man","wing Chun",1893,1972,"china"
+4,morihei,ueshiba,Aikido,1883,1969,"Japan"
+5,"Gichin","funakoshi","karate",1868,1957,"Japan"</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <h2 class="flex items-center w-fit my-6" id="ji-fa"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#ji-fa">技法</a></h2>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://customer-snccc0j9v3kfzkif.cloudflarestream.com/47a8887e5d0b9399817dd1f1607038e7/downloads/default.mp4"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">棕带挑战的解决方案</figcaption>
+      </figure>
+      <h2 class="flex items-center w-fit my-6" id="pou-xi"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#pou-xi">剖析</a></h2>
+      <ol class="list-decimal ml-9">
+        <li>定位到第一个 <code class="font-semibold text-[#aa8bd5]"><code>"</code></code> 的位置</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: select right</code></code> 选择 <code class="font-semibold text-[#aa8bd5]"><code>"</code></code></li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: select all matches</code></code> 选择所有实例</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: delete</code></code> 删除所有 <code class="font-semibold text-[#aa8bd5]"><code>"</code></code></li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: cancel</code></code> 退出多光标模式</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: select left</code></code> 选择前面的 <code class="font-semibold text-[#aa8bd5]"><code>,</code></code></li>
+        <li>选择 <code class="font-semibold text-[#aa8bd5]"><code>,</code></code> 的所有实例<br>我们在这里不会使用 <code class="font-semibold text-[#aa8bd5]"><code>editor: select all matches</code></code>, 因为我们不想选择分割列名的逗号<br>相反, 我们按住对应 <code class="font-semibold text-[#aa8bd5]"><code>editor: select next</code></code> 的快捷键, 重复选择下一个匹配项 (<code class="font-semibold text-[#aa8bd5]"><code>editor: undo selection</code></code> 可以撤销选择)<br></li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: move right</code></code> 退出选择单格的状态状态</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: select to next word end</code></code> 直接选择在逗号后面的所有单词(这里会包括一些整数, 但无所谓)<br></li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: convert to title case</code></code> 转换为首字母大写</li>
+      </ol>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="hei-dai-tiao-zhan"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#hei-dai-tiao-zhan">黑带挑战</a></h1>
+      <p>目标:<br>将下面 markdown 文本中的武术演员的名字提取出来<br>将每个单词都首字母大写, 以 <code class="font-semibold text-[#aa8bd5]"><code>&lt;last>, &lt;first></code></code> 的格式输出, 并按字母序排列<br>Tips:<br></p>
+      <ul class="list-disc ml-5">
+        <li>复习最开始一小节的知识</li>
+        <li>查看行处理的命令</li>
+        <li>查看多光标的命令</li>
+      </ul>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-markdown text-sm sm:text-base"># Iconic Kung Fu Actors
+ 
+## bruce lee
+ 
+Bruce Lee's portrayal of "Lee" in the 1973 martial arts film _Enter the Dragon_ is legendary. This character showcased Lee's exceptional martial arts skills, his philosophy of Jeet Kune Do, and his incredible physical prowess. The film cemented Bruce Lee's status as a global icon and greatly influenced the perception of Asian and martial arts culture in the Western world.
+ 
+## jackie chan
+ 
+Jackie Chan brought a new dimension to the martial arts film genre with his role as Wong Fei-hung in the 1978 film _Drunken Master_. Chan's unique blend of impressive martial arts and comedic timing created a refreshing and influential approach to the genre, highlighting the traditional drunken fist fighting style and establishing Chan as a major star in both Asia and the West.
+ 
+## jet li
+ 
+In the 1991 film _Once Upon a Time in China_, Jet Li portrays Huo Yuanjia, a revered martial arts master and founder of the Chin Woo Athletic Association. Li's performance was widely praised for its combination of grace, agility, and martial arts expertise, offering a narrative that explored Chinese nationalism and the importance of martial arts in cultural identity.
+ 
+## donnie yen
+ 
+Donnie Yen's role as Ip Man, the Wing Chun grandmaster, and teacher of Bruce Lee, in the 2008 film _Ip Man_, is considered one of his best performances. Through this role, Yen was able to showcase the skill, philosophy, and humanity of Ip Man, portraying significant events in his life against the backdrop of the Sino-Japanese War. The film series has become a classic, highlighting the spirit of Wing Chun and its significance in martial arts history.
+ 
+## michelle yeoh
+ 
+Michelle Yeoh's portrayal of Yu Shu Lien in the 2000 film _Crouching Tiger, Hidden Dragon_ brought her international acclaim. Her character is a skilled warrior who navigates a complex plot of love, honor, and betrayal. Yeoh's performance, alongside her martial arts skill, played a significant role in the film's success, demonstrating the power and depth of female characters in the martial arts genre.</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <h2 class="flex items-center w-fit my-6" id="ji-fa"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#ji-fa">技法</a></h2>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://customer-snccc0j9v3kfzkif.cloudflarestream.com/e1f6f13b0121300e7d0fcf808c7d21df/downloads/default.mp4"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">黑带挑战的解决方案</figcaption>
+      </figure>
+      <h2 class="flex items-center w-fit my-6" id="pou-xi"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#pou-xi">剖析</a></h2>
+      <ol class="list-decimal ml-9">
+        <li>向下定位到第一个 <code class="font-semibold text-[#aa8bd5]"><code>##</code></code> 的标题头</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: select right</code></code> 选择 <code class="font-semibold text-[#aa8bd5]"><code>##</code></code></li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: select all matches</code></code> 选择 <code class="font-semibold text-[#aa8bd5]"><code>##</code></code> 的所有实例</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: move right</code></code> 取消选择状态</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: select to end of line</code></code> 选择到每行的末尾</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: copy</code></code> 复制选区</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: move to end</code></code> 定位到文件的末尾</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: newline</code></code> 插入一些换行符</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: paste</code></code> 粘贴之前复制的文本</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: select to beginning of line</code></code> 选择最后一行</li>
+        <li>通过多次 <code class="font-semibold text-[#aa8bd5]"><code>editor: select up</code></code> 向上扩展选区的范围到名字那里</li>
+        <li>运行 <code class="font-semibold text-[#aa8bd5]"><code>editor: split selection into lines</code></code> 以将光标加到每行末尾</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: move to previous word start</code></code> 跳转到名字与姓氏间的空格</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: delete</code></code> 删除空格</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: select to next word end</code></code> 选择所有姓氏</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: copy</code></code> 复制</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: delete</code></code> 删除</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: move to beginning of line</code></code> 跳回每行开头</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: paste</code></code> 粘贴姓氏</li>
+        <li>在每个名字后面添加 <code class="font-semibold text-[#aa8bd5]"><code>,</code></code></li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: move to beginning of line</code></code> 跳转到每行开头</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: select to end of line</code></code> 扩展选区范围到每行末尾</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: convert to title case</code></code> 将所选文本转换为首字母大写</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: move to beginning of line</code></code> 跳转到每行开头</li>
+        <li>在每个名字前插入 <code class="font-semibold text-[#aa8bd5]"><code>- [ ]</code></code></li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: move to end of line</code></code> 移动到每行末尾</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: select to beginning of line</code></code> 选择每行</li>
+        <li>通过 <code class="font-semibold text-[#aa8bd5]"><code>editor: sort lines case sensitive</code></code> 进行排序</li>
+      </ol>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="hui-gu-suo-xuan"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#hui-gu-suo-xuan">回顾所选</a></h1>
+      <p>您可能希望在继续处理前查看所有被选择的文本, 以确保某个选择没抓取不该选中的内容<br>虽然可以滚动当前文件来复查所选内容, 但如果它们分布稀疏杂乱且位于长文件中, 这会变得相当繁琐乏味<br>此时运行 <code class="font-semibold text-[#aa8bd5]"><code>editor: open selections in multibuffer</code></code> 会非常高效, 它能将所有选区集中显示在紧凑的多缓冲区视图中<br>通过多缓冲区视图中, 您可以更轻松地复查所选, 进行编辑, 还有保存更改<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="jie-lun"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#jie-lun">结论</a></h1>
+      <p>文本转换实用且充满乐趣, 通过寻找步骤最少的解决方案(您可能已经发现更简洁的练习答案), 这一过程被 “游戏化”<br>当并非所有转换都像这里呈现的练习那样界限分明, 例如某些重复性的编辑任务往往无法通过多重光标一次性彻底解决<br>此时的目标就转变为了, 如何选择高效的文本状态, 使得手动收尾的工作量最小化<br><br>我们希望您能掌握更多新的 “技法”, 并将其添加到您的文本处理武器库中<br>请记住, 您练习得越多, 就会变得越发熟练, 所以继续磨练你的握力吧!<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <div class="flex flex-col sm:mx-2 *:my-2"><a class="flex items-center border-2 border-slate-500 w-full sm:rounded-md hover:border-white  justify-start " href="/posts/zed-blog-translation/zed-decoded-tasks" hx-get="/posts/zed-blog-translation/zed-decoded-tasks/index.html" hx-target="body" hx-push-url="/posts/zed-blog-translation/zed-decoded-tasks" hx-swap="innerHTML show:window:top"><span class="text-2xl sm:text-4xl sm:p-2 pl-2 pr-1 order-first ">&lt;</span> <span class="text-xl sm:text-2xl sm:p-2">基于 Tree-Sitter 生成语法感知的任务</span></a> <a class="flex items-center border-2 border-slate-500 w-full sm:rounded-md hover:border-white  justify-end " href="/posts/zed-blog-translation/zed-decoded-text-coordinate-systems" hx-get="/posts/zed-blog-translation/zed-decoded-text-coordinate-systems/index.html" hx-target="body" hx-push-url="/posts/zed-blog-translation/zed-decoded-text-coordinate-systems" hx-swap="innerHTML show:window:top"><span class="text-2xl sm:text-4xl sm:p-2 pr-2 pl-1 order-last ">></span> <span class="text-xl sm:text-2xl sm:p-2">文本坐标系</span></a></div>
+    </div>
+  </body>
+</html>
