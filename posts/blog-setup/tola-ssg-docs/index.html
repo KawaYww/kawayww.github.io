@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>柳上川</title><meta name="description" content="柳上川的博客"/><link rel="shortcut icon" href="/images/blog/avatar.avif" type="image/avif"/><link rel="stylesheet" href="/styles/highlight.min.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Regular/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Italic/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Bold/result.css"/><link rel="stylesheet" href="/styles/catppuccin-macchiato.css"/><link rel="stylesheet" href="/iconfonts/iconfont.css"/><link rel="stylesheet" href="/styles/tailwind.css"/><script src="/scripts/highlight.min.js"> </script><script src="/scripts/rust.min.js"> </script><script src="/scripts/nix.min.js"> </script><script src="/scripts/scheme.min.js"> </script><script src="/scripts/htmx.min.js"> </script><script src="/scripts/prefetch.js"> </script><script src="/scripts/custom.js"> </script><meta name="darkreader-lock"></head>
+  <body>
+    <div id="content" class="flex flex-col mx-4 mb-20 scroll-smooth" lang="zh-Hans">
+      <div class="text-2xl sm:text-3xl my-4 w-full text-center">『tola-ssg 使用文档』</div>
+      <div class="font-medium w-fit sm:mx-auto flex flex-col border-l-4 pl-2 sm:flex-row sm:border-l-0 sm:pl-0">
+        <p>[ 更新:2025-07-24</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>作者:柳上川</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>系列:<a class="underline underline-offset-5" href="/categories/blog-setup" hx-get="/categories/blog-setup/index.html" hx-target="body" hx-push-url="/categories/blog-setup" hx-swap="innerHTML show:window:top">blog-setup</a>]</p>
+      </div>
+      <div class="flex flex-col items-center m-4">
+        <div class="w-fit mx-auto text-lg font-semibold">摘要</div>
+        <div class="w-fit break-keep text-center sm:mx-[25%] *:inline">这是关于 <a class="underline underline-offset-5 font-medium" href="https://github.com/kawayww/tola-ssg">tola-ssg</a> 的使用文档, 与相关联的 typst 配置/技巧/idiom<br>本博客的构建工具就是它, 顺带一提写文档怎么感觉比写代码还累!<br></div>
+      </div>
+      <div class="flex flex-col my-10 w-fit border-2 border-slate-500">
+        <p><span class="text-2xl">目录:</span></p>
+        <div class="w-fit pr-2 my-2">
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">┌─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#cha-kan-ban-ben">查看版本</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#cha-kan-bang-zhu">查看帮助</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#chu-shi-hua">初始化</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#zhi-ding-gen-mu-lu">指定根目录</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#jin-xing-gou-jian">进行构建</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#ben-di-yu-lan">本地预览</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#pei-zhi-wen-jian">配置文件</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#tailwindji-cheng">tailwind集成</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">└─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#svgzhuan-huan-ya-suo">svg转换压缩</a></span></div>
+        </div>
+      </div>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="cha-kan-ban-ben"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#cha-kan-ban-ben">查看版本</a></h1>
+      <p><code class="font-semibold text-[#aa8bd5]"><code>tola -V</code></code> 的示例输出:</p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">tola 0.5.6</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="cha-kan-bang-zhu"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#cha-kan-bang-zhu">查看帮助</a></h1>
+      <p><code class="font-semibold text-[#aa8bd5]"><code>tola -h</code></code> 的示例输出:</p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">static site generator for typst-based blog
+
+Usage: tola [OPTIONS] &lt;COMMAND>
+
+Commands:
+  init    Init a template site
+  serve   Serve the site. Rebuild and reload on change automatically
+  build   Deletes the output directory if there is one and rebuilds the site
+  deploy  Deletes the output directory if there is one and rebuilds the site
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+  -r, --root &lt;ROOT>          root directory path
+  -o, --output &lt;OUTPUT>      Output directory path related to `root`
+  -c, --content &lt;CONTENT>    Content directory path related to `root`
+  -a, --assets &lt;ASSETS>      Assets directory path related to `root`
+  -C, --config &lt;CONFIG>      Config file path related to `root` [default: tola.toml]
+  -m, --minify &lt;MINIFY>      Minify the html content [possible values: true, false]
+  -t, --tailwind &lt;TAILWIND>  enable tailwindcss support [possible values: true, false]
+  -h, --help                 Print help
+  -V, --version              Print version</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="chu-shi-hua"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#chu-shi-hua">初始化</a></h1>
+      <p>我们可以用以下命令初始化一个全新的基于 <code class="font-semibold text-[#aa8bd5]"><code>tola</code></code> 构建的站点项目:</p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>tola init</code></code>: 基于当前目录创建</li>
+      </ul>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="zhi-ding-gen-mu-lu"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#zhi-ding-gen-mu-lu">指定根目录</a></h1>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="jin-xing-gou-jian"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#jin-xing-gou-jian">进行构建</a></h1>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="ben-di-yu-lan"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#ben-di-yu-lan">本地预览</a></h1>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="pei-zhi-wen-jian"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#pei-zhi-wen-jian">配置文件</a></h1>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="tailwindji-cheng"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#tailwindji-cheng">tailwind集成</a></h1>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="svgzhuan-huan-ya-suo"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#svgzhuan-huan-ya-suo">svg转换压缩</a></h1>
+    </div>
+  </body>
+</html>

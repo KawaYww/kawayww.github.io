@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>柳上川</title><meta name="description" content="柳上川的博客"/><link rel="shortcut icon" href="/images/blog/avatar.avif" type="image/avif"/><link rel="stylesheet" href="/styles/highlight.min.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Regular/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Italic/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Bold/result.css"/><link rel="stylesheet" href="/styles/catppuccin-macchiato.css"/><link rel="stylesheet" href="/iconfonts/iconfont.css"/><link rel="stylesheet" href="/styles/tailwind.css"/><script src="/scripts/highlight.min.js"> </script><script src="/scripts/rust.min.js"> </script><script src="/scripts/nix.min.js"> </script><script src="/scripts/scheme.min.js"> </script><script src="/scripts/htmx.min.js"> </script><script src="/scripts/prefetch.js"> </script><script src="/scripts/custom.js"> </script><meta name="darkreader-lock"></head>
+  <body>
+    <div id="content" class="flex flex-col mx-4 mb-20 scroll-smooth" lang="zh-Hans">
+      <div class="text-2xl sm:text-3xl my-4 w-full text-center">『基于 Tree-Sitter 生成语法感知的任务』</div>
+      <div class="font-medium w-fit sm:mx-auto flex flex-col border-l-4 pl-2 sm:flex-row sm:border-l-0 sm:pl-0">
+        <p>[写自:2025-08-05</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>作者:柳上川</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>系列:<a class="underline underline-offset-5" href="/categories/zed-blog-translation" hx-get="/categories/zed-blog-translation/index.html" hx-target="body" hx-push-url="/categories/zed-blog-translation" hx-swap="innerHTML show:window:top">zed-blog-translation</a>]</p>
+      </div>
+      <div class="flex flex-col items-center m-4">
+        <div class="w-fit mx-auto text-lg font-semibold">摘要</div>
+        <div class="w-fit break-keep text-center sm:mx-[25%] *:inline">对博客 <a class="underline underline-offset-5 font-medium" href="https://zed.dev/blog/zed-decoded-tasks">Zed Decoded: Syntax-Aware Task Spawning With Tree-Sitter</a> 的翻译</div>
+      </div>
+      <div class="flex flex-col my-10 w-fit border-2 border-slate-500">
+        <p><span class="text-2xl">目录:</span></p>
+        <div class="w-fit pr-2 my-2">
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">┌─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#yun-xing-task">运行 Task</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#task-bian-liang">Task 变量</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#qiu-zhi-dai-ma">求值代码</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#ding-yi-task">定义 Task</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#te-ding-yu-yu-yan-de-task">特定于语言的 Task</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">└─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#ke-yun-xing-dui-xiang">可运行对象</a></span></div>
+        </div>
+      </div>
+      <figure class="p-2 mb-2"><video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/zed-decoded-tasks/intro_demo.mp4"></video></figure>
+      <p><br>你有没有想过从 Zed 内部执行代码? 测试, linter, 编译器, 脚本, 或单行的 shell?<br><br>上面的视频演示了我用 Zed 的 <em>Tasks</em>, 在 Zed 内部执行 Go 语言的测试, 当前函数的名字被传递给 <code class="font-semibold text-[#aa8bd5]"><code>go test</code></code><br>Tasks, 作为一项新功能, 于 Zed 的 <a class="underline underline-offset-5 font-medium" href="https://github.com/zed-industries/zed/releases/tag/v0.124.7">v0.124.7</a> 版本中首次出现<br>Piotr, Kirill 和 Mikayla 自那时起便不断改进它, 在目前最新的 Zed 预览版 <a class="underline underline-offset-5 font-medium" href="https://github.com/zed-industries/zed/releases/tag/v0.136.0-pre">v0.136</a> 中, 坦率地说, 其令人印象深刻<br><br>它们堪称 “简约” 一词的最佳诠释, 同时又不失强大功能<br>其底层运用了精妙的 <a class="underline underline-offset-5 font-medium" href="https://tree-sitter.github.io/tree-sitter/">Tree-sitter</a> 技术, 这也正是我决心深入探究它们的原因所在<br>(译者注: youtube 上的配套视频: <a class="underline underline-offset-5 font-medium" href="https://youtu.be/se3zS2ZVvMo">传送门</a>)<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="yun-xing-task"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#yun-xing-task">运行 Task</a></h1>
+      <p>首先, 如何运行任务? 打开 Zed, 按 <code class="font-semibold text-[#aa8bd5]"><code>cmd-shift-p</code></code> 打开任务面板, 输入 <code class="font-semibold text-[#aa8bd5]"><code>task: spawn</code></code><br>接下来, 你会看见一个框框, 在其中敲下想执行的命令, 按 <code class="font-semibold text-[#aa8bd5]"><code>opt-return</code></code> 启动任务, 像这样:<br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/zed-decoded-tasks/tasks_run_oneshot.mp4"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">Zed 预览版 0.136: 将 <code class="font-semibold text-[#aa8bd5]"><code>go run</code></code> 作为一个 task 运行</figcaption>
+      </figure>
+      <p>现在, 再次键入 <code class="font-semibold text-[#aa8bd5]"><code>cmd-shift-p</code></code>, 但这次输入 <code class="font-semibold text-[#aa8bd5]"><code>task：rerun</code></code><br>顾名思义, 此功能会重新运行上次执行的任务, 若运行过多个不同任务, 则始终运行最后一个<br>(除了用 <code class="font-semibold text-[#aa8bd5]"><code>opt+return</code></code> 启动任务, 你还可以使用 <code class="font-semibold text-[#aa8bd5]"><code>cmd+opt+return</code></code> 的组合键, 这将使任务以临时形式运行, 即其不会被标记为 “最后运行的任务”)<br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/zed-decoded-tasks/tasks_rerun_oneshot.mp4"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">重新运行同一任务</figcaption>
+      </figure>
+      <p>若您认为打字太多(噢噢噢噢噢我可怜的手啊啊啊!), Zed 也提供对应的键绑定: <code class="font-semibold text-[#aa8bd5]"><code>opt-shift-t</code></code> 绑定到 <code class="font-semibold text-[#aa8bd5]"><code>task: spawn</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>opt-t</code></code> 绑定到 <code class="font-semibold text-[#aa8bd5]"><code>task: rerun</code></code><br>目前一切顺利, 所有曾希望通过快捷键执行代码的人都松了口气: “终于……”<br><br>不止于此!<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="task-bian-liang"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#task-bian-liang">Task 变量</a></h1>
+      <p>在最上面的那个小介绍视频中, 您看到我使用 <code class="font-semibold text-[#aa8bd5]"><code>$ZED_SYMBOL</code></code> 来引用运行任务时光标所在的函数<br><code class="font-semibold text-[#aa8bd5]"><code>$ZED_SYMBOL</code></code> 由 <code class="font-semibold text-[#aa8bd5]"><code>Tree-sitter</code></code> 提供支持, 其被填充为当前光标位置所在的最后一个 Symbol(符号) 的名称<br>这对应于你在 Zed 窗格面板顶部的导航中, 所看到的最后一个 Symbol<br><br>Zed 提供了更多类似的变量:<br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>$ZED_FILE</code></code>: 当前打开的文件的绝对路径</li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>$ZED_ROW</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>$ZED_COLUMN</code></code>: 包含游标的行与列</li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>$ZED_WORKTREE_ROOT</code></code>: 工作树根文件夹的绝对路径</li>
+      </ul>
+      <p><br>您可以在 <a class="underline underline-offset-5 font-medium" href="https://zed.dev/docs/tasks#variables">此处</a>找到最新的完整任务变量列表, 但我想在此介绍其中一位: <code class="font-semibold text-[#aa8bd5]"><code>$ZED_SELECTED_TEXT</code></code><br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="qiu-zhi-dai-ma"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#qiu-zhi-dai-ma">求值代码</a></h1>
+      <p><code class="font-semibold text-[#aa8bd5]"><code>$ZED_SELECTED_TEXT</code></code> 代表 “当前选择的文本”, 这听起来可能一般, 但它其实蛮好用的<br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/zed-decoded-tasks/evaluating_code.mp4"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">使用 Task 运行 SQL 语句 (在 psql 中)</figcaption>
+      </figure>
+      <p>在上面这个视频, 我生成了一个任务<br>其将 <code class="font-semibold text-[#aa8bd5]"><code>$ZED_SELECTED_TEXT</code></code> 传递给 <code class="font-semibold text-[#aa8bd5]"><code>psql</code></code>(PostgreSQL 的 CLI)<br>我选择第一个 SQL 语句后, 运行 Task, 然后选择下一个, 重新运行, 选择下一个, 重新运行, 选择最后一个, 重新运行<br><br>如果你仔细观察, 或已尝试过 Task 操作, 可能会产生疑问:<br>等等, 你是咋样重新运行的? <code class="font-semibold text-[#aa8bd5]"><code>$ZED_SELECTED_TEXT</code></code> 为什么始终包含最新选中的内容, 而非首次运行任务时的初始选中文本?<br><br>因为我自己在 <code class="font-semibold text-[#aa8bd5]"><code>keymap.json</code></code> 中添加了这样的快捷键:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-json text-sm sm:text-base">[
+  {
+    "context": "EmptyPane || SharedScreen || vim_operator == none &amp;&amp; !VimWaiting &amp;&amp; vim_mode != insert",
+    "bindings": {
+      ", r e": ["task::Rerun", { "reevaluate_context": true }]
+    }
+  }
+]</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>忽略 “context” 和 “vim-mode” 相关的玩意, 重要的是这块: <code class="font-semibold text-[#aa8bd5]"><code>{ "reevaluate_context": true}</code></code><br>将 <code class="font-semibold text-[#aa8bd5]"><code>reevaluate_context</code></code> 设置为 <code class="font-semibold text-[#aa8bd5]"><code>true</code></code> 后, 任务运行时将始终重新计算上下午(即 Task 变量, 如 <code class="font-semibold text-[#aa8bd5]"><code>$ZED_SELECTED_TEXT</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>$ZED_FILE</code></code>)<br><br>对于 <code class="font-semibold text-[#aa8bd5]"><code>task::Rerun</code></code>, 这里提供了 <a class="underline underline-offset-5 font-medium" href="https://github.com/zed-industries/zed/blob/70888cf3d6764c79554c1cc99de1a2197bec87b4/crates/tasks_ui/src/modal.rs#L42-L58">更多变量</a>: <code class="font-semibold text-[#aa8bd5]"><code>allow_concurrent_runs</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>use_new_terminal</code></code><br>在配套视频中, Piotr 和 Kirill 将解释这些变量, 以及演示如何使用它们<br><br>这是一些有用的东西: 通过 Task, 你可以求值完整的文件, 脚本, 选择的文本……天空即是极限!<br>或者, 好吧，你也可以在你的 shell 中运行点啥 (<br><br>也许你又在想 “噢噢噢噢噢我可怜的手啊啊啊!”, 因为你看到我输入了很多命令啊变量啊……<br>那么, 有更好的方法嘛? 有<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="ding-yi-task"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#ding-yi-task">定义 Task</a></h1>
+      <p>您可以使用 <em>任务模板(Task Template)</em> 来定义任务, 它们是些 json 文件<br>您可以在其中定义多个不同的 Task, 并使用相关的变量<br><br>模版可以放在两个不同的位置:<br></p>
+      <ul class="list-disc ml-5">
+        <li>项目根目录中的 <code class="font-semibold text-[#aa8bd5]"><code>.zed/tasks.json</code></code> 文件 (用 <code class="font-semibold text-[#aa8bd5]"><code>zed: open local tasks</code></code> 来创建/打开它)</li>
+        <li>全局范围的 <code class="font-semibold text-[#aa8bd5]"><code>~/.config/zed/tasks.json</code></code> 文件 (用 <code class="font-semibold text-[#aa8bd5]"><code>zed: open tasks</code></code> 来创建/打开它)</li>
+      </ul>
+      <p><br>示例文件:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-json text-sm sm:text-base">[
+  {
+    "label": "My cool loop",
+    "command": "for i in {1..5}; do echo \"Hello $ZED_FILE $ZED_ROW - $i/5\"; sleep 1; done"
+  },
+  {
+    "label": "ruby eval: '$ZED_SELECTED_TEXT'",
+    "command": "ruby -e '$ZED_SELECTED_TEXT'",
+    "use_new_terminal": false
+  },
+  {
+    "label": "go test - current function",
+    "command": "go test . -run $ZED_SYMBOL",
+    "reveal": "always"
+  },
+  {
+    "label": "Number of dotfiles",
+    "command": "find . -name '.*' -depth 1 | wc -l",
+    "cwd": "/Users/thorstenball"
+  }
+]</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>当在项目根目录下的 <code class="font-semibold text-[#aa8bd5]"><code>.zed/tasks.json</code></code> 存在上述 json 时, <code class="font-semibold text-[#aa8bd5]"><code>task: spawn</code></code> 会得到下面的框框:<br></p>
+      <figure class="p-2 mb-2">
+        <img class=" sm:w-[60%] mx-auto w-full rounded-lg" src="https://zed.dev/img/post/zed-decoded-tasks/tasks_spawn_with_definitions.png">
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">请注意, 任务 “ruby eval” 不会显示, 因为我还没选择文本</figcaption>
+      </figure>
+      <p>当在 <code class="font-semibold text-[#aa8bd5]"><code>tasks.json</code></code> 中定义上面那样附带 Label(标签) 的任务时, 您还可以创建快捷键来生成它们:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-json text-sm sm:text-base">{
+  "context": "EmptyPane || SharedScreen || vim_operator == none &amp;&amp; !VimWaiting &amp;&amp; vim_mode != insert",
+  "bindings": {
+    ", r t": ["task::Spawn", { "task_name": "My cool loop" }]
+  }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这将运行任务 <code class="font-semibold text-[#aa8bd5]"><code>My cool loop</code></code><br>所以你可怜的手指是安全的! 更少的打字量! 不仅因为大多数情况下您只需编写一次定义, 有时您还根本不需编写它们<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="te-ding-yu-yu-yan-de-task"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#te-ding-yu-yu-yan-de-task">特定于语言的 Task</a></h1>
+      <p>在 Zed 中, 越来越多的语言已经预先定义了任务, 比如在 rust 文件中运行 <code class="font-semibold text-[#aa8bd5]"><code>task: spawn</code></code>:<br></p>
+      <figure class="p-2 mb-2">
+        <img class=" sm:w-[60%] mx-auto w-full rounded-lg" src="https://zed.dev/img/post/zed-decoded-tasks/tasks_spawn_with_definitions_rust.png">
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">包含在 <code class="font-semibold text-[#aa8bd5]"><code>Zed's language support for rust</code></code> 部分中的 Task</figcaption>
+      </figure>
+      <p>这些 Task 包括 Test, Check, Lint, Run 等<br><code class="font-semibold text-[#aa8bd5]"><code>Language extensions</code></code> 可以定义自己的 <code class="font-semibold text-[#aa8bd5]"><code>tasks.json</code></code>, 并将其呈现给用户:<br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>Elixir</code></code> 已经有了 <code class="font-semibold text-[#aa8bd5]"><code>tasks.json</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>Gleam</code></code> 也有了 <code class="font-semibold text-[#aa8bd5]"><code>tasks.json</code></code></li>
+        <li><a class="underline underline-offset-5 font-medium" href="https://github.com/RemcoSmitsDev">@RemcoSmitsDev</a> 正在努力向 PHP 添加 <code class="font-semibold text-[#aa8bd5]"><code>tasks.json</code></code><br></li>
+        <li>……</li>
+      </ul>
+      <p><br>这些定义也没啥特别的, 它们与您定义运行的任务相同, 只是它们附带在语言扩展中<br>如果您现在想知道是否应打开 PR, 来为您喜欢的语言添加 <code class="font-semibold text-[#aa8bd5]"><code>tasks.json</code></code> 文件, 答案是 “yes, please!”<br>(rust 是我们内部最常用的语言, 也是我们的测试平台, 其有些特别的地方: rust 动态定义了一个 <code class="font-semibold text-[#aa8bd5]"><code>$RUST_PACKAGE</code></code> 变量, 但语言扩展目前还不能自定义, 不过计划支持)<br><br>再说一遍: 不至于此!<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="ke-yun-xing-dui-xiang"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#ke-yun-xing-dui-xiang">可运行对象</a></h1>
+      <p>当你用最新版本的 Zed 打开一个 rust 文件, 不仅会得到一系列要运行的 Task, 还会看见以下内容:</p>
+      <figure class="p-2 mb-2">
+        <img class=" sm:w-[60%] mx-auto w-full rounded-lg" src="https://zed.dev/img/post/zed-decoded-tasks/tasks_runnables.png">
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">看看 gutter(即最左侧)</figcaption>
+      </figure>
+      <p>看见位于最左侧 gutter 中的小播放按钮了吗?<br>是的, 你可以单击它们:<br></p>
+      <figure class="p-2 mb-2">
+        <img class=" sm:w-[60%] mx-auto w-full rounded-lg" src="https://zed.dev/img/post/zed-decoded-tasks/tasks_runnables_rust.mp4">
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">通过单击按钮运行 rust 测试</figcaption>
+      </figure>
+      <p>它也是任务, 但 Zed 是如何定位, 使得播放按钮被精准放在测试旁边, 以便于运行 Task 的呢?<br>是的, 还是 <code class="font-semibold text-[#aa8bd5]"><code>Tree-Sitter</code></code>, Zed 中的每个语言扩展, 都可以提供一个叫 <code class="font-semibold text-[#aa8bd5]"><code>runnables.scm</code></code> 的文件, 其包含 <code class="font-semibold text-[#aa8bd5]"><code>Tree-sitter queries</code></code> 语句<br>它们被用于捕获 syntaxt-tree(语法树) 中可运行的节点: 测试函数, 主函数, 实际上任何可运行的代码块都能被识别<br><br>这是当前 rust 的 <code class="font-semibold text-[#aa8bd5]"><code>runnables.scm</code></code>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-scheme text-sm sm:text-base">(
+    (attribute_item (attribute
+        [((identifier) @_attribute)
+        (scoped_identifier (identifier) @_attribute)
+            ])
+        (#eq? @_attribute "test"))
+    .
+    (attribute_item) *
+    .
+    (function_item
+        name: (_) @run)
+) @rust-test</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>若您从未见过 <code class="font-semibold text-[#aa8bd5]"><code>scheme</code></code> 语言, 或 <code class="font-semibold text-[#aa8bd5]"><code>Tree-sitter queries</code></code>, 那么这对您来说会很陌生, 不过它的作用并非很复杂<br>一个 <code class="font-semibold text-[#aa8bd5]"><code>Tree-Sitter query</code></code> 描叙了 syntactic-node(语法节点) 的模式(编程语言中 <code class="font-semibold text-[#aa8bd5]"><code>pattern-matching</code></code> 特性上的那种), 以匹配语法树<br></p>
+      <ul class="list-disc ml-5">
+        <li>此特定的 query(查询) 匹配了语法树中 “第一个具有 <code class="font-semibold text-[#aa8bd5]"><code>attribute_item</code></code> 且其 identifier(标识符) 是 <code class="font-semibold text-[#aa8bd5]"><code>test</code></code>” 的节点<br></li>
+        <li>随后, 该 query 允许任意数量的其他 <code class="font-semibold text-[#aa8bd5]"><code>attribute_item</code></code>(用 <code class="font-semibold text-[#aa8bd5]"><code>(attribute item) *</code></code> 表示)存在<br></li>
+        <li>最后, 要求模式中必须存在一个 <code class="font-semibold text-[#aa8bd5]"><code>function_item</code></code>, 其将 <code class="font-semibold text-[#aa8bd5]"><code>name</code></code> 属性存入变量 <code class="font-semibold text-[#aa8bd5]"><code>@run</code></code><br></li>
+        <li>语法节点符合该模式时, 则会被标记为 <code class="font-semibold text-[#aa8bd5]"><code>@rust-test</code></code><br></li>
+      </ul>
+      <p><br>在 Zed 中运行 <code class="font-semibold text-[#aa8bd5]"><code>debug: open syntax tree view</code></code> 时, 您可以看到给定文件的语法树<br>对于下图中的测试文件, 我们可以看到测试函数与 <code class="font-semibold text-[#aa8bd5]"><code>runnables.scm</code></code> 文件中描述的模式所匹配:<br><br></p>
+      <figure class="p-2 mb-2">
+        <img class=" sm:w-[60%] mx-auto w-full rounded-lg" src="https://zed.dev/img/post/zed-decoded-tasks/syntax_tree_rust.png">
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">rust 测试函数所对应的 <code class="font-semibold text-[#aa8bd5]"><code>Tree-sitter syntax tree</code></code></figcaption>
+      </figure>
+      <p>节点被标记为 <code class="font-semibold text-[#aa8bd5]"><code>@rust-test</code></code> 后, 可以作为 <code class="font-semibold text-[#aa8bd5]"><code>runnable</code></code> 对象被运行了, 可剩下的问题是: 我们如何运行它?<br>这就是 <code class="font-semibold text-[#aa8bd5]"><code>tasks.json</code></code> 发挥作用的时刻, 下面是一个示例:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-json text-sm sm:text-base">{
+  "label": "cargo test function",
+  "command": "cargo",
+  "args": ["test", "$ZED_SYMBOL"],
+  "tags": ["rust-test"]
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这里新增了 “tags” 属性, 其包含了 “rust-test”, 其同样被用于标记 “runnable syntax node”(可运行的语法节点)<br>得益于此, <code class="font-semibold text-[#aa8bd5]"><code>runnables.scm</code></code> 与 Task 系统被关联起来了:<br></p>
+      <ol class="list-decimal ml-9">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>runnables.scm</code></code> 中的 queries 可与任何 “runnable” 的语法节点匹配, 并为它们提供 tags</li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>tasks.json</code></code> 文件中的 Task 定义可包含 tags</li>
+        <li>若 Zed 发现节点与 Task 的定义有关联, 就会在每个节点旁边放置一个小小的播放按钮, 以便用户运行定义的任务</li>
+      </ol>
+      <p><br>我又重复啰嗦了一遍, 但真的: 这很强大, 很有用<br>因为任何东西都可被标记为 “runnable”, 任何东西都可以作为任务被执行, 想象一下各种可能!<br><br>不止是标记 test 函数, 我们还可以标记整个 test suites<br>或者, 您可以用不同的方式标记不同的测试, 这样您就能进行 integration/unit/fast/slow test<br><br>你也可以标记 markdown 文件中的 main 函数, sql 语句, 代码块(比如用 <code class="font-semibold text-[#aa8bd5]"><code>graphviz</code></code> 执行), 或者……<br>换句话说: 去试试 Task, 让我们知道您的想法, 并祝您愉快地使用 Zed 扩展!</p>
+      <hr class="border-2 border-dashed my-10">
+      <div class="flex flex-col sm:mx-2 *:my-2"><a class="flex items-center border-2 border-slate-500 w-full sm:rounded-md hover:border-white  justify-start " href="/posts/zed-blog-translation/crdts" hx-get="/posts/zed-blog-translation/crdts/index.html" hx-target="body" hx-push-url="/posts/zed-blog-translation/crdts" hx-swap="innerHTML show:window:top"><span class="text-2xl sm:text-4xl sm:p-2 pl-2 pr-1 order-first ">&lt;</span> <span class="text-xl sm:text-2xl sm:p-2">CRDTs 让协作文本编辑成为 Zed 的核心</span></a> <a class="flex items-center border-2 border-slate-500 w-full sm:rounded-md hover:border-white  justify-end " href="/posts/zed-blog-translation/text-manipulation" hx-get="/posts/zed-blog-translation/text-manipulation/index.html" hx-target="body" hx-push-url="/posts/zed-blog-translation/text-manipulation" hx-swap="innerHTML show:window:top"><span class="text-2xl sm:text-4xl sm:p-2 pr-2 pl-1 order-last ">></span> <span class="text-xl sm:text-2xl sm:p-2">文本处理功夫 の 进阶的黑带</span></a></div>
+    </div>
+  </body>
+</html>

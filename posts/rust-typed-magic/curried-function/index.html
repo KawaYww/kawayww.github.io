@@ -1,0 +1,1811 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>柳上川</title><meta name="description" content="柳上川的博客"/><link rel="shortcut icon" href="/images/blog/avatar.avif" type="image/avif"/><link rel="stylesheet" href="/styles/highlight.min.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Regular/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Italic/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Bold/result.css"/><link rel="stylesheet" href="/styles/catppuccin-macchiato.css"/><link rel="stylesheet" href="/iconfonts/iconfont.css"/><link rel="stylesheet" href="/styles/tailwind.css"/><script src="/scripts/highlight.min.js"> </script><script src="/scripts/rust.min.js"> </script><script src="/scripts/nix.min.js"> </script><script src="/scripts/scheme.min.js"> </script><script src="/scripts/htmx.min.js"> </script><script src="/scripts/prefetch.js"> </script><script src="/scripts/custom.js"> </script><meta name="darkreader-lock"></head>
+  <body>
+    <div id="content" class="flex flex-col mx-4 mb-20 scroll-smooth" lang="zh-Hans">
+      <div class="text-2xl sm:text-3xl my-4 w-full text-center">『rust-typed-magic: 柯里化柯里化与过程过程宏』</div>
+      <div class="font-medium w-fit sm:mx-auto flex flex-col border-l-4 pl-2 sm:flex-row sm:border-l-0 sm:pl-0">
+        <p>[写自:2024-03-02</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>作者:柳上川</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>系列:<a class="underline underline-offset-5" href="/categories/rust-typed-magic" hx-get="/categories/rust-typed-magic/index.html" hx-target="body" hx-push-url="/categories/rust-typed-magic" hx-swap="innerHTML show:window:top">rust-typed-magic</a>]</p>
+      </div>
+      <div class="flex flex-col items-center m-4">
+        <div class="w-fit mx-auto text-lg font-semibold">摘要</div>
+        <div class="w-fit break-keep text-center sm:mx-[25%] *:inline">学习闭包与函数, 了解柯里化的概念, 最后使用过程宏作为大杀器, 自动生成柯里化函数吧</div>
+      </div>
+      <div class="flex flex-col my-10 w-fit border-2 border-slate-500">
+        <p><span class="text-2xl">目录:</span></p>
+        <div class="w-fit pr-2 my-2">
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">┌─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#cheng-pin-yan-shi">成品演示</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#han-shu">函数</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#han-shu-xiang-yu-zhi-zhen">函数项与指针</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#you-shi-and-que-xian">优势 and 缺陷</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#bi-bao">闭包</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#bu-huo-zi-you-bian-liang">捕获自由变量</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#traitde-shi-xian">trait的实现</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#ni-ming-lei-xing-sheng-cheng">匿名类型生成</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#qiang-zhi-zhuan-yi-suo-you-quan">强制转移所有权</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#ke-li-hua">柯里化</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#guo-cheng-hong">过程宏</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#yuan-bian-cheng-de-jian-jie">元编程的简介</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#guo-cheng-hong-de-shi-yong">过程宏的使用</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#rang-hong-zhi-chi-fan-xing">让宏支持泛型</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">└─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#zi-dong-tui-dao-lei-xing">自动推导类型</a></span></div>
+        </div>
+      </div>
+      <p>前置知识: rust 基础语法<br>完整代码: <a class="underline underline-offset-5 font-medium" href="https://github.com/Jedsek/curried">curried</a><br><br><em>注意</em>:<br>此篇代码的目的并不在于写出一个 “完美地支持异步等各种函数的任何场景下的柯里化操作”<br>更多的是了解函数, 闭包, 柯里化, 元编程, 过程宏的概念, 属于面向新手尽量做到友好的杂七杂八教程, 请多包容啦QAQ<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="cheng-pin-yan-shi"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#cheng-pin-yan-shi">成品演示</a></h1>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// tests/test.rs
+use curried::{curry, to_curry};
+use std::fmt::Display;
+
+#[curry]
+fn add(a: i32, b: i32, c: i32) -> i32 {
+    a + b + c
+}
+
+#[curry]
+fn concat_string&lt;T>(a: T, b: T, c: T) -> String
+where
+    T: Display + 'static, // Note: You should additionally add 'static
+{
+    a.to_string() + &amp;b.to_string() + &amp;c.to_string()
+}
+
+fn map(a: i32, b: i32, c: i32) -> i32 {
+    a + b - c
+}
+
+fn normal_curry() {
+    let i = add(1)(2)(3);
+    assert_eq!(i, 6);
+}
+
+fn generic_curry() {
+    let f = concat_string(1)(23);
+    let s = f(456);
+    assert_eq!(s, "123456");
+}
+
+fn map_curry() {
+    let f = to_curry!(map(a, b, c));
+    let i = [1, 2, 3].map(f(1)(2));
+    assert_eq!(i, [4, 5, 6]);
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>当你看完本节, 就能够获得一种基于过程宏实现的语法糖<br>(成品基于 stable-rust, 不过中间学习的时候会演示 nightly-rust 下的一些 feature)<br><br>简单来说, 柯里化(curry) 让我们将一个 “接收n个参数的n元函数”, 转化为一个 “接收1个参数并返回一个(n-1)元函数的函数”<br>于是 add(1, 2, 3) 可以被写作 add(1)(2)(3), 之后会再讲解柯里化相关的一些作用<br><br>正片开始咯!<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="han-shu"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#han-shu">函数</a></h1>
+      <p>为了方便之后实现柯里化时的讲解, 所以先提前将一些概念放在了前面, 首先让我们来看看函数<br></p>
+      <h2 class="flex items-center w-fit my-6" id="han-shu-xiang-yu-zhi-zhen"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#han-shu-xiang-yu-zhi-zhen">函数项与指针</a></h2>
+      <p>什么是函数? 传入参数, 进行操作, 然后返回结果, 仅此而已 (结果可以为空)<br>在 rust 中, 下面这种 <code class="font-semibold text-[#aa8bd5]"><code>fn</code></code> 开头的 <code class="font-semibold text-[#aa8bd5]"><code>item</code></code> 是最常见的, 也叫作 <a class="underline underline-offset-5 font-medium" href="https://doc.rust-lang.org/reference/types/function-item.html">function-item</a><br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn foo(x: i32) -> i32 {
+    x + 1
+}
+
+fn main() {
+    let a: fn(i32) -> i32 = foo;
+
+    // 输出结果是个类似这样的指针的地址: 0x600cc581a4f0 
+    println!("{:p}", a);
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>在上面的代码中, <code class="font-semibold text-[#aa8bd5]"><code>fn foo</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>fn main</code></code> 都是一个 <code class="font-semibold text-[#aa8bd5]"><code>item(项)</code></code>, 而变量 a 的类型是 <em>函数指针类型(function pointer type)</em><br></p>
+      <h2 class="flex items-center w-fit my-6" id="you-shi-and-que-xian"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#you-shi-and-que-xian">优势 and 缺陷</a></h2>
+      <p>对于有泛型的函数, 其本身也有一个类型, 因为rust的泛型是 <em>异构翻译(heterogeneous-translation)</em><br>即 rust 在编译时会单态化每个泛型函数, 即为其生成具体类型<br><br>对于泛型函数, 我们要手动指定类型, 帮助编译器进行推导:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn bar&lt;T>(x: T) -> T {
+    x
+}
+
+fn foo(x: i32) -> i32 {
+    x + 1
+}
+
+fn main() {
+    let mut b: fn(i32) -> i32 = bar::&lt;i32>;
+    b = foo;
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>你会注意到我们手动标注了变量的类型, 并且其可以被赋值一个类型相同的函数<br>但若是自动推导, 在IDE/编辑器上悬浮的类型会多一个 <em>标识符(ident)</em>, 也就是函数本身的名字(无法手动标注)<br>倘若尝试让编译器自行推导:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn foo(x: i32) -> i32 {
+    x + 1
+}
+
+fn bar(x: i32) -> i32 {
+    x + 1
+}
+
+fn main() {
+    // typeof(a): fn foo(i32) -> i32
+    let mut a = foo;
+    a = bar;  // Failed to compile: type mismatched
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>因为编译器其实为每个函数都生成了一个 <em>独一无二的标识符(unique identifier)</em>, 并将其作为类型信息的一部分<br>如果我们不是自己手动标注类型, 而是任由编译器将这默认的标识符添加上去, 就会导致 <em>type mismatched</em> 的编译期错误<br><br>rust 中的函数还是所谓的 <em>ZST(zero sized type)</em>, 即 <em>零大小类型</em>, 因为其类型都是在编译期间就已经确定, 全是静态的<br><br>在 rust-reference 中的 <a class="underline underline-offset-5 font-medium" href="https://doc.rust-lang.org/reference/types/function-item.html">function-item</a> 中, 明确提过编译器对于这些fn类型都自动实现了哪些 trait:<br><code class="font-semibold text-[#aa8bd5]"><code>Fn</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>FnMut</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>FnOnce</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Copy</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Clone</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Send</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Sync</code></code> (前三个 trait 对应闭包, 我们马上就要讲到)<br><br><strong>但是, 但是啊, 但是! 这些类型有一个致命的缺陷, 那就是没有办法使用 outer 环境下的变量</strong><br>(好吧夸张了点, 其实这也不叫缺陷, 只是单纯的分工合作而已)<br><br>举个例子, 如果我们想这样做是不可以的, 因为引用的不是 const 也不是 static, 而是用 let 修饰的局部变量:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn main() {
+    let a = 1;
+    fn print_a() {
+        println!("{}", a);
+    }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这时候就要论到我们的闭包类型登场了! 锵锵锵锵!(BGM起!)<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="bi-bao"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#bi-bao">闭包</a></h1>
+      <p>让我们开始讲解 <em>闭包(closure)</em> 吧, 这是本篇文章的重头戏之一<br></p>
+      <h2 class="flex items-center w-fit my-6" id="bu-huo-zi-you-bian-liang"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#bu-huo-zi-you-bian-liang">捕获自由变量</a></h2>
+      <p>最早实现 <em>闭包(closure)</em> 的语言是 <em>scheme</em>(lisp的两种主要方言之一), 其定义非常简单: 能够捕获与使用<em>自由变量</em>的函数<br>在 rust 中, 闭包优于函数项的全部的用处与概念, 都围绕着 <strong>捕获自由变量</strong> 而展开<br></p>
+      <p>什么是 <em>自由变量</em>? 其实你在上一节的末尾已经见识过了, 让我们再把那部分的代码贴出来:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn main() {
+    let a = 1;
+    fn print_a() {
+        println!("{}", a);
+    }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>让我们忽略先前的编译错误, 并且假设这部分代码能成功编译:<br><br>在外层函数 <strong>main</strong> 中, 我们定义了 <strong>a</strong>, 它是在 <strong>main</strong> 函数中产生的, 它的一切都被其所知晓, 所以对该外层函数来讲, a 是 <em>bounded</em>(不自由/被约束) 的<br>但对于内层的函数 <strong>print_a</strong> 来讲, 变量 <strong>a</strong> 即没有出现在参数的位置, 也不是在其函数体内产生的, 所以对于内层函数来讲, a 是 <em>free</em>(自由) 的<br><br>倘若闭包是 <em>能够捕获与使用自由变量的函数</em>, 那么这里的 <strong>print_a</strong> 毫无疑问就是一个闭包<br>当然, 在很多编程语言中, 闭包一般也拥有许许多多的别名, 比如 <em>匿名函数/lambda表达式</em> 等 (虽然完全视作相同概念并不严谨, 但暂时忽略这些区别)<br><br>在 rust 中, 我们可以这样创建与使用闭包, 其大多数情况下可以自动推导传入参数的类型:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let f = || 1;
+f()  // 1
+
+let g = |x| x + 1;
+g(1)  // 2
+
+let a = 10;
+let h = |x| a + x
+h(10) // 20</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>闭包相当有用, 运用场景很多, 倘若没有闭包, 我们就得手动创建一个具体名字的函数, 并显式写出函数签名中的所有类型<br>对于可能只有一两行, 并且不在乎名字的函数, 我们不如干脆写成闭包:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn main() {
+    let (a, b, c) = ("a", "b", "c");
+    let f = |x| (String::from("Hello, ") + x + "~~~~~~~~");
+
+    f(a);
+    f(b);
+    f(c);
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我们也可以给诸如 map 这种函数传入一个闭包, 这也叫作 回调函数(callback), 表示将其交给别人来调用<br>在下面的代码中, 我们创建了一个闭包交给了 map, 而 map 则会调用用户传入的闭包<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// [10, 20, 30]
+[1, 2, 3].map(|x| x * 10);</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>在上面的代码中, 我们仅把闭包当作匿名函数使用, 并未用它捕获 自由变量(或者说作用域内的局部变量) 的能力<br>之前的 function-item 不会也不能捕获作用域内变量, 而闭包可以, 让我们接下来看下与闭包类型相关的核心概念吧<br></p>
+      <h2 class="flex items-center w-fit my-6" id="traitde-shi-xian"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#traitde-shi-xian">trait的实现</a></h2>
+      <p>以下三种 trait 先前已经提到过, 所有 <em>function-item</em> 都已自动实现了他们, 但是闭包则并不会全部都实现<br>这三个 trait 有所谓的父子关系: <code class="font-semibold text-[#aa8bd5]"><code>Fn: FnMut: FnOnce</code></code>, 代表实现 <code class="font-semibold text-[#aa8bd5]"><code>Fn</code></code> 的前提是实现了 <code class="font-semibold text-[#aa8bd5]"><code>FnMut</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>FnOnce</code></code>, 对于 <code class="font-semibold text-[#aa8bd5]"><code>FnMut</code></code> 同理<br><br>让我们假设存在一个自由变量x, 是某个闭包唯一所捕获的变量<br><br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>FnOnce</code></code>:<br></li>
+      </ul>
+      <p>表示至少运行一次的闭包, 为 <em>每个闭包</em> 自动实现<br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>FnMut</code></code>:<br></li>
+      </ul>
+      <p>表示以 <em>&amp;mut(可变借用)</em> 的形式使用了变量x的闭包, 为 <em>不会消费被捕获变量所有权的闭包</em> 自动实现<br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>Fn</code></code>:<br></li>
+      </ul>
+      <p>表示以 <em>&amp;(不可变借用)</em> 的形式使用了变量x(或者不捕获变量x)的闭包, 为 <em>不会消费x所有权也不会改变(mutate)x的值的闭包</em> 自动实现<br><br>当你创建闭包时, 会自动为闭包选择性地实现它们<br>每个闭包都自动实现了 <code class="font-semibold text-[#aa8bd5]"><code>FnOnce</code></code>, 表示至少能运行一次, 每个闭包除此之外还会自动实现 <code class="font-semibold text-[#aa8bd5]"><code>Fn</code></code> 或者 <code class="font-semibold text-[#aa8bd5]"><code>FnMut</code></code> (取决于你以什么形式使用被捕获的变量)<br><br>倘若闭包即未以 <em>&amp;mut的形式</em> 使用变量x(未实现 <code class="font-semibold text-[#aa8bd5]"><code>FnMut</code></code>), 也不是以 <em>&amp;的形式</em> 使用变量x/没有捕获变量x(未实现<code class="font-semibold text-[#aa8bd5]"><code>Fn</code></code>), 那么它自然只实现了 <code class="font-semibold text-[#aa8bd5]"><code>FnOnce</code></code><br>这样一来, 只实现 <code class="font-semibold text-[#aa8bd5]"><code>FnOnce</code></code> 的闭包, 理所当然地代表着会以 <em>取得所有权的形式</em> 使用被捕获的变量 (毕竟就这三种形式)<br><br>它们之间存在父子关系 <code class="font-semibold text-[#aa8bd5]"><code>Fn: FnMut: FnOnce</code></code>, 代表 <code class="font-semibold text-[#aa8bd5]"><code>Fn</code></code> 是后者的 <em>sub-trait(子trait)</em>, 实现 <code class="font-semibold text-[#aa8bd5]"><code>Fn</code></code> 必须先实现 <code class="font-semibold text-[#aa8bd5]"><code>FnMut/FnOnce</code></code><br>因此对于只要求传入 <code class="font-semibold text-[#aa8bd5]"><code>FnOnce</code></code> 的地方, 自然可以被其 <code class="font-semibold text-[#aa8bd5]"><code>sub-trait</code></code> 们所代替 (子trait基于父trait的基础上多实现了一些东西)<br><br>倘若函数的返回值是个闭包, 那么应优先返回 <code class="font-semibold text-[#aa8bd5]"><code>Fn</code></code> (根据先前阐述过的 sub-trait 的事实可知 <code class="font-semibold text-[#aa8bd5]"><code>Fn</code></code> 更加通用)<br><br>若闭包捕获了 <code class="font-semibold text-[#aa8bd5]"><code>i32/f64/bool</code></code> 等基础类型时, 看起来就好像它们的所有权被拿走了, 但请别忘记 <code class="font-semibold text-[#aa8bd5]"><code>Copy</code></code> 的存在<br>当被捕获变量是个实现了 <code class="font-semibold text-[#aa8bd5]"><code>Copy</code></code> 的类型, 闭包会拿走其副本, 这并未 消费被捕获变量的所有权<br></p>
+      <h2 class="flex items-center w-fit my-6" id="ni-ming-lei-xing-sheng-cheng"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#ni-ming-lei-xing-sheng-cheng">匿名类型生成</a></h2>
+      <p>生成闭包时, 编译器会自动创建匿名的结构体, 并为该类型实现 <code class="font-semibold text-[#aa8bd5]"><code>Fn/FnMut/FnOnce</code></code> 等 trait, 我们并不知道其具体类型叫什么<br>因此, 我们得用泛型或 impl 关键字来表示闭包的实际类型:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn generate_close() -> impl Fn(i32) -> i32 {
+    |x| x + 1
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这也叫作 <em>opaque-type(不透明类型)</em>, 对于编译器来讲, 它只知道这个返回值的类型实现了某个 trait, 除此以外一无所知<br><br>这类似先前所述的 <em>function-item</em> 里的 <em>unique identifier</em>, 每个具体的闭包实例是生成的匿名结构体的具体实例<br>对于 <code class="font-semibold text-[#aa8bd5]"><code>impl Fn</code></code> 这种 <em>opaque-type</em>, 即使看起来类型一样, 其实实际类型并不一样<br><br>不过 <em>非捕获闭包non-capturing closure)</em> 除外, 如果闭包不捕获变量, 则完全等价于 <code class="font-semibold text-[#aa8bd5]"><code>fn</code></code> 声明开头的 <em>function-item</em><br>对于这样的闭包, 如果它们看起来类型一样, 那么它们的类型则是真的一样的 (并且可以与 <code class="font-semibold text-[#aa8bd5]"><code>fn</code></code> 开头的类型互相转化)<br></p>
+      <p>尝试用编译错误进行证明:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// f1 不捕获任何自由变量, 相当于用 fn 声明了一个函数并返回
+fn f1() -> impl Fn() -> i32 {
+    if true {
+        || 1
+    } else {
+        || 2
+    }
+}
+
+// f2 捕获了自由变量, 并不等价于 fn 声明的函数
+fn f2() -> impl Fn() -> i32 {
+    let a = 1;
+    if true {
+        || a
+    } else {
+        || a
+    }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>让我们解释一下上面的代码:<br><br>我们都知道一个事实, 那就是 rust 中的 <code class="font-semibold text-[#aa8bd5]"><code>if-else/match</code></code> 要求每个分支所返回的值必须具有相同类型<br>这段代码进行编译时, 第一个不会报错, 第二个则无法通过编译, 证明了 <code class="font-semibold text-[#aa8bd5]"><code>f1</code></code> 中两个 <em>未捕获闭包</em> 具有相同类型<br>但对于 <code class="font-semibold text-[#aa8bd5]"><code>f2</code></code> 中的闭包们, 因为它们两个捕获了 <em>自由变量</em>, 因此具有不同类型<br></p>
+      <h2 class="flex items-center w-fit my-6" id="qiang-zhi-zhuan-yi-suo-you-quan"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#qiang-zhi-zhuan-yi-suo-you-quan">强制转移所有权</a></h2>
+      <p>先前为每个闭包自动实现 trait 时, 强调的是 <em>如何使用</em>, 但 <code class="font-semibold text-[#aa8bd5]"><code>move</code></code> 关键字可将被闭包捕获的变量的所有权, 强制交给闭包(但闭包本身可以不消费所有权)<br>若闭包内仍然只是 <em>以不可变借用的形式</em> 去使用被捕获变量, 那么它依旧仍然只实现了 <code class="font-semibold text-[#aa8bd5]"><code>Fn</code></code><br><br><code class="font-semibold text-[#aa8bd5]"><code>move</code></code> 关键字, 很多时候用于解决生命周期的问题 (我们在实现柯里化时, 也会用到这个特性):<br>闭包所捕获的变量, 其生命周期可能短于闭包本身, 比如你声明一个函数, 返回值是个闭包, 它捕获了函数体内产生的变量<br>这个被捕获的变量, 会随着函数的执行在末尾被 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code> 掉, 因此当已作为返回值传递给外界的闭包想使用它时, 就会访问无效的变量<br>因此, 我们直接用 <code class="font-semibold text-[#aa8bd5]"><code>move</code></code> 将该变量的所有权强制传递给闭包即可, 即使闭包本身可能并不需要消费其所有权<br><br>哟西, 大致的基础概念都会了<br>既然你已经懂得了 <code class="font-semibold text-[#aa8bd5]"><code>1+1=2</code></code> 了, 让我们开始证明哥德巴赫猜想吧!<br>既然你已经懂得函数与闭包的概念了, 让我们开始用过程宏进行元编程, 写一个可以将函数柯里化的属性宏吧!<br>既然你已经懂得函数与闭包的概念了, 让我们开始手动模拟一下柯里化吧!<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="ke-li-hua"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#ke-li-hua">柯里化</a></h1>
+      <p><em>柯里化(curry)</em>, 指仅接收一个参数并返回一个新函数, 这个函数也仅接收一个参数并返回新函数…<br>直到最后一个函数, 接收一个参数并返回最后的值<br></p>
+      <p>柯里化的概念其实相当简洁好懂, 难的是在默认不支持柯里化的语言中实现柯里化(没错, 就是你, rust!)<br>请考虑利用先前提到的知识, 尝试对下面这个简单的函数进行柯里化:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn add(a: i32, b: i32, c: i32) -> i32 {
+    a + b + c
+}
+
+fn add_curry(a: i32) -> ??? {
+    ???
+}
+
+fn main() {
+    add(1, 2, 3)        // 6
+    add_curry(1)(2)(3)  // 6
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>思路很容易想到, 毕竟该怎么做不都已经告诉你了吗 (bushi<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">#![feature(impl_trait_in_fn_trait_return)]
+
+fn add(a: i32, b: i32, c: i32) -> i32 {
+    a + b + c
+}
+
+fn add_curry(a: i32) -> impl FnOnce(i32) -> impl FnOnce(i32) -> i32 {
+    move |b| move |c| a + b + c
+}
+
+fn main() {
+    add(1, 2, 3)        // 6
+    add_curry(1)(2)(3)  // 6
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>先前在闭包篇已经讲述过一些概念:<br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>move</code></code> 关键字强制取走被捕获变量的所有权</li>
+        <li>闭包/匿名函数 本身到底自动实现了 <code class="font-semibold text-[#aa8bd5]"><code>Fn</code></code> 还是 <code class="font-semibold text-[#aa8bd5]"><code>FnMut</code></code>, 由闭包本身以 <em>何种形式</em> 使用 <em>被捕获的自由变量</em> 而决定</li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>Fn: FnMut: FnOnce</code></code>, 前两者是 <code class="font-semibold text-[#aa8bd5]"><code>FnOnce</code></code> 的 sub-trait, 比其多实现了一些东西, 所以 <code class="font-semibold text-[#aa8bd5]"><code>impl FnOnce</code></code> 可以指代所有类型的闭包</li>
+      </ul>
+      <p><br><em>注意</em>:<br>将函数的返回值类型写作 impl FnOnce 时可以返回任意类型的闭包, 但当你将它用于比如 map 需要传入 FnMut 时会编译失败<br>因为编译器只知道它实现了 FnOnce, 即使你人脑编译时觉得没问题, 但编译器根据函数签名等来检查时并不认同你 (不透明类型(opaque-type))<br><br>接下来让我们开始过程宏的概念吧, 了解什么是元编程, rust 过程宏的强大之处, 随后将类似这样的函数自动柯里化吧<br><br>啊咧? 这一节结束的也太快了吧? 篇幅好短啊, 就跟█(数据删除)与██(数据删除)一样短 (?<br>(当然不可能啊小傻瓜!!) 其实还有一些坑, 不过我们将其放到后面再讲, 用宏先来实现一个初版的语法糖再说<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="guo-cheng-hong"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#guo-cheng-hong">过程宏</a></h1>
+      <p>倘若是真的一点都没接触过相关概念, 理解下面的内容时可能会比较吃力, 明白的人直接跳过这节即可<br>我强烈建议学习 rust 中的宏/元编程时, 先学习一点 <em>声明宏(declare-macro)</em>, 当然也可以直接看下面, 会讲的!<br><br>其在我的博客中也有相应教程, 或者去看 <a class="underline underline-offset-5 font-medium" href="https://veykril.github.io/tlborm/">rust小宏书</a><br></p>
+      <h2 class="flex items-center w-fit my-6" id="yuan-bian-cheng-de-jian-jie"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#yuan-bian-cheng-de-jian-jie">元编程的简介</a></h2>
+      <p><em>宏(macro)</em> 是 rust 中一种重要的 <em>元编程(meta-programming)</em> 手段<br>在正常编程时, 我们将 <code class="font-semibold text-[#aa8bd5]"><code>i32/f64/String</code></code> 等类型视作数据, 操控与计算它们生成新的数据, 而元编程则将代码视作数据进行操控, 并生成新的代码<br><br>举个例子, 我们拿比较常见的 <code class="font-semibold text-[#aa8bd5]"><code>vec!</code></code> 宏来说明 (仅仅为了说明宏的概念, 所以会有出入并化简)<br>下面是宏根据我们传入的 <code class="font-semibold text-[#aa8bd5]"><code>1, 2, 3</code></code> 所生成的实际代码(简化了):<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// 1
+let a = vec![1, 2, 3]
+
+// 2
+let a = {
+    let mut v = Vec::new();
+    v.push(1);
+    v.push(2);
+    v.push(3);
+    v
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>源代码其实只是一串文本(String), 并没有什么特殊含义, 得交给编译器解析这串文本才能得到可执行程序(编译)<br>就像正常编程时将数据划分为 <code class="font-semibold text-[#aa8bd5]"><code>i32/f64/String/Vec</code></code> 等类型一样, 元编程中也对代码进行了分类, 为文本赋予了人为的含义:<br><em>表达式(expr)</em>, <em>标识符(ident)</em>, <em>变量类型(type)</em>, <em>字面量(literal)</em>, <em>模式(pattern)</em> 等…<br><br>我们将这些被人为赋予了意义的文本叫作 <em>Token(编程语言中的最小语法单元)</em><br>在 rust 官方内嵌提供的 proc-macro 库中, 我们将其归类为 <em>TokenTree</em><br></p>
+      <blockquote class="border-l-4 border-solid border-gray-300 mx-1 my-3 px-4 opacity-60">A single token or a delimited sequence of token trees (e.g., [1, (), ..]).</blockquote>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">pub enum TokenTree {
+    Group(Group),     // 被括号包裹起来(包括括号本身)的内容
+    Ident(Ident),     // 标识符, 比如变量名, 函数名
+    Punct(Punct),     // 标点符号, 比如逗号, 加号等
+    Literal(Literal), // 字面量, 比如 'a', "s", 2, true 等
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>而通过提供的 proc-macro 这个编译器内置的库, 我们可以使用过程宏操控 <code class="font-semibold text-[#aa8bd5]"><code>TokenStream</code></code><br>其概念相当于 <code class="font-semibold text-[#aa8bd5]"><code>Vec&lt;TokenTree></code></code>, 但 <code class="font-semibold text-[#aa8bd5]"><code>Clone</code></code> 的代价较低<br><br>我们其实经常使用过程宏<br>宏为我们生成并隐藏了这些代码, 暴露给用户的接口宛若魔法一般, 这即是元编程魅力的冰山一角:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// 1
+#[derive(Debug)]
+struct A(i32);
+
+// 2
+struct A(i32);
+impl std::fmt::Debug for A {
+    fn fmt(&amp;self, f: &amp;mut std::fmt::Formatter&lt;'_>) -> std::fmt::Result {
+        todo!()
+    }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <h2 class="flex items-center w-fit my-6" id="guo-cheng-hong-de-shi-yong"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#guo-cheng-hong-de-shi-yong">过程宏的使用</a></h2>
+      <p>本节我们将开始实现一个最小化的柯里化宏<br>为了照顾第一次学习过程宏的同学, 我会贴一下过程宏的三种分类与实际开发时的常用库<br><br></p>
+      <ul class="list-disc ml-5">
+        <li><em>过程宏(procedural-macro)</em>, 即 <em>proc-macro</em>, 在 rust 中有以下三种类型:<br></li>
+        <li><em>函数式(function like)</em>: 类似于调用函数, 与声明宏使用起来的语法一致, 类似 <code class="font-semibold text-[#aa8bd5]"><code>vec![]</code></code><br></li>
+        <li><em>派生宏(derive macro)</em>: 你使用的哪些 <code class="font-semibold text-[#aa8bd5]"><code>#[derive(...)]</code></code> 都属于这类范畴<br></li>
+        <li><em>属性宏(attribute macro)</em>: 我们接下来要创建的柯里化宏就是这一类, <code class="font-semibold text-[#aa8bd5]"><code>#[CustomMacro(Attribute)]</code></code>, 其中的 <code class="font-semibold text-[#aa8bd5]"><code>Attr</code></code> 可以不写置空<br></li>
+      </ul>
+      <p><br>其实吧, 第三类宏的生成产物你已经见到过了:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">#![feature(impl_trait_in_fn_trait_return)]
+
+fn add(a: i32, b: i32, c: i32) -> i32 {
+    a + b + c
+}
+
+fn add_curry(a: i32) -> impl FnOnce(i32) -> impl FnOnce(i32) -> i32 {
+    move |b| move |c| a + b + c
+}
+
+fn main() {
+    add(1, 2, 3)        // 6
+    add_curry(1)(2)(3)  // 6
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>如果改成第三类的属性宏, 则用户可以写成这样, 不需要关心实现的细节:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">#![feature(impl_trait_in_fn_trait_return)]
+
+use curried::curry;
+
+#[curry]
+fn add(a: i32, b: i32, c: i32) -> i32 {
+    a + b + c
+}
+
+fn main() {
+    let a = add(1);  // impl Fn(i32) -> impl Fn(i32) -> i32
+    let b = a(2);    // impl Fn(i32) -> i32
+    let c = b(3);    // i32: 6
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我们将 <code class="font-semibold text-[#aa8bd5]"><code>fn add(...) -> i32 { ... }</code></code> 作为参数喂给了 <code class="font-semibold text-[#aa8bd5]"><code>#[curry]</code></code> 这个宏, 宏吃下传入的 <code class="font-semibold text-[#aa8bd5]"><code>TokenStream</code></code>, 进行一番操作后生成了新的 <code class="font-semibold text-[#aa8bd5]"><code>TokenStream</code></code><br>这个新的 <code class="font-semibold text-[#aa8bd5]"><code>TokenStream</code></code> 才会被编译器所编译, 这里生成的结果是一个函数, 其名字来源于传入的参数, 也叫 <code class="font-semibold text-[#aa8bd5]"><code>add</code></code>, 但函数签名与函数体都被修改过了<br><br>让我们开始写第一个过程宏吧, 首先新建一个 crate, 让我们将其命名为 curried, 并且添加依赖:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">cargo new --lib curried
+cd curried
+cargo add proc-macro2
+cargo add quote
+cargo add syn -F "full"</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>随后记得修改 Cargo.toml, 使其是个 proc-macro 类型的 lib:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-toml text-sm sm:text-base"># Cargo.toml
+[dependencies]
+proc-macro2 = "1.0.78"
+quote = "1.0.35"
+syn = { version = "2.0.51", features = ["full"] }
+
+[lib]
+proc-macro = true</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>末尾的 <code class="font-semibold text-[#aa8bd5]"><code>proc-macro = true</code></code>, 是因为目前 rust 只允许被这样声明的 lib 编写过程宏, 并且只允许向外导出过程宏<br>被声明为 <code class="font-semibold text-[#aa8bd5]"><code>proc-macro</code></code> 的 lib 在默认情况下能直接 use 的, 除了 <code class="font-semibold text-[#aa8bd5]"><code>std</code></code> 还将多一个 <code class="font-semibold text-[#aa8bd5]"><code>proc-macro</code></code> (官方提供的用来解析与生成 <code class="font-semibold text-[#aa8bd5]"><code>TokenStream</code></code>)<br><br>接下来要理清楚新加进来的三个 crate 之间的关系, 这三个全都不是官方的, 但却是开发过程宏的事实标准:<br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>proc-macro2</code></code>:<br></li>
+      </ul>
+      <p>和官方提供内嵌的 proc-macro 名字很像, 不过其实是第三方写的, 但确实是下一代, 无脑用就行了<br>其提供了可以在 <code class="font-semibold text-[#aa8bd5]"><code>build.rs/main.rs</code></code>, 还有单元测试中解析/生成 <code class="font-semibold text-[#aa8bd5]"><code>TokenStream</code></code> 的能力, 是对官方库的一层包装<br><br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>syn</code></code>:<br></li>
+      </ul>
+      <p>基于 proc-macro2, 提供了将 <code class="font-semibold text-[#aa8bd5]"><code>TokenStream</code></code> 解析为更加高抽象的结构 (人为地赋予更明显的意义)<br>比如 <em>泛型(T)</em>, <em>where子句(where T:)</em>, <em>函数项(fn)</em>, <em>可见性(pub, pub(crate))</em> 等, 更加方便地进行解析<br><br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>quote</code></code>:<br></li>
+      </ul>
+      <p>基于 <code class="font-semibold text-[#aa8bd5]"><code>proc-macro2</code></code>, 提供了根据由 <code class="font-semibold text-[#aa8bd5]"><code>syn/proc-macro2</code></code> 得到的解析结构, 便捷地生成新的 <code class="font-semibold text-[#aa8bd5]"><code>TokenStream</code></code> 的方法<br>它会给你一个 <code class="font-semibold text-[#aa8bd5]"><code>quote!</code></code> 宏, 方便地进行插值, 生成新的 <code class="font-semibold text-[#aa8bd5]"><code>TokenStream</code></code><br><br>而官方内嵌提供的 <code class="font-semibold text-[#aa8bd5]"><code>proc-macro</code></code>, 你可以理解为某种 abi 标准, 编译器只能通过 <code class="font-semibold text-[#aa8bd5]"><code>proc_macro::TokenStream</code></code> 生成代码<br>站在 <code class="font-semibold text-[#aa8bd5]"><code>proc-macro2/syn/quote</code></code> 提供的高抽象框架上, 生成的则是 <code class="font-semibold text-[#aa8bd5]"><code>proc_macro2::TokenStream</code></code>, 而非 <code class="font-semibold text-[#aa8bd5]"><code>proc_macro::TokenStream</code></code><br>但没关系, 别人早就全帮你准备好了, 在两者进行转换时, 只需要调用一下 <code class="font-semibold text-[#aa8bd5]"><code>.into()</code></code> 就 OK 了<br><br>让我们来实际感受一下上面所说的内容:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// src/lib.rs
+use proc_macro::TokenStream;
+use proc_macro2::TokenTree;
+use quote::quote;
+
+#[proc_macro_attribute]
+pub fn curry(_attr: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as syn::ItemFn);
+
+    let (body, sig, vis) = (parsed.block, parsed.sig, parsed.vis);
+    let (fn_ident, fn_args, fn_return_type) = sig.ident, fn_args = sig.inputs, sig.output);
+
+    let new_fn = quote!(
+        #vis fn #fn_ident (#fn_args) #fn_return_type {
+            #body
+        }
+    );
+
+    // TokenStream 实现了 std::fmt::Display, 所以可以通过 `println!` 打印进行 debug
+    println!("{}\n", new_fn);
+
+    new_fn.into()
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>根据代码继续加深印象:<br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>proc-macro2</code></code>:<br></li>
+      </ul>
+      <p>相当于 <code class="font-semibold text-[#aa8bd5]"><code>proc-macro</code></code> 的包装, 基于三剑客最后生成的是 <code class="font-semibold text-[#aa8bd5]"><code>proc_macro2::TokenStream</code></code>, 但传给编译器的得是 <code class="font-semibold text-[#aa8bd5]"><code>proc_macro::TokenStream</code></code> 所以要调用 <code class="font-semibold text-[#aa8bd5]"><code>.into</code></code><br><br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>syn</code></code>:<br></li>
+      </ul>
+      <p>提供了许多高抽象的结构帮助解析, 比如这里我们将原始的 <code class="font-semibold text-[#aa8bd5]"><code>TokenStream</code></code> 类型的 <code class="font-semibold text-[#aa8bd5]"><code>input</code></code> 给转换为了 <code class="font-semibold text-[#aa8bd5]"><code>ItemFn</code></code><br>随后将从已经被解析包装为 <code class="font-semibold text-[#aa8bd5]"><code>ItemFn</code></code> 类型的变量中, 提取了函数体, 函数签名, 函数可见性修饰符(不是<code class="font-semibold text-[#aa8bd5]"><code>pub</code></code>就是空)<br>随后从函数签名上得到了函数的名称, 函数的参数, 函数的返回类型<br>(不然你就得自己进行解析抽象了哦)<br><br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>quote</code></code>:<br></li>
+      </ul>
+      <p>在 <code class="font-semibold text-[#aa8bd5]"><code>quote!</code></code> 宏里面, 我们以 <code class="font-semibold text-[#aa8bd5]"><code>#变量名称</code></code> 的形式进行插值, 类似于 <code class="font-semibold text-[#aa8bd5]"><code>format!("{a}")</code></code> 中的 <code class="font-semibold text-[#aa8bd5]"><code>{a}</code></code>, 不过生成的是 <code class="font-semibold text-[#aa8bd5]"><code>proc_macro2::TokenStream</code></code><br>我们这里仅仅是原封不动的解析拆解了输入, 然后原封不动地组装回去作为了输出<br><br>让我们测试一下可不可以通过编译, 在项目根目录创建测试文件夹 <code class="font-semibold text-[#aa8bd5]"><code>tests/</code></code>:</p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// tests/test.rs
+use curried::curry;
+
+#[curry]
+fn add(a: i32, b: i32, c: i32) -> i32 {
+    a + b + c
+}
+
+#[test]
+fn test() {
+    let x = add(1, 2, 3);
+    assert_eq!(x, 6);
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>若运行 <code class="font-semibold text-[#aa8bd5]"><code>cargo test</code></code>, 则编译会顺利通过<br>你也可以稍加修改, 比如给生成函数的名字增加一个 <code class="font-semibold text-[#aa8bd5]"><code>new_</code></code> 的前缀:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">//  src/lib.rs
+use proc_macro::TokenStream;
+use quote::{format_ident, quote};
+
+#[proc_macro_attribute]
+pub fn curry(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(item as syn::ItemFn);
+
+    let (body, sig, vis) = (parsed.block, parsed.sig, parsed.vis);
+    let (fn_ident, fn_args, fn_return_type) = (sig.ident, sig.inputs, sig.output);
+
+    let new_fn_ident = format_ident!("new_{fn_ident}"); // here
+    let new_fn = quote!(
+                // here
+        #vis fn #new_fn_ident (#fn_args) #fn_return_type {
+            #body
+        }
+    );
+
+    // TokenStream 实现了 std::fmt::Display, 所以可以通过 `println!` 打印进行 debug
+    println!("{}\n", new_fn);
+
+    new_fn.into()
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>现在 <code class="font-semibold text-[#aa8bd5]"><code>test.rs</code></code> 中应该会出现编译错误, 因为现在生成的新函数的名字已经变成了 <code class="font-semibold text-[#aa8bd5]"><code>new_add</code></code><br>而对于柯里化, 我们仅需在 <code class="font-semibold text-[#aa8bd5]"><code>TokenStream</code></code> 被解析抽象为 <code class="font-semibold text-[#aa8bd5]"><code>ItemFn</code></code> 的基础上, 修改它的 <em>函数签名</em> 与 <em>函数体</em> 即可:<br><br></p>
+      <ul class="list-disc ml-5">
+        <li><em>函数签名</em>: 是 <code class="font-semibold text-[#aa8bd5]"><code>fn f(#ident1: #type1) -> impl FnOnce(#type2) -> impl FnOnce(#type3) -> impl FnOnce(#type4) ... -> #typen</code></code> 的形式</li>
+        <li><em>函数体</em>: 是 <code class="font-semibold text-[#aa8bd5]"><code>move |#ident2| move |#ident3| ... #body</code></code> 的形式</li>
+      </ul>
+      <p><br>别忘了必须使用 <code class="font-semibold text-[#aa8bd5]"><code>move</code></code> 关键字强制将被捕获变量的所有权交给闭包, 保证了作为函数返回值传播的闭包, 其生命周期长于被捕获的变量<br>由于函数体内可能会消费参数(被捕获变量)的所有权, 所以我们应该统一写成 <code class="font-semibold text-[#aa8bd5]"><code>FnOnce</code></code><br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">#![feature(impl_trait_in_fn_trait_return)]
+
+fn add(a: i32) -> impl FnOnce(i32) -> impl FnOnce(i32) -> i32 {
+    move |b| move |c| a + b + c
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>最明显的难点自然在于如何生成这样的形式, 先让我们完善解决问题的思路, 搭建出来基本的骨架结构:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// src/lib.rs
+use proc_macro::TokenStream;
+use quote::quote;
+use syn::{parse_macro_input, Block, FnArg, ItemFn, Pat, ReturnType, Type};
+
+#[proc_macro_attribute]
+pub fn curry(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let parsed = parse_macro_input!(item as ItemFn);
+
+    let (body, sig, vis) = (parsed.block, parsed.sig, parsed.vis);
+
+    let fn_return_type = sig.output;
+    let (fn_ident, fn_args) = (sig.ident, sig.inputs);
+    let (impl_generics, _ty_generics, where_clause) = sig.generics.split_for_impl();
+
+    let mut arg_idents = vec![];
+    let mut arg_types = vec![];
+    for arg in fn_args.into_iter() {
+        let (ident, ty) = match arg {
+            FnArg::Typed(p) => (p.pat, p.ty),
+            FnArg::Receiver(_) => panic!("self parameter is unsupported now"),
+        };
+        arg_idents.push(ident);
+        arg_types.push(ty);
+    }
+
+    let return_type = generate_return_type(&amp;arg_types, fn_return_type);
+    let body = generate_body(&amp;arg_idents, &amp;arg_types, body);
+    let first_arg_ident = arg_idents.first().unwrap();
+    let first_arg_type = arg_types.first().unwrap();
+
+    let first_arg = if first_arg_ident.is_some() {
+        quote!(#first_arg_ident: #first_arg_type)
+    } else {
+        quote!()
+    };
+
+    let new_fn = quote!(
+        #vis fn #fn_ident #impl_generics (#first_arg) #return_type #where_clause {
+            #body
+        }
+    );
+
+    new_fn.into()
+}
+
+fn generate_return_type(
+    types: &amp;[Box&lt;Type>], 
+    fn_return_type: ReturnType,
+) -> proc_macro2::TokenStream {
+    todo!()
+}
+
+fn generate_body(
+    idents: &amp;[Box&lt;Pat>],
+    types: &amp;[Box&lt;Type>],
+    body: Box&lt;Block>,
+) -> proc_macro2::TokenStream {
+    todo!()
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我们从 <em>函数签名</em> 中得到了 <em>函数体</em>, <em>返回类型</em>, 还有参数中的 <em>Pat(pattern, 模式)</em> (类型 <code class="font-semibold text-[#aa8bd5]"><code>x: i32</code></code> 这样的形式为一对 <em>Pat</em>)<br>我们留下了两个空实现的函数, 通过传递进来 <em>切片(slice)</em> (诸如文中的 <code class="font-semibold text-[#aa8bd5]"><code>&amp;[Box&lt;Type>]</code></code>) 来解决先前的两个难点<br>我们还通过 <code class="font-semibold text-[#aa8bd5]"><code>quote!</code></code> 进行了插值, 在 <code class="font-semibold text-[#aa8bd5]"><code>curry</code></code> 中生成新的 <code class="font-semibold text-[#aa8bd5]"><code>TokenStream</code></code> 并返回<br></p>
+      <p>让我们先完成 <code class="font-semibold text-[#aa8bd5]"><code>generate_return_type</code></code> 的部分并介绍 <code class="font-semibold text-[#aa8bd5]"><code>quote!</code></code> 的 <em>重复插值(repeat)</em>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// src/lib.rs
+fn generate_return_type(
+    types: &amp;[Box&lt;Type>],
+    fn_return_type: ReturnType,
+) -> proc_macro2::TokenStream {
+    let last = types.len();
+    let range = 1..last;
+
+    let types = &amp;types[range];
+
+    let fn_return_type = quote!(
+        #( -> impl Fn(#types) )* #fn_return_type
+    );
+
+    fn_return_type
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <ul class="list-disc ml-5">
+        <li>在 <code class="font-semibold text-[#aa8bd5]"><code>quote!</code></code> 中的 <code class="font-semibold text-[#aa8bd5]"><code>#(...)*</code></code> 里面会进行重复插值, 它接受一个元素实现了 <code class="font-semibold text-[#aa8bd5]"><code>ToTokens</code></code> 的迭代器并重复地提取插入<br></li>
+        <li>先前说 <code class="font-semibold text-[#aa8bd5]"><code>impl Fn</code></code> 比较通用, 所以这里使用了 <code class="font-semibold text-[#aa8bd5]"><code>impl Fn</code></code> 作为返回值类型, 但请记住, 我们之后会将其更改, 原因与 <code class="font-semibold text-[#aa8bd5]"><code>move</code></code> 移动所有权有关<br></li>
+      </ul>
+      <p><br>同理, 让我们继续完成 <code class="font-semibold text-[#aa8bd5]"><code>generate_body</code></code>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// src/lib.rs
+fn generate_body(
+    idents: &amp;[Box&lt;Pat>],
+    types: &amp;[Box&lt;Type>],
+    body: Box&lt;Block>,
+) -> proc_macro2::TokenStream {
+    let last = types.len();
+    let range = 1..last;
+
+    let types = &amp;types[range.clone()];
+    let idents = &amp;idents[range];
+
+    let body = quote!(
+        #( move |#idents: #types| )* #body
+    );
+
+    body
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>在项目根目录下运行 <code class="font-semibold text-[#aa8bd5]"><code>cargo t</code></code>, 你会看见用于 debug 的 <code class="font-semibold text-[#aa8bd5]"><code>println</code></code> 打印了最后的 <code class="font-semibold text-[#aa8bd5]"><code>TokenStream</code></code> 并通过测试:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// tests/test.rs
+#![feature(impl_trait_in_fn_trait_return)]
+use curried::curry;
+
+#[curry]
+fn add(a: i32, b: i32, c: i32) -> i32 {
+    a + b + c
+}
+
+#[test]
+fn test() {
+    let x = add(1)(2)(3);
+    assert_eq!(x, 6);
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>看起来很不错, 不过其实上面的 <code class="font-semibold text-[#aa8bd5]"><code>add</code></code> 并没有 <em>消费参数(被捕获变量)的所有权</em>, 因为 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code> 实现了 <code class="font-semibold text-[#aa8bd5]"><code>Copy</code></code><br>让我们试试在函数体内消费参数的所有权:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// tests/test.rs
+#![feature(impl_trait_in_fn_trait_return)]
+use curried::curry;
+
+#[curry]
+fn concat_string(a: String, b: String, c: String) -> String {
+    format!("{a}{b}{c}")
+}
+
+#[test]
+fn test() {
+    let s1 = String::from("1");
+    let s2 = String::from("23");
+    let s3 = String::from("456");
+
+    let x = concat_string(s1)(s2)(s3);
+    assert_eq!(x, String::from("123456"));
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>顺利通过编译, 毕竟我们为返回值类型生成的是 impl FnOnce, 但倘若你改成 impl Fn 的样子, 就会得到这样的报错:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">error[E0507]: cannot move out of `a`, a captured variable in an `Fn` closure
+  --> tests/test.rs:10:1
+   |
+10 | #[curry]
+   | ^^^^^^^^
+   | |
+   | captured by this `Fn` closure
+   | `a` is moved here
+11 | fn concat_string(a: String, b: String, c: String) -> String {
+   |                  - captured outer variable
+12 |     format!("{a} {b} {c}")
+   |               -
+   |               |
+   |               variable moved due to use in closure
+   |               move occurs because `a` has type `String`, which does not implement the `Copy` trait</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>如果写成 <code class="font-semibold text-[#aa8bd5]"><code>impl Fn</code></code>, 对于参数是 <code class="font-semibold text-[#aa8bd5]"><code>String</code></code> 的情况会报错, 对于是 <code class="font-semibold text-[#aa8bd5]"><code>i32</code></code> 的情况不会报错, 因为后者实现了 <code class="font-semibold text-[#aa8bd5]"><code>Copy</code></code><br>这更加证明了我们得写成 <code class="font-semibold text-[#aa8bd5]"><code>impl FnOnce</code></code> 的形式<br><br>我们终于成功写出了一个可以对普通函数进行柯里化的属性宏了, 接下来让我们看看两种特殊情况<br>(说是特殊情况, 其实也是常见场景…)<br><br></p>
+      <ul class="list-disc ml-5">
+        <li>拥有泛型的函数<br></li>
+        <li>迭代器的 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code> 中对回调函数的 <code class="font-semibold text-[#aa8bd5]"><code>FnMut</code></code> 约束需求<br></li>
+      </ul>
+      <h2 class="flex items-center w-fit my-6" id="rang-hong-zhi-chi-fan-xing"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#rang-hong-zhi-chi-fan-xing">让宏支持泛型</a></h2>
+      <p>我们先前已经将输入参数中的泛型部分粘贴上去了, 所以现在直接进行测试:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// tests/test.rs
+#[curry]
+fn concat&lt;T: std::fmt::Display>(a: T, b: T, c: T) -> String {
+    format!("{a} {b} {c}")
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">fn concat &lt; T : std :: fmt :: Display > (a : T) -> impl FnOnce(T) -> impl
+FnOnce(T) -> String
+{ move | b : T | move | c : T | { format! ("{a} {b} {c}") } }
+
+error: concrete type differs from previous defining opaque type use
+  --> tests/test.rs:16:1
+   |
+16 | #[curry]
+   | ^^^^^^^^ expected `impl FnOnce(T) -> String`, got `{closure@tests/test.rs:16:1: 16:9}`
+   |
+note: previous use here
+  --> tests/test.rs:16:1
+   |
+16 | #[curry]
+   | ^^^^^^^^
+   = note: this error originates in the attribute macro `curry` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0720]: cannot resolve opaque type
+  --> tests/test.rs:16:1
+   |
+16 | #[curry]
+   | ^^^^^^^^ cannot resolve opaque type</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>看不懂啊? 什么鬼? 为什么会报错?<br>哈哈啊哈哈哈哈哈哈哈其实这是 编译器的bug, 我tm遇见的时候搜了好多资料搜不到解释, 快疯了快疯了快疯了哈哈哈哈啊哈哈哈哈哈哈哈哈哈哈哈噗噗噗噗噗噗噗噗啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊呜呜呜呜呜呜呜呜呜呜呜嗷嗷嗷呜呜呜呜呜呜呜呜哈哈哈哈哈呜呜呜呜呜 (不是<br><br>但请别在意, 代码本身写的其实是没有问题的, 但毕竟开了 nightly 下的 feature, 而且我们依旧有方法绕过去<br><br>当宏遇见 bug 时, 我们先前留下用来 debug 的 <code class="font-semibold text-[#aa8bd5]"><code>println</code></code> 打印了生成的 <code class="font-semibold text-[#aa8bd5]"><code>TokenStream</code></code><br>至少对我个人来说, 我是通过将打印结果粘贴为一个独立的新函数快速修改, 找到了解决方案:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// Failed to compile
+fn concat_1&lt;T: std::fmt::Display>(a: T) -> impl FnOnce(T) -> impl FnOnce(T) -> String {
+    move |b: T| move |c: T| format!("{a} {b} {c}")
+}
+通过修改, 我们有以下两种方法顺利编译 (这真的是bug, 当你阅读本篇时可能已被修复):// Sucessful
+fn concat_1&lt;T: std::fmt::Display>(a: T) -> impl FnOnce(T) -> impl FnOnce(T) -> String {
+    (|| move |b: T| move |c: T| format!("{a} {b} {c}"))()
+}
+
+// Sucessful
+fn concat_1&lt;T: std::fmt::Display>(a: T) -> impl FnOnce(T) -> impl FnOnce(T) -> String {
+    (move |b: T| move |c: T| format!("{a} {b} {c}"), ).0
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>哟西, 既然找到了解决方法, 让我们修改宏吧:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// src/lib.rs
+fn generate_body(
+    // ...
+) -> proc_macro2::TokenStream {
+    // ...
+    // ...
+    let body = quote!(
+        ( #( move |#idents: #types| )* #body ,).0
+    );
+
+    body
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>顺利解决了, 但如果我们想在 stable 情况下编译, 则可以通过使用 <code class="font-semibold text-[#aa8bd5]"><code>Box&lt;dyn Trait></code></code> 来构造 <em>trait-object</em><br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// src/lib.rs
+fn generate_return_type(
+    types: &amp;[Box&lt;Type>],
+    fn_return_type: ReturnType,
+) -> proc_macro2::TokenStream {
+    let last = types.len();
+    let range = 1..last;
+    let len = range.len();
+
+    let types = &amp;types[range.clone()];
+
+    let fn_return_type = quote!(#fn_return_type).to_string();
+    let mut token_stream = String::new();
+    for ty in types.iter() {
+        let ty = quote!(#ty);
+        token_stream += &amp;format!("-> Box&lt;dyn FnOnce({ty})");
+    }
+    token_stream += &amp;fn_return_type;
+    token_stream += &amp;">".repeat(len);
+
+    proc_macro2::TokenStream::from_str(&amp;token_stream).unwrap()
+}
+
+fn generate_body(
+    idents: &amp;[Box&lt;Pat>],
+    types: &amp;[Box&lt;Type>],
+    body: Box&lt;Block>,
+) -> proc_macro2::TokenStream {
+    let last = types.len();
+    let range = 1..last;
+    let len = range.len();
+
+    let idents = &amp;idents[range.clone()];
+    let types = &amp;types[range];
+
+    let body = quote!(#body);
+    let mut token_stream = String::new();
+    for (id, ty) in idents.iter().zip(types.iter()) {
+        let (ident, ty) = (quote!(#id), quote!(#ty));
+        token_stream += &amp;format!("Box::new( move |{ident}: {ty}| ");
+    }
+    token_stream += &amp;format!("{body}");
+    token_stream += &amp;")".repeat(len);
+
+    proc_macro2::TokenStream::from_str(&amp;token_stream).unwrap()
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我们构造了 <code class="font-semibold text-[#aa8bd5]"><code>Box&lt;dyn FnOnce(T) -> Box&lt;dyn FnOnce(T) -> String>></code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>Box::new(move |b| Box::new(move |c| -> #body))</code></code><br>这需要在末尾配齐 <code class="font-semibold text-[#aa8bd5]"><code>></code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>)</code></code> 这两种括号, 因此我们直接操控字符串, 然后调用 <code class="font-semibold text-[#aa8bd5]"><code>from_str</code></code> 转成 <code class="font-semibold text-[#aa8bd5]"><code>TokenStream</code></code> 即可(记得 <code class="font-semibold text-[#aa8bd5]"><code>use std::str::FromStr</code></code>)<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="zi-dong-tui-dao-lei-xing"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#zi-dong-tui-dao-lei-xing">自动推导类型</a></h1>
+      <p>我们已经解决了泛型的情况, 但仍然有一种情况我们无法通过, 那就在需求传入 <code class="font-semibold text-[#aa8bd5]"><code>Fn/FnMut</code></code> 的地方:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">#[curry]
+fn add(a: i32, b: i32, c: i32) -> i32 {
+    a + b + c
+}
+
+// Expected: [4, 5, 6]
+// But failed to compile
+[1, 2, 3].map(add(1)(2))</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>因为我们的 <em>属性宏</em> 生成的是 <code class="font-semibold text-[#aa8bd5]"><code>impl FnOnce</code></code>, 自然无法传递给需要 <code class="font-semibold text-[#aa8bd5]"><code>FnMut</code></code> 的 <code class="font-semibold text-[#aa8bd5]"><code>map</code></code> 中, 只能在相同作用域内依靠自动类型推导:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn add(a: i32, b: i32, c: i32) -> i32 {
+    a + b + c
+}
+
+let f = move |a| move |b| move |c| map(a, b, c);
+[1, 2, 3].map(f);</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>当然, 我们也可以写一个简化操作的宏 (虽然没简化多少):<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">#[proc_macro]
+pub fn to_curry(input: TokenStream) -> TokenStream {
+    let input = proc_macro2::TokenStream::from(input);
+
+    let (mut fn_name, mut body) = (None, None);
+    let mut not_in_body = true;
+    let mut args = vec![];
+
+    for tt in input {
+        match tt {
+            TokenTree::Group(group) => {
+                body = Some(group);
+                break;
+            }
+            TokenTree::Ident(ident) if not_in_body => {
+                fn_name = Some(ident);
+                not_in_body = false;
+            }
+            _ => (),
+        }
+    }
+    for tt in body.clone().unwrap().stream().into_iter() {
+        if let TokenTree::Ident(ident) = tt {
+            args.push(ident)
+        }
+    }
+
+    let body = body.unwrap();
+    let closure = quote!(
+        #( move |#args| )* #fn_name #body
+    );
+
+    closure.into()
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>现在可以这样:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let f = to_curry!(add(a, b, c));
+[1, 2, 3].map(f(1)(2)); // [4, 5, 6]</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>就此, 本文完结啦!<br>感谢你的观看!<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <div class="flex flex-col sm:mx-2 *:my-2"><a class="flex items-center border-2 border-slate-500 w-full sm:rounded-md hover:border-white  justify-end " href="/posts/rust-typed-magic/gats" hx-get="/posts/rust-typed-magic/gats/index.html" hx-target="body" hx-push-url="/posts/rust-typed-magic/gats" hx-swap="innerHTML show:window:top"><span class="text-2xl sm:text-4xl sm:p-2 pr-2 pl-1 order-last ">></span> <span class="text-xl sm:text-2xl sm:p-2">泛型关联类型</span></a></div>
+    </div>
+  </body>
+</html>

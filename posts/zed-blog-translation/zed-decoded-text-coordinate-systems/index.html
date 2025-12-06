@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>柳上川</title><meta name="description" content="柳上川的博客"/><link rel="shortcut icon" href="/images/blog/avatar.avif" type="image/avif"/><link rel="stylesheet" href="/styles/highlight.min.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Regular/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Italic/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Bold/result.css"/><link rel="stylesheet" href="/styles/catppuccin-macchiato.css"/><link rel="stylesheet" href="/iconfonts/iconfont.css"/><link rel="stylesheet" href="/styles/tailwind.css"/><script src="/scripts/highlight.min.js"> </script><script src="/scripts/rust.min.js"> </script><script src="/scripts/nix.min.js"> </script><script src="/scripts/scheme.min.js"> </script><script src="/scripts/htmx.min.js"> </script><script src="/scripts/prefetch.js"> </script><script src="/scripts/custom.js"> </script><meta name="darkreader-lock"></head>
+  <body>
+    <div id="content" class="flex flex-col mx-4 mb-20 scroll-smooth" lang="zh-Hans">
+      <div class="text-2xl sm:text-3xl my-4 w-full text-center">『文本坐标系』</div>
+      <div class="font-medium w-fit sm:mx-auto flex flex-col border-l-4 pl-2 sm:flex-row sm:border-l-0 sm:pl-0">
+        <p>[写自:2025-08-06</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>作者:柳上川</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>系列:<a class="underline underline-offset-5" href="/categories/zed-blog-translation" hx-get="/categories/zed-blog-translation/index.html" hx-target="body" hx-push-url="/categories/zed-blog-translation" hx-swap="innerHTML show:window:top">zed-blog-translation</a>]</p>
+      </div>
+      <div class="flex flex-col items-center m-4">
+        <div class="w-fit mx-auto text-lg font-semibold">摘要</div>
+        <div class="w-fit break-keep text-center sm:mx-[25%] *:inline">对博客 <a class="underline underline-offset-5 font-medium" href="https://zed.dev/blog/zed-decoded-text-coordinate-systems">Text Coordinate Systems</a> 的翻译</div>
+      </div>
+      <div class="flex flex-col my-10 w-fit border-2 border-slate-500">
+        <p><span class="text-2xl">目录:</span></p>
+        <div class="w-fit pr-2 my-2">
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">┌─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#point">Point</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#offset">Offset</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#utf-16,-ng">UTF-16, 嗯?</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#displaypoint">DisplayPoint</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">└─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#anchor">Anchor</a></span></div>
+        </div>
+      </div>
+      <p>当有人询问你: “你的光标在哪?” 答案可能类似 “第 18 行”<br>当然, 如果你那天直觉惊人, 也可以类似 “第 18 行, 第 5 列”, 行与列, 就是这么简单轻松<br><br>包括 Zed 在内的文本编辑器也使用 <code class="font-semibold text-[#aa8bd5]"><code>lines</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>columns</code></code> 的概念去描述位置<br>但当我第一次探索其源码时, 发现其中还有很多其他 “坐标系”: <code class="font-semibold text-[#aa8bd5]"><code>offsets(偏移量)</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>offset in UTF-16</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>display points</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>anchors</code></code><br><br>为了最终了解这些不同的文本坐标系, 以及何时该使用哪个坐标系, 我与 Zed 的两位联合创始人 Nathan, Antonio 展开了交谈<br>他们引导我完成了从 <code class="font-semibold text-[#aa8bd5]"><code>Point</code></code> -> <code class="font-semibold text-[#aa8bd5]"><code>DisplayPoint</code></code> -> <code class="font-semibold text-[#aa8bd5]"><code>Anchor</code></code> 的全部过程<br>(译者注: youtube 上的配套视频: <a class="underline underline-offset-5 font-medium" href="https://youtu.be/il7NoDUFCWU">传送门</a>)<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="point"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#point">Point</a></h1>
+      <p>首先, 我们来谈谈 Zed 中最明显的文本坐标形式: <code class="font-semibold text-[#aa8bd5]"><code>Point</code></code><br>一个 <code class="font-semibold text-[#aa8bd5]"><code>Point</code></code> 代表着文本缓冲区中 “以 0 为初始索引” 且 “由行与列组成” 的点<br>它看起来类似这样:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// crates/rope/src/point.rs
+ 
+struct Point {
+    row: u32,
+    column: u32,
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这并不奇怪, Row &amp; Column, 就像肉与土豆一样自然<br>以下是我们其中一项测试的代码片段, 用于说明如何使用 <code class="font-semibold text-[#aa8bd5]"><code>Point</code></code>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let last_selection_start = editor.selections.last::&lt;Point>(cx).range().start;
+assert_eq!(last_selection_start, Point::new(2, 0));</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>此处的 <code class="font-semibold text-[#aa8bd5]"><code>assertion</code></code> 试图确保选区从第三行(索引从 0 开始!), 第一列开始<br><code class="font-semibold text-[#aa8bd5]"><code>Point</code></code> 的便利之处在于, 它能轻松表达沿线条的定位操作, 比如 “将光标下移一行” 只需简单增加 <code class="font-semibold text-[#aa8bd5]"><code>row</code></code> 即可:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let old_point = Point::new(18, 5);
+let new_point = Point::new(point.row + 1, point.column);</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>从 line-18 变到 line-19, 我们仅需简单加一, 如果想回去, 那就设为负一<br>但是, 如果您想向左或者向右移动时该怎么办呢?<br><br>这将棘手起来, 因为不同行可能有不同长度, 简单的加减法可能会导致您在文本中的位置变得无效<br>事实证明, <code class="font-semibold text-[#aa8bd5]"><code>Point</code></code> 看起来简单, 但实际上具有欺骗性, 我们仍需要小心处理它<br><br>以 Zed 为例, <code class="font-semibold text-[#aa8bd5]"><code>Point</code></code> 遵循 Nathan 所说的 “typewriter logic”(打字机逻辑): 回车符(本质上新增一行)会将 <code class="font-semibold text-[#aa8bd5]"><code>column</code></code> 的记数重置为 0<br>毕竟在打字机上, 回车后的印字头会回到下一行的起始位置<br><br>为了说明这一点, 这里有一个在 Zed 代码库中通过的测试, 注意其中的 <code class="font-semibold text-[#aa8bd5]"><code>column</code></code>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn test_point_basics() {
+    let point_a = Point::new(5, 8);
+    let point_b = Point::new(2, 10);
+    let result = point_a + point_b;
+ 
+    assert_eq!(result, Point::new(7, 10));
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这里的两个 point 被加在一起, 5 和 2 得到了 10, 但列却仍然是 10, 即 <code class="font-semibold text-[#aa8bd5]"><code>point_b</code></code> 的列值<br>看来用 point 进行文本数学的运算并不像我想的那么简单直接呢?<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="offset"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#offset">Offset</a></h1>
+      <p><code class="font-semibold text-[#aa8bd5]"><code>Offset</code></code>(偏移量) 是 Zed 中的另一种文本坐标系统, 其概念简明直接<br>这是个数字, 用于表示 “文档中的某个位置” 距离 “文档起始位置” 的 Byte(字节) 数<br><br>文档的开头自然就是 <code class="font-semibold text-[#aa8bd5]"><code>Offset::new(0)</code></code>, 位于 <code class="font-semibold text-[#aa8bd5]"><code>Hello World</code></code> 中的 <code class="font-semibold text-[#aa8bd5]"><code>W</code></code> 的位置是 <code class="font-semibold text-[#aa8bd5]"><code>Offset::new(6)</code></code><br>文档中的最后一个字符则是 <code class="font-semibold text-[#aa8bd5]"><code>Offset::new(document.len() - 1)</code></code><br>(假设每个字符都是一个字节)<br><br><code class="font-semibold text-[#aa8bd5]"><code>Offset</code></code> 在处理跨越多行的文本时特别有用:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let start = Offset::new(10);
+let end = Offset::new(50);
+let selection = Selection::new(start, end);</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>完全不需要担心列, 从这个字符到那个字符, 包括换行符, 这些很容易用 <code class="font-semibold text-[#aa8bd5]"><code>Offset</code></code> 来表达<br>但同样, <code class="font-semibold text-[#aa8bd5]"><code>Offset</code></code> 也有一个小问题, 仅靠它是不够的<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="utf-16,-ng"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#utf-16,-ng">UTF-16, 嗯?</a></h1>
+      <p>在探索 Zed 的代码库时, 你会发现 <code class="font-semibold text-[#aa8bd5]"><code>OffsetUtf16</code></code> 其实比 <code class="font-semibold text-[#aa8bd5]"><code>Offset</code></code> 使用得更频繁 (还有 <code class="font-semibold text-[#aa8bd5]"><code>PointUtf16</code></code>)<br>我个人从不需处理 <code class="font-semibold text-[#aa8bd5]"><code>UTF-16</code></code>, 除开使用 LSP(语言服务器协议), 该协议使用 UTF-16 编码来计算和描述文本的位置和偏移量<br><br>这就是Zed同时拥有 <code class="font-semibold text-[#aa8bd5]"><code>OffsetUtf16</code></code> 和 <code class="font-semibold text-[#aa8bd5]"><code>PointUtf16</code></code> 的原因: 与语言服务器通信<br>例如, 下面是一个查找给定 position 对应的 definition(定义) 时的函数:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn definition&lt;T: ToPointUtf16>(
+    &amp;self,
+    buffer: &amp;Model&lt;Buffer>,
+    position: T,
+    cx: &amp;mut ModelContext&lt;Self>,
+) -> Task&lt;Result&lt;Vec&lt;LocationLink>>> {
+    let position = position.to_point_utf16(buffer.read(cx));
+    self.definition_impl(buffer, position, cx)
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>该 position(一个实现了 <code class="font-semibold text-[#aa8bd5]"><code>ToPointUtf16</code></code> 的类型 <code class="font-semibold text-[#aa8bd5]"><code>T</code></code>) 在被发送给语言服务器前会被转换为 <code class="font-semibold text-[#aa8bd5]"><code>PointUtf16</code></code> 类型<br>底层实现中, 这可能会调用 <code class="font-semibold text-[#aa8bd5]"><code>Rope</code></code> 结构体上的方法:<br>(译者注: 关于 Rope 相关的对应博客我也翻译了: <a class="underline underline-offset-5 font-medium" href="/posts/zed-blog-translation/zed-decoded-rope-sumtree" hx-get="/posts/zed-blog-translation/zed-decoded-rope-sumtree/index.html" hx-target="body" hx-push-url="/posts/zed-blog-translation/zed-decoded-rope-sumtree" hx-swap="innerHTML show:window:top">传送门: Rope &amp; SumTree</a>)</p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// crates/rope/src/rope.rs
+ 
+impl Rope {
+    fn point_to_point_utf16(&amp;self, point: Point) -> PointUtf16 {
+        if point >= self.summary().lines {
+            return self.summary().lines_utf16();
+        }
+        let mut cursor = self.chunks.cursor::&lt;(Point, PointUtf16)>();
+        cursor.seek(&amp;point, Bias::Left, &amp;());
+        let overshoot = point - cursor.start().0;
+        cursor.start().1
+        + cursor.item().map_or(PointUtf16::zero(), |chunk| {
+            chunk.point_to_point_utf16(overshoot)
+        })
+    }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>为理解这里的每一行, 我建议阅读关于之前的博客: <a class="underline underline-offset-5 font-medium" href="https://zed.dev/blog/zed-decoded-rope-sumtree">Rope &amp; SumTree</a> (译者注: 对应翻译: <a class="underline underline-offset-5 font-medium" href="/posts/zed-blog-translation/zed-decoded-rope-sumtree" hx-get="/posts/zed-blog-translation/zed-decoded-rope-sumtree/index.html" hx-target="body" hx-push-url="/posts/zed-blog-translation/zed-decoded-rope-sumtree" hx-swap="innerHTML show:window:top">传送门</a>)<br>目前只需知道: 由于语言服务器, UTF-16 对 Zed 来说至关重要, 以至于实现 Rope 的 SumTree 数据结构已直接索引了 UTF-16 的 points 与 offset<br>这导致产生了两个新的文本坐标系 <code class="font-semibold text-[#aa8bd5]"><code>PointUtf16</code></code> 和 <code class="font-semibold text-[#aa8bd5]"><code>OffsetUtf16</code></code>, 并使得其与 UTF-16 之间的转换非常快<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="displaypoint"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#displaypoint">DisplayPoint</a></h1>
+      <p>沿着抽象阶梯向上爬升, 抛开 offset, row, column 的概念, 接下来就会遇到 <code class="font-semibold text-[#aa8bd5]"><code>DisplayPoint</code></code>, 这又是个啥?<br><code class="font-semibold text-[#aa8bd5]"><code>DisplayPoint</code></code> 是个围绕 <code class="font-semibold text-[#aa8bd5]"><code>BlockPoint</code></code> 的 <a class="underline underline-offset-5 font-medium" href="https://doc.rust-lang.org/rust-by-example/generics/new_types.html">newtype</a>, 呃呃, 那 <code class="font-semibold text-[#aa8bd5]"><code>BlockPoint</code></code> 又是个啥?<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// crates/editor/src/display_map/block_map.rs
+ 
+struct BlockPoint(pub Point);</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>一个 <code class="font-semibold text-[#aa8bd5]"><code>BlockPoint</code></code> 其实就是一个… <code class="font-semibold text-[#aa8bd5]"><code>Point</code></code> !<br>等下! 啊? 这是否意味着我们并没爬上抽象阶梯, 仅仅在抽象仓鼠轮里原地打转?<br><br>并非并非, 不完全对, 因为一个 <code class="font-semibold text-[#aa8bd5]"><code>BlockPoint</code></code> 确实是个 <code class="font-semibold text-[#aa8bd5]"><code>Point</code></code>, 但在此上下文(<code class="font-semibold text-[#aa8bd5]"><code>DisplayPoint</code></code> 与编辑器的 crate 内部)中, 其行列含义有所不同<br>它们并非指向磁盘上文本文件中对应的行与列, 而是指向你实际可见的, 显示在编辑器上的那些行列, 因此才称之为 <code class="font-semibold text-[#aa8bd5]"><code>DisplayPoint</code></code><br>(译者注: 我真服了怎么这么会水)<br></p>
+      <figure class="p-2 mb-2">
+        <img class=" sm:w-[60%] mx-auto w-full rounded-lg" src="https://zed.dev/img/post/zed-decoded-text-coordinate-systems/screenshot_cursor_position.png">
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">光标在哪?</figcaption>
+      </figure>
+      <p>光标的位置是什么? 仔细观察, 作为一个普通的 <code class="font-semibold text-[#aa8bd5]"><code>Point</code></code>(索引从 0 开始!), 它将是 line-23 与 column-23<br>但若作为 <code class="font-semibold text-[#aa8bd5]"><code>DisplayPoint</code></code>, 光标的位置是 line-29 与 column-36!<br><br>这是因为 <code class="font-semibold text-[#aa8bd5]"><code>DisplayPoint</code></code> 描述了 <code class="font-semibold text-[#aa8bd5]"><code>DisplayMap</code></code> 上的位置 (希望我们在后续的 Zed-Decoded 小剧场中可以介绍这些), 并考虑了:<br></p>
+      <ul class="list-disc ml-5">
+        <li>软换行(soft-wrapping)</li>
+        <li>折叠(folding)</li>
+        <li>内联提示(inlay hints)</li>
+        <li>制表符(tabs)</li>
+        <li>代码块与折痕(blocks &amp; creases)</li>
+      </ul>
+      <p><br>在上面的截图中可以看到, 第 6 行是 软换行(soft-wrapping) 的, 其占据了不止一行空间<br>同时, <code class="font-semibold text-[#aa8bd5]"><code>Point::MAX</code></code> 的定义被折叠, 一个代码块区域正在展示诊断错误(diagnostic error), <code class="font-semibold text-[#aa8bd5]"><code>zero()</code></code> 方法中有两处内联提示(inlay hints)<br>该 <code class="font-semibold text-[#aa8bd5]"><code>DisplayPoint</code></code> 允许 Zed 考虑所有情况, 并精准描叙光标所在的位置!<br>这里是个修改过的 test, 我发现其非常能说明 <code class="font-semibold text-[#aa8bd5]"><code>DisplayPoint</code></code> 的作用:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// Modified version of a test in crates/editor/src/display_map.rs
+ 
+async fn test_zed_decoded(cx: &amp;mut gpui::TestAppContext) {
+    // [... setup ...]
+ 
+    let font_size = px(12.0);
+    let wrap_width = Some(px(64.));
+ 
+    let text = "one two three four five\nsix seven eight";
+    let buffer = MultiBuffer::build_simple(text, cx);
+    let map = cx.new_model(|cx| {
+        DisplayMap::new(
+            buffer.clone(),
+            font("Helvetica"),
+            font_size,
+            wrap_width,
+            // [... other parameters ...]
+        )
+    });
+ 
+    let snapshot = map.update(cx, |map, cx| map.snapshot(cx));
+ 
+    // Given the above constraints — font_size, wrap_width, ... — the text above
+    // is displayed in 5 lines.
+    assert_eq!(
+        snapshot.text_chunks(DisplayRow(0)).collect::&lt;String>(),
+        "one two \nthree four \nfive\nsix seven \neight"
+    );
+ 
+    // DisplayPoint(1, 0) is equivalent to Point(0, 8)
+    assert_eq!(
+        DisplayPoint::new(DisplayRow(1), 0).to_point(&amp;snapshot),
+        Point::new(0, 8)
+    );
+ 
+    // DisplayPoint(1, 2) is equivalent to Point(0, 10)
+    assert_eq!(
+        DisplayPoint::new(DisplayRow(1), 2).to_point(&amp;snapshot),
+        Point::new(0, 10)
+    );
+ 
+    // DisplayPoint(4, 1) is equivalent to Point(1, 11)
+    // (This is the "i" in "eight")
+    assert_eq!(
+        DisplayPoint::new(DisplayRow(4), 1).to_point(&amp;snapshot),
+        Point::new(1, 11)
+    );
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>用于测试的原始文本:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">one two three four five
+six seven eight</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>在 12 像素字号, 64 像素换行宽度, Helvetica 字体等条件下, 实际会渲染为:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">one two 
+three four 
+five
+six seven 
+eight</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>通过 <code class="font-semibold text-[#aa8bd5]"><code>DisplayMap</code></code>(测试函数中的 <code class="font-semibold text-[#aa8bd5]"><code>snapshot</code></code> 变量), 我们可以实现两种坐标系的转换:<br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>Point::new(0, 10)</code></code> 对应显示于 <code class="font-semibold text-[#aa8bd5]"><code>DisplayPoint::new(1, 2)</code></code></li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>Point::new(1, 11)</code></code> 对应显示于 <code class="font-semibold text-[#aa8bd5]"><code>DisplayPoint::new(4, 1)</code></code></li>
+      </ul>
+      <p><br>很精妙哇! 虽然底层还有好多机制值得探讨, 但篇幅所限, 我们该讨论下一个坐标系了, 或者说我原以为是坐标系, 实则不是的: <code class="font-semibold text-[#aa8bd5]"><code>Anchors</code></code>(锚点)<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="anchor"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#anchor">Anchor</a></h1>
+      <p>在与 Nathan 和 Antonio 交谈前(您可以观看配套视频), 我知道 <code class="font-semibold text-[#aa8bd5]"><code>Anchor</code></code>, 因为我已经在代码库中看见了 <code class="font-semibold text-[#aa8bd5]"><code>Anchor</code></code> 类型与相关函数<br>我假设它们是表示文本文档中 position 的另一种方式/坐标系<br><br>但其实这是错的, <code class="font-semibold text-[#aa8bd5]"><code>Anchor</code></code> 与文本文档中的 position 相关, 但与 <code class="font-semibold text-[#aa8bd5]"><code>Point</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Offset</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>DisplayPoint</code></code> 有很大不同<br>假设你有这样一个文本:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">Hello World!</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p><code class="font-semibold text-[#aa8bd5]"><code>Anchor</code></code> 允许你指向文档中给定字符的一侧(左 or 右), 例如针对上面的文本, 您可以创建一个指向 <code class="font-semibold text-[#aa8bd5]"><code>W</code></code> 左侧的 <code class="font-semibold text-[#aa8bd5]"><code>Anchor</code></code>, 这将接近 <code class="font-semibold text-[#aa8bd5]"><code>Point::new(0, 6)</code></code><br>但两者间存在着本质差异: <code class="font-semibold text-[#aa8bd5]"><code>Point</code></code> 描述了 <code class="font-semibold text-[#aa8bd5]"><code>W</code></code> 在当前文档版本中的位置, <code class="font-semibold text-[#aa8bd5]"><code>Anchor</code></code> 则会始终附着在该字母的侧边, 即使文档内容发生编辑变动<br><br>用 Nathan 的话来说:<br></p>
+      <blockquote class="border-l-4 border-solid border-gray-300 mx-1 my-3 px-4 opacity-60"><code class="font-semibold text-[#aa8bd5]"><code>Anchor</code></code> 是逻辑坐标, 您可以在字符的左/右侧创建它, 此后不管何时, 您都可以重新定位到当初标记的字符位置<br>即使期间发生过编辑, 或字符已被删除, 您仍能获取其逻辑位置, 即墓碑(tombstone)位置<br>这个位置既代表该字符未被删除时的原址, 也代表执行撤销删除操作后该字符将重现的位置<br></blockquote>
+      <p>(译者注: 这在 CRDTs 对应的博文中也有相关涉及, 我也进行了翻译: <a class="underline underline-offset-5 font-medium" href="/posts/zed-blog-translation/crdts" hx-get="/posts/zed-blog-translation/crdts/index.html" hx-target="body" hx-push-url="/posts/zed-blog-translation/crdts" hx-swap="innerHTML show:window:top">传送门</a>)<br><br>因此, 如果我们在上方 <code class="font-semibold text-[#aa8bd5]"><code>W</code></code> 的文本左侧添加一个 <code class="font-semibold text-[#aa8bd5]"><code>Anchor</code></code>, 然后将文本编辑为如下所示:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">Hello and good day to you, World!</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我们仍然可以 “赎回” 我们的 <code class="font-semibold text-[#aa8bd5]"><code>Anchor</code></code>, 并将其转换为 <code class="font-semibold text-[#aa8bd5]"><code>W</code></code> 此刻所在位置的实际 <code class="font-semibold text-[#aa8bd5]"><code>Point</code></code><br>这对协作文本编辑意义重大: 若您的光标位于 <code class="font-semibold text-[#aa8bd5]"><code>W</code></code>, 有人来编辑其左侧, 自己的光标仍应停留在 <code class="font-semibold text-[#aa8bd5]"><code>W</code></code>, 而非随文本变动而漂移(像站在移动地板上一般不安!)<br><br>当我们查看 <code class="font-semibold text-[#aa8bd5]"><code>Anchor</code></code> 的定义, 你就会发现 Zed 的协作性质和 CRDT 有多么密切的联系:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// crates/text/src/anchor.rs, slightly simplified
+ 
+/// A timestamped position in a buffer
+struct Anchor {
+    timestamp: clock::Lamport,
+    /// The byte offset in the buffer
+    offset: usize,
+    /// Describes which character the anchor is biased towards
+    bias: Bias,
+    buffer_id: Option&lt;BufferId>,
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这里的 <code class="font-semibold text-[#aa8bd5]"><code>timestamp</code></code> 是 <a class="underline underline-offset-5 font-medium" href="https://en.wikipedia.org/wiki/Lamport_timestamp">Lamport timestamp</a>, 一种逻辑时间戳<br>在我们的对话中, Antonio 说在这里的字段名 <code class="font-semibold text-[#aa8bd5]"><code>timestamp</code></code> 并不是个好名字, 它曾被称为 <code class="font-semibold text-[#aa8bd5]"><code>id</code></code><br><br>Nathans 解释道:<br></p>
+      <blockquote class="border-l-4 border-solid border-gray-300 mx-1 my-3 px-4 opacity-60">在 CRDT 中(或至少我们目前的 CRDT 实现中), 每段文本, 无论是字符, 粘贴的文本, 还是插入的其他内容, 都会被视为不可变的 block<br>这个不可变的 block 会被赋予在全部集群范围内唯一的 ID<br></blockquote>
+      <p><br>上面的 <code class="font-semibold text-[#aa8bd5]"><code>timestamp: clock::Lamport</code></code> 就是这个 ID, Nathan 继续说道:<br></p>
+      <blockquote class="border-l-4 border-solid border-gray-300 mx-1 my-3 px-4 opacity-60">[…] 本质上, 这是一种获得唯一 ID 的方式, 是吧?<br>其唯一性继承自副本 ID, 而每个副本都可以通过增加自身的序列号, 然后全天自由地生成新的 Lamport 时间戳<br>它实际上是为 “插入(insertion)” 操作, 为最初插入的文本块所设计的 ID<br></blockquote>
+      <p><br>因此 <code class="font-semibold text-[#aa8bd5]"><code>timestamp</code></code> 是分配给不可变文本块的唯一 ID, <code class="font-semibold text-[#aa8bd5]"><code>offset</code></code> 紧跟其后, 描述了 <code class="font-semibold text-[#aa8bd5]"><code>Anchor</code></code> 在这段文本中的位置(它也是不可变的)<br>Nathan 开始解释 “不可变性”:<br></p>
+      <blockquote class="border-l-4 border-solid border-gray-300 mx-1 my-3 px-4 opacity-60">一旦插入数据, 它就是不可变的, 即使你删除部分内容, 我们也只是将其隐藏或标记为墓碑进行记录, 但它们依然存在<br>通过这种方式, 我们实现了协同编辑, 整个系统始终保持单调递增状态, 数据只会随时间累积<br>正因如此, 我们能够通过 insertion-ID, offset 等稳定的标识进行定位<br>虽然现在需要通过复杂的索引机制来精确定位, 但至少我们拥有了可稳定引用的参照点: 这也是我们选择锚定它的原因<br></blockquote>
+      <p><br>用 Nathan 的话来说, <code class="font-semibold text-[#aa8bd5]"><code>Anchor</code></code> 是一个锚定点, 锚定了这个 “单调递增” 的结构:<br></p>
+      <blockquote class="border-l-4 border-solid border-gray-300 mx-1 my-3 px-4 opacity-60">但最精妙的地方在于, 这不仅对协作有用! 锚点还被用于文本的后台处理, 例如你想把一段文本发送给后台运行的语言服务器<br>于是创建了两个 <code class="font-semibold text-[#aa8bd5]"><code>Anchor</code></code>(被选文本的 start 与 end), 然后启动后台进程, 利用这两个锚点将文本发送给语言服务器<br>与此同时m 用户仍可继续输入和修改文本, 因为这两个锚点始终有效, 它们被固定在了不可变文本片段的具体位置上<br></blockquote>
+      <p><br>就这样吧, <code class="font-semibold text-[#aa8bd5]"><code>Point</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Offset</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>UTF-16</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>DisplayPoint</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Anchor</code></code>, 谁会想到我们能从行与列转向 <code class="font-semibold text-[#aa8bd5]"><code>Lamport clock</code></code>?<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <div class="flex flex-col sm:mx-2 *:my-2"><a class="flex items-center border-2 border-slate-500 w-full sm:rounded-md hover:border-white  justify-start " href="/posts/zed-blog-translation/text-manipulation" hx-get="/posts/zed-blog-translation/text-manipulation/index.html" hx-target="body" hx-push-url="/posts/zed-blog-translation/text-manipulation" hx-swap="innerHTML show:window:top"><span class="text-2xl sm:text-4xl sm:p-2 pl-2 pr-1 order-first ">&lt;</span> <span class="text-xl sm:text-2xl sm:p-2">文本处理功夫 の 进阶的黑带</span></a></div>
+    </div>
+  </body>
+</html>

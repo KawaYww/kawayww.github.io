@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>柳上川</title><meta name="description" content="柳上川的博客"/><link rel="shortcut icon" href="/images/blog/avatar.avif" type="image/avif"/><link rel="stylesheet" href="/styles/highlight.min.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Regular/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Italic/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Bold/result.css"/><link rel="stylesheet" href="/styles/catppuccin-macchiato.css"/><link rel="stylesheet" href="/iconfonts/iconfont.css"/><link rel="stylesheet" href="/styles/tailwind.css"/><script src="/scripts/highlight.min.js"> </script><script src="/scripts/rust.min.js"> </script><script src="/scripts/nix.min.js"> </script><script src="/scripts/scheme.min.js"> </script><script src="/scripts/htmx.min.js"> </script><script src="/scripts/prefetch.js"> </script><script src="/scripts/custom.js"> </script><meta name="darkreader-lock"></head>
+  <body>
+    <div id="content" class="flex flex-col mx-4 mb-20 scroll-smooth" lang="zh-Hans">
+      <div class="h-fit flex flex-col mt-8 sm:flex-row sm:ml-6 sm:my-8">
+        <div class="flex flex-none justify-center h-fit hover:animate-bounce sm:justify-start"><a class="w-50 sm:w-60 flex justify-center items-center relative group duration-200 hover:scale-110 sm:hover:scale-90 hover:rotate-12 sm:hover:-rotate-12 hover:opacity-80 *:[p]:contents" href="/about" hx-get="/about/index.html" hx-target="body" hx-push-url="/about"><img class="w-40 sm:w-50" src="/images/blog/avatar.avif"><img class="w-50 sm:w-60 absolute" src="/images/blog/avatar_border.png"><div class="text-6xl! text-black opacity-60 iconfont icon-restart absolute invisible group-hover:visible animate-spin"></div></a></div>
+        <div class="flex-none group h-fit mt-10 pt-4 border-t-2 border-dashed border-sky-400 sm:mt-0 sm:py-0 sm:ml-10 sm:border-l-3 sm:border-y-0">
+          <div class="animate-bounce duration-100 w-fit mx-auto sm:ml-3 sm:py-3 text-4xl! font-semibold bg-gradient-to-r
+                    bg-clip-text from-sky-400/90 to-purple-600/100 text-transparent">柳上川</div>
+          <div class="sm:mx-0 sm:pt-3 sm:h-fit *:text-lg! *:italic *:text-slate-400">
+            <div>-> <a class="no-underline! hover:underline! hover:font-semibold! font-normal!" href="/about#arcana" hx-get="/about/index.html#arcana" hx-target="body" hx-push-url="/about#arcana">诉说吧! 阿尔卡纳</a></div>
+            <div>-> <a class="no-underline! hover:underline! hover:font-semibold! font-normal!" href="/about#iron-will" hx-get="/about/index.html#iron-will" hx-target="body" hx-push-url="/about#iron-will">西西弗斯式钢铁活法</a></div>
+            <div>-> <a class="no-underline! hover:underline! hover:font-semibold! font-normal!" href="/about#iron-will" hx-get="/about/index.html#iron-will" hx-target="body" hx-push-url="/about#iron-will">cosplay堂吉珂德</a></div>
+            <div>-> <a class="no-underline! hover:underline! hover:font-semibold! font-normal!" href="/about#qing-pin" hx-get="/about/index.html#qing-pin" hx-target="body" hx-push-url="/about#qing-pin">浊富 or 清贫?</a></div>
+            <div>-> <a class="no-underline! hover:underline! hover:font-semibold! font-normal!" href="/about#galgame" hx-get="/about/index.html#galgame" hx-target="body" hx-push-url="/about#galgame">GALGAME!</a></div>
+          </div>
+        </div>
+        <div class="flex-none h-fit my-4 pt-2 pb-4 border-y-2 border-dashed border-purple-400 sm:my-0 sm:py-0 sm:mx-10 sm:border-l-3 sm:border-y-0">
+          <div class="duration-100 w-fit mx-auto sm:ml-3 sm:py-3 text-3xl! sm:text-4xl! font-semibold"><span class="bg-gradient-to-r bg-clip-text from-sky-400/90 to-purple-600/100 text-transparent"><span id="goto">GOTO</span> <span id="path" class="hidden italic text-fuchsia-400">>><span style="white-space: pre-wrap">&#x20;</span><span id="path-text"></span></span></span></div>
+          <div class="grid grid-rows-2 grid-cols-3 grid-flow-col mx-auto *:rounded-xs *:text-2xl *:border-2 *:border-sky-600 sm:ml-4 *:m-1 *:p-1 *:hover:scale-110 *:hover:opacity-70 *:hover:duration-200 *:odd:hover:-translate-y-2 *:even:hover:translate-y-2" hx-on:mouseleave="
+        document.getElementById('path').classList.add('hidden')
+        document.getElementById('goto').classList.remove('hidden')
+      "><a href="/programming" hx-on:mouseenter="
+        document.getElementById('path-text').innerText = '/programming';
+        document.getElementById('path').classList.remove('hidden')
+        document.getElementById('goto').classList.add('hidden')
+      " hx-get="/programming/index.html" hx-target="body" hx-push-url="/programming" class="flex flex-row h-fit"><i class="iconfont icon-code text-sky-500 text-2xl! px-2"></i>编程</a> <a href="/moments" hx-on:mouseenter="
+        document.getElementById('path-text').innerText = '/moments';
+        document.getElementById('path').classList.remove('hidden')
+        document.getElementById('goto').classList.add('hidden')
+      " hx-get="/moments/index.html" hx-target="body" hx-push-url="/moments" class="flex flex-row h-fit"><i class="iconfont icon-chat text-sky-500 text-2xl! px-2"></i>时刻</a> <a href="/math" hx-on:mouseenter="
+        document.getElementById('path-text').innerText = '/math';
+        document.getElementById('path').classList.remove('hidden')
+        document.getElementById('goto').classList.add('hidden')
+      " hx-get="/math/index.html" hx-target="body" hx-push-url="/math" class="flex flex-row h-fit"><i class="iconfont icon-math text-sky-500 text-2xl! px-2"></i>数学</a> <a href="/weekly-review" hx-on:mouseenter="
+        document.getElementById('path-text').innerText = '/weekly-review';
+        document.getElementById('path').classList.remove('hidden')
+        document.getElementById('goto').classList.add('hidden')
+      " hx-get="/weekly-review/index.html" hx-target="body" hx-push-url="/weekly-review" class="flex flex-row h-fit"><i class="iconfont icon-week text-sky-500 text-2xl! px-2"></i>周结</a> <a href="/about" hx-on:mouseenter="
+        document.getElementById('path-text').innerText = '/about';
+        document.getElementById('path').classList.remove('hidden')
+        document.getElementById('goto').classList.add('hidden')
+      " hx-get="/about/index.html" hx-target="body" hx-push-url="/about" class="flex flex-row h-fit"><i class="iconfont icon-about text-sky-500 text-2xl! px-2"></i>关于</a> <a href="/fantasy" hx-on:mouseenter="
+        document.getElementById('path-text').innerText = '/fantasy';
+        document.getElementById('path').classList.remove('hidden')
+        document.getElementById('goto').classList.add('hidden')
+      " hx-get="/fantasy/index.html" hx-target="body" hx-push-url="/fantasy" class="flex flex-row h-fit"><i class="iconfont icon-flower text-sky-500 text-2xl! px-2"></i>幻想</a> <a href="/friends" hx-on:mouseenter="
+        document.getElementById('path-text').innerText = '/friends';
+        document.getElementById('path').classList.remove('hidden')
+        document.getElementById('goto').classList.add('hidden')
+      " hx-get="/friends/index.html" hx-target="body" hx-push-url="/friends" class="flex flex-row h-fit"><i class="iconfont icon-love text-red-400 text-2xl! px-2"></i>友链</a> <a href="/error" hx-on:mouseenter="
+        document.getElementById('path-text').innerText = '/error';
+        document.getElementById('path').classList.remove('hidden')
+        document.getElementById('goto').classList.add('hidden')
+      " hx-get="/error/index.html" hx-target="body" hx-push-url="/error" class="flex flex-row h-fit"><i class="iconfont icon-error text-slate-500 text-2xl! px-2"></i>错误</a></div>
+        </div>
+        <div class="flex w-full hidden sm:inline-flex">
+          <div class="text-8xl text-blue-200 font-semibold font-italic ml-auto my-auto">K.Y</div>
+        </div>
+      </div>
+      <hr class="border-2 border-dashed my-10">
+      <div class="mx-auto w-fit text-xl text-purple-300 sm:text-3xl">★ ★ WHERE AM I? ★ ★</div>
+      <p><br></p>
+      <img src="/images/blog/kawayww-here.avif" class="mx-auto w-full sm:w-1/2">
+      <p><br>=> 啊啊你好! 我是柳上川, 这里是我的个人博客, 请随意探索吧<br>=> 这里有杂七杂八的东西, 如<a class="underline underline-offset-5 font-medium" href="/programming" hx-get="/programming/index.html" hx-target="body" hx-push-url="/programming" hx-swap="innerHTML show:window:top">编程</a>, <a class="underline underline-offset-5 font-medium" href="/math" hx-get="/math/index.html" hx-target="body" hx-push-url="/math" hx-swap="innerHTML show:window:top">数学</a>, <a class="underline underline-offset-5 font-medium" href="/fantasy" hx-get="/fantasy/index.html" hx-target="body" hx-push-url="/fantasy" hx-swap="innerHTML show:window:top">发癫</a>, <a class="underline underline-offset-5 font-medium" href="/fantasy" hx-get="/fantasy/index.html" hx-target="body" hx-push-url="/fantasy" hx-swap="innerHTML show:window:top">小说</a>, 仍在完善ing<br>=> 欢迎加好友, 欢迎括列喵, 欢迎一起交流探讨: <a class="underline underline-offset-5 font-medium" href="/about#contact-me" hx-get="/about/index.html#contact-me" hx-target="body" hx-push-url="/about#contact-me">联络我</a><br>=> 本博客<strong>全部</strong>基于 <a class="underline underline-offset-5 font-medium" href="https://typst.app/">typst</a> 与 <a class="underline underline-offset-5 font-medium" href="https://github.com/KawaYww/tola-ssg">tola-ssg</a> 进行构建, 采用<br><br></p>
+      <div class="mx-auto w-fit text-xl text-yellow-100 sm:text-3xl">★ ★ WHO AM I? ★ ★</div>
+      <p><br>-> 网名有 柳上川, 柳下川, 清贫, Jedsek, KawaYww 等, 目前属于 <code class="font-semibold text-[#aa8bd5]"><code data-lang="text">柳上川</code></code>+<code class="font-semibold text-[#aa8bd5]"><code>KawaYww</code></code> 的组合! !<br>-> 爱好 ACGN, 即 Animation &lt;=> Comic &lt;=> Game &lt;=> Novel, 四位一体, 偏好 2D 独游, 推各种嘎啦给木(galgame)<br>-> 追寻艺术, 兴趣使然, 沉溺幻想, 拥抱孤独, 对抗虚无, 热爱世界, 我或许是这样的人吧? 深夜偶尔也会 emo 宣泄情感呜呜呜<br>-> 即使感到迷茫也要前行, 我们都是……迷途之子啊! (? 好吧我不装了, 我是少女乐队厨子)<br>-> 讨厌人挤人的环境(比如国内漫展), 是传统向宅男<br></p>
+    </div>
+  </body>
+</html>

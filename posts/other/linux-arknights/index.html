@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>柳上川</title><meta name="description" content="柳上川的博客"/><link rel="shortcut icon" href="/images/blog/avatar.avif" type="image/avif"/><link rel="stylesheet" href="/styles/highlight.min.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Regular/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Italic/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Bold/result.css"/><link rel="stylesheet" href="/styles/catppuccin-macchiato.css"/><link rel="stylesheet" href="/iconfonts/iconfont.css"/><link rel="stylesheet" href="/styles/tailwind.css"/><script src="/scripts/highlight.min.js"> </script><script src="/scripts/rust.min.js"> </script><script src="/scripts/nix.min.js"> </script><script src="/scripts/scheme.min.js"> </script><script src="/scripts/htmx.min.js"> </script><script src="/scripts/prefetch.js"> </script><script src="/scripts/custom.js"> </script><meta name="darkreader-lock"></head>
+  <body>
+    <div id="content" class="flex flex-col mx-4 mb-20 scroll-smooth" lang="zh-Hans">
+      <div class="text-2xl sm:text-3xl my-4 w-full text-center">『在 Linux 下畅玩明日方舟』</div>
+      <div class="font-medium w-fit sm:mx-auto flex flex-col border-l-4 pl-2 sm:flex-row sm:border-l-0 sm:pl-0">
+        <p>[写自:2024-03-23</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>作者:柳上川 ]</p>
+      </div>
+      <div class="flex flex-col items-center m-4">
+        <div class="w-fit mx-auto text-lg font-semibold">摘要</div>
+        <div class="w-fit break-keep text-center sm:mx-[25%] *:inline">在Linux下畅玩明日方舟, 包括按键自定义, MAA使用, 超宽屏视野, 直播推流等教程</div>
+      </div>
+      <div class="flex flex-col my-10 w-fit border-2 border-slate-500">
+        <p><span class="text-2xl">目录:</span></p>
+        <div class="w-fit pr-2 my-2">
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">┌─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#mo-ni-qi">模拟器</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#nei-he">内核</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#huan-yuan">换源</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#qi-dong">启动</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#you-xi-an-zhuang">游戏安装</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#maazi-dong-shou-cai">MAA自动收菜</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#chao-kuan-ping">超宽屏</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#zhi-bo-tui-liu">直播推流</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">└─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#an-jian-zi-ding-yi">按键自定义</a></span></div>
+        </div>
+      </div>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="mo-ni-qi"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#mo-ni-qi">模拟器</a></h1>
+      <h2 class="flex items-center w-fit my-6" id="nei-he"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#nei-he">内核</a></h2>
+      <p>我们使用的模拟器方案基于 <a class="underline underline-offset-5 font-medium" href="https://github.com/remote-android/redroid-doc">redroid</a>, 可以非常简单方便地在 Linux 上运行 android 容器<br>首先根据 <a class="underline underline-offset-5 font-medium" href="https://github.com/remote-android/redroid-doc">redroid-doc</a> 进行配置, 它可以在任何 Linux 上运行, 只需要启动一些内核功能即可<br>我的机子目前是 Arch, 默认内核是 linux-zen, 所以直接就满足了需求, 不必操心这方面<br></p>
+      <h2 class="flex items-center w-fit my-6" id="huan-yuan"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#huan-yuan">换源</a></h2>
+      <p>通过包管理器安装 docker, 并且记得换成国内镜像加快下载速度, 不然会非常慢:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">sudo mkdir /etc/docker
+vim /etc/docker/daemon.json</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>在 <code class="font-semibold text-[#aa8bd5]"><code>/etc/docker/daemon.json</code></code> 中添加如下内容:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-json text-sm sm:text-base">{
+    "registry-mirrors": [
+        "https://dockerproxy.com",
+        "https://docker.mirrors.ustc.edu.cn",
+        "https://docker.nju.edu.cn"
+    ]
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>重启一下服务:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">sudo service docker restart</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <h2 class="flex items-center w-fit my-6" id="qi-dong"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#qi-dong">启动</a></h2>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-bash text-sm sm:text-base">sudo docker run -d --privileged  \
+  -v ~/vms/redroid11:/data   \
+  -p 5555:5555  \
+  --name redroid11   \
+  redroid/redroid:11.0.0-latest   \
+  androidboot.redroid_width=1920   \
+  androidboot.redroid_height=1080   \
+  androidboot.redroid_gpu_mode=host   \
+  androidboot.redroid_dpi=480 \
+  androidboot.redroid_fps=120  \
+  androidboot.use_memfd=true</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我们启动了 docker, 第一次启动时会自动帮你进行下载, 我们在这里使用的是 android11, 所以取名为 redroid11<br>(并不推荐使用非 android11 的版本, 比如换成 <code class="font-semibold text-[#aa8bd5]"><code>redroid::14.0.0-latest</code></code>, 本人遇见了好几个bug, 现在 11 是最稳定而且完全够用的)<br>随后在终端输入如下内容:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">adb connect localhost:5555
+scrcpy -s localhost:5555 --audio-codec=raw --print-fps -b 2048m --audio-bit-rate=2048m</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我们连接到了先前启动的 docker 容器, 并且使用 scrcpy 创建了显示窗口(这里会在终端打印当前帧数)<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="you-xi-an-zhuang"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#you-xi-an-zhuang">游戏安装</a></h1>
+      <p>在 <a class="underline underline-offset-5 font-medium" href="https://ak.hypergryph.com/">明日方舟官网</a> 下载安卓版本的安装包, 然后:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">adb install ~/Downloads/arknights-hg-2221.apk</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>在 scrcpy 的显示窗口中, 我们按住鼠标左键从下往上拉, 在 app-launcher 界面点击 明日方舟 即可打开游戏并进行下载<br>如果是 1920x1080 的分辨率, 你可能看不到 app-launcher, 所以可以更改分辨率, 比如改成 4k:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">sudo docker rm -f redroid11
+
+sudo docker run -d --privileged  \
+  -v ~/vms/redroid11:/data   \
+  -p 5555:5555  \
+  --name redroid11   \
+  redroid/redroid:11.0.0-latest   \
+  androidboot.redroid_width=3840   \
+  androidboot.redroid_height=2160   \
+  androidboot.redroid_gpu_mode=host   \
+  androidboot.redroid_dpi=480 \
+  androidboot.redroid_fps=120  \
+  androidboot.use_memfd=true</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>然后通过 <code class="font-semibold text-[#aa8bd5]"><code>adb</code></code> + <code class="font-semibold text-[#aa8bd5]"><code>scrcpy</code></code> 就会看见进行过缩放的界面啦～<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="maazi-dong-shou-cai"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#maazi-dong-shou-cai">MAA自动收菜</a></h1>
+      <p>玩粥的基本上都听说过 <a class="underline underline-offset-5 font-medium" href="https://maa.plus/">MAA</a> 的大名吧? 是基于 <em>图像识别技术</em> 自动帮你完成日常/公招/基建换班/肉鸽刷源石锭/生息演算刷分等<br>因为是伟大的 图像识别 技术, 你不需要担心会像某些模拟器的录制脚本一不小心把你的合成玉/源石全部花光, 而且具有绝对的操作精准度<br>我们使用目前最新的 <a class="underline underline-offset-5 font-medium" href="https://github.com/MaaAssistantArknights/MaaX">MAAX</a> (MAA GUI with Electron &amp; Vue3)<br><br>根据 README 上面的操作自行编译安装, 先确保使用包管理器安装了 <code class="font-semibold text-[#aa8bd5]"><code>cross-env</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>zip</code></code>:<br>(注意, release页面的不是最新版本, 有些操作没有支持, 比如 2024-03-23 的今天, 最新分支支持生息演算刷分, 但 release 的旧版还未支持)<br><br>安装 pnpm 并进行换源加速下载:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">npm config set registry https://registry.npm.taobao.org
+sudo npm install -g pnpm
+pnpm config set registry https://registry.npm.taobao.org</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>拉取 git 仓库, 速度慢记得开代理:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">git clone https://github.com/MaaAssistantArknights/MaaX.git --depth 1
+cd MaaX/
+git submodule update --init --recursive
+sudo pnpm install
+sudo pnpm run make
+chown -R $(whoami) out/maa-x-linux-x64/</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p><code class="font-semibold text-[#aa8bd5]"><code>MaaX/out/maa-x-linux-64/</code></code> 目录下的 <code class="font-semibold text-[#aa8bd5]"><code>maa-x</code></code> 即为可执行文件, 直接打开即可<br>因为我们的 redroid11 跑的端口是 localhost:5555, 所以在 MAA 中添加端口时添加 <code class="font-semibold text-[#aa8bd5]"><code>127.0.0.1:5555</code></code> 并进行连接即可<br>MAAX 的 ui 非常简单易懂, 所以我就不在此进行更多介绍啦, 继续往下看吧～<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="chao-kuan-ping"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#chao-kuan-ping">超宽屏</a></h1>
+      <p>超宽屏体验, 也就是大约 <code class="font-semibold text-[#aa8bd5]"><code>21:9</code></code> 的长宽比, 在玩方舟时可以获取更多的视野, 玩起来相当舒服<br>根据你的电脑配置, 自行在 <code class="font-semibold text-[#aa8bd5]"><code>3440X1440</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>2560X1080</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>1792X768</code></code> 中选一个喂给 <code class="font-semibold text-[#aa8bd5]"><code>docker/redroid</code></code> 当参数, 像上面那样重新启动:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">sudo docker rm -f redroid11
+
+sudo docker run -d --privileged  \
+  -v ~/vms/redroid11:/data   \
+  -p 5555:5555  \
+  --name redroid11   \
+  redroid/redroid:11.0.0-latest   \
+  androidboot.redroid_width=1792   \
+  androidboot.redroid_height=768   \
+  androidboot.redroid_gpu_mode=host   \
+  androidboot.redroid_dpi=480 \
+  androidboot.redroid_fps=120  \
+  androidboot.use_memfd=true</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>对于我个人, 我是在方舟的设置里面开启 低画质 + 60帧, 因为方舟的高低画质, 肉眼看实际上是几乎完全一样的<br>你可以理解为, 开启 低画质 可以获得 高画质 般的体验与较高的性能 (确信)<br><br>先前的 scrcpy 加上了 –print-fps 的参数在终端输出当前帧率, 这可以方便我们进行分辨率的调教<br>我的屏幕是 1920x1080, 在使用 1792x768 时可以获得稳定60帧, 而且对画质影响不大<br><br>请注意, MAA 是基于 16:9 进行操作的, 所以当你使用 MAA 时, 应该从 21:9 切换回 16:9<br>请注意, 使用 MAA 时, 启动 docker/redroid 应该设置为 16:9, 不过你不需要 scrcpy 显示窗口, 即使不显示也会在后台自行开刷的哦～<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="zhi-bo-tui-liu"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#zhi-bo-tui-liu">直播推流</a></h1>
+      <p>请自行下载 obs, 并以 obs b站 直播推流 的关键词进行搜索, 网上一大堆, 这点 linux 是完全与 windows 一样的, 不需要多讲<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="an-jian-zi-ding-yi"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#an-jian-zi-ding-yi">按键自定义</a></h1>
+      <p>重头戏来了, 如何在 linux 下获得如同 windows 下的 mumu模拟器/雷电模拟器 那样的按键自定义操作呢?<br>嘛, 毕竟方舟是一款手游, 既然像 mumu模拟器 这种可以进行模拟, 我们在自由的 linux 上没有道理无法做到相同的事情<br><br>以下的思路, 你的 linux 桌面环境需要满足如下条件:<br></p>
+      <ul class="list-disc ml-5">
+        <li>wayland (我懒得在x11下再搞一遍了…)</li>
+        <li>可以对按键进行高度自定义的绑定</li>
+      </ul>
+      <p><br>只要满足这两个条件即可, 类似 kde/gnome 都有办法可以做到, 不过肯定不如使用类似 sway/hyprland 这样的窗管来得方便<br>我本人是基于 hyprland, 下面的脚本应该可以轻松适配到 sway 等窗管上, kde/gnome 用户则请自行琢磨吧<br><br>我的思路是在玩方舟的时候直接将 scrcpy 的显示窗口进行全屏, 然后在 <code class="font-semibold text-[#aa8bd5]"><code>hyprland</code></code> 中创建一个按键的子模式(mode/submap)<br><br>当按下 <code class="font-semibold text-[#aa8bd5]"><code>win+shift+a</code></code> 时, 会进入 <code class="font-semibold text-[#aa8bd5]"><code>mode/arknights</code></code>, 并进行弹窗提示<br>在 <code class="font-semibold text-[#aa8bd5]"><code>mode/arknights</code></code> 下, 其他全局快捷键会被屏蔽无视, 让你只能使用 <code class="font-semibold text-[#aa8bd5]"><code>mode/arknights</code></code> 下定义的快捷键, 以此避免了按键冲突<br>再次按下 <code class="font-semibold text-[#aa8bd5]"><code>win+shift+a</code></code> 时, 会退出 <code class="font-semibold text-[#aa8bd5]"><code>mode/arknights</code></code>, 并进行弹窗提示<br><br>目前是把 mumu 模拟器的快捷键方案给抄了过来:<br><br><code class="font-semibold text-[#aa8bd5]"><code><span style="white-space: pre-wrap">&#x20;</span>~/.config/hypr/keybindings.conf</code></code>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base"># Paths
+$scripts         =  ~/.config/hypr/scripts
+
+# 获取当前鼠标位置, 方便按键进行定位
+bind = $mainMod shift,p, exec, bash -c "notify-send -t 1000 '$(hyprctl cursorpos)'"
+
+bind = $mainMod SHIFT, A, exec, hyprctl dispatch submap arknights &amp;&amp; notify-send -t 500 "Enter Mode/arknights"
+submap = arknights
+
+# 获取当前鼠标位置, 在 mode/arknights 下也允许
+bind = $mainMod shift,p, exec, bash -c "notify-send -t 1000 '$(hyprctl cursorpos)'"
+
+# 倍速切换
+bind = , space, exec, sh $scripts/ydotool.sh click 1720 180
+
+# 点击鼠标当前位置
+bind = , C, exec, sh $scripts/ydotool.sh click
+
+# 暂停
+bind = , G, exec, sh $scripts/ydotool.sh click 1820 180
+
+# Esc
+bind = , F, exec, sh $scripts/ydotool.sh esc
+
+# 撤退干员
+bind = , A, exec, sh $scripts/ydotool.sh click &amp;&amp; sleep 0.1s &amp;&amp; sh $scripts/ydotool.sh click 920 370
+
+# 释放技能
+bind = , D, exec, sh $scripts/ydotool.sh click &amp;&amp; sleep 0.1s &amp;&amp; sh $scripts/ydotool.sh click 1220 600
+
+# 划火柴
+bind = , W, exec, sh $scripts/ydotool.sh esc &amp;&amp; sleep 0.25s &amp;&amp; sh $scripts/ydotool.sh esc
+
+# 返回
+bind = , grave, exec, sh $scripts/ydotool.sh click 90 200
+
+
+bind = $mainMod SHIFT, A, exec, hyprctl dispatch submap reset &amp;&amp; notify-send -t 500 "Exit  Mode/arknights"
+submap = reset</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这是基于 1920x1080 的屏幕, 对于你自己的屏幕需要更改一下进行点击时对应的 x 与 y<br><br></p>
+      <p><code class="font-semibold text-[#aa8bd5]"><code>~/.config/hypr/scripts/ydotool.sh</code></code>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">#!/usr/bin/env bash
+
+# 这个文件记录了对应按键的 keycode:  
+# /usr/include/linux/input-event-codes.h
+
+export YDOTOOL_SOCKET=$HOME/.ydotool_socket
+
+pos_x=$(hyprctl cursorpos | cut -d "," -f1)
+pos_y=$(hyprctl cursorpos | cut -d "," -f2)
+
+if [[ $1 == "click" ]]; then
+  if [[ -n $2 ]];then
+    ydotool mousemove -a -x $2 -y $3
+    ydotool click 0xc0
+    # 鼠标点击之后记得回到之前的位置
+    ydotool mousemove -a -x $pos_x -y $pos_y
+  else
+    # 如果没有给位置参数, 则鼠标在当前位置单击
+    ydotool click 0xc0
+  fi
+fi
+
+
+if [[ $1 == "esc" ]]; then
+  # Esc 的 keycode 是 1, 所以 `1:1` 表示 `按下` Esc,  `1:0` 表示 `松开` Esc  
+  ydotool key 1:1 1:0
+fi</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我们这里包装了 ydotool 在 wayland 下进行按键模拟, 并且记得提前允许 ydotoold:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">bash -c 'ydotoold --socket-path="$HOME/.ydotool_socket" --socket-own="$(id -u):$(id -g)"'</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>可以在每次启动 Hyprland 时自行运行 ydotoold<br><code class="font-semibold text-[#aa8bd5]"><code>~/.config/hypr/startup.conf</code></code>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">exec-once = bash -c 'ydotoold --socket-path="$HOME/.ydotool_socket" --socket-own="$(id -u):$(id -g)"'</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>至此, 已经可以在 linux 下畅玩明日方舟哩, 甚至完全可以做到比 windows 拥有更高的上限<br>本文完, 我要去看仙术杯回放了哦哦哦哦哦哦哦哦哦哦哦哦, 集！成！战！略！至今我还没遇见有手游的肉鸽能比粥的肉鸽好玩 (应该吧<br></p>
+    </div>
+  </body>
+</html>

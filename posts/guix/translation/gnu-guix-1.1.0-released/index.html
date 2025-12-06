@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>柳上川</title><meta name="description" content="柳上川的博客"/><link rel="shortcut icon" href="/images/blog/avatar.avif" type="image/avif"/><link rel="stylesheet" href="/styles/highlight.min.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Regular/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Italic/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Bold/result.css"/><link rel="stylesheet" href="/styles/catppuccin-macchiato.css"/><link rel="stylesheet" href="/iconfonts/iconfont.css"/><link rel="stylesheet" href="/styles/tailwind.css"/><script src="/scripts/highlight.min.js"> </script><script src="/scripts/rust.min.js"> </script><script src="/scripts/nix.min.js"> </script><script src="/scripts/scheme.min.js"> </script><script src="/scripts/htmx.min.js"> </script><script src="/scripts/prefetch.js"> </script><script src="/scripts/custom.js"> </script><meta name="darkreader-lock"></head>
+  <body>
+    <div id="content" class="flex flex-col mx-4 mb-20 scroll-smooth" lang="zh-Hans">
+      <div class="text-2xl sm:text-3xl my-4 w-full text-center">『GNU Guix 1.1.0 released』</div>
+      <div class="font-medium w-fit sm:mx-auto flex flex-col border-l-4 pl-2 sm:flex-row sm:border-l-0 sm:pl-0">
+        <p>[写自:2025-07-03</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>作者:柳上川</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>系列:<a class="underline underline-offset-5" href="/categories/guix" hx-get="/categories/guix/index.html" hx-target="body" hx-push-url="/categories/guix" hx-swap="innerHTML show:window:top">guix</a>]</p>
+      </div>
+      <div class="flex flex-col items-center m-4">
+        <div class="w-fit mx-auto text-lg font-semibold">摘要</div>
+        <div class="w-fit break-keep text-center sm:mx-[25%] *:inline">对官网博客 <a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/blog/2020/gnu-guix-1.1.0-released/">GNU Guix 1.1.0 released</a> 的翻译</div>
+      </div>
+      <p>我们隆重宣布 GNU Guix 1.1.0 的发布!<br><br>本次发行包含:</p>
+      <ul class="list-disc ml-5">
+        <li><a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/manual/en/html_node/System-Installation.html">ISO-9660 安装镜像</a></li>
+        <li><a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/manual/en/html_node/Running-Guix-in-a-VM.html">虚拟机镜像</a></li>
+        <li>提供源码包及二进制的 tar 压缩文件, 以在现有 GNU/Linux 发行版上安装 guix 包管理器</li>
+      </ul>
+      <p><br>Guix 用户可以通过 <code class="font-semibold text-[#aa8bd5]"><code>guix pull</code></code> 进行更新<br><br>如果您想知道安装 Guix System 是什么样的, 下面的视频概述了引导式安装的过程:<br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://guix.gnu.org/guix-videos/guix-system-install-1.1.0.webm"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full"><a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/guix-videos/guix-system-install-1.1.0.webm">下载视频</a></figcaption>
+      </figure>
+      <p>还有更多 <a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/videos/">入门视频</a><br><br>距离上个版本已过去 11 个月, 期间有 <strong>201</strong> 位贡献者提交了代码和软件包<br>本次更新包含超过 <strong>14000</strong> 次提交<br><br>以下是 <em>工具</em> 方面的亮点:<br></p>
+      <ul class="list-disc ml-5">
+        <li>新的 <code class="font-semibold text-[#aa8bd5]"><code>guix deploy</code></code> 工具允许您一次部署多台机器, 无论是 <a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/blog/2019/towards-guix-for-devops/">通过 SSH 的远程机器</a> 还是 <a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/blog/2019/managing-servers-with-gnu-guix-a-tutorial/">虚拟专用服务器(VPS)上的机器</a></li>
+        <li>channel 的作者现在可为用户撰写新闻条目, <a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/blog/2019/spreading-the-news/">用户通过 <code class="font-semibold text-[#aa8bd5]"><code>guix pull --news</code></code> 可轻松读取</a>,<br>如果您已经在使用 Guix, 那么您可能已经阅读了这些新闻!</li>
+        <li>新的命令 <a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/manual/en/html_node/Invoking-guix-system.html"><code class="font-semibold text-[#aa8bd5]"><code>guix system describe</code></code></a> 可以得到部署系统时使用的 channel 的 commit, 并包含一个指向你系统配置文件的链接<br>精确的来源跟踪提供了 “准确了解在两个不同的系统实例中发生的变化” 的能力, 该功能建立在新的 <a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/manual/en/html_node/Service-Reference.html#index-provenance_002dservice_002dtype"><code class="font-semibold text-[#aa8bd5]"><code>provenance</code></code></a> 服务上</li>
+        <li><a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/manual/en/html_node/Invoking-guix-pack.html"><code class="font-semibold text-[#aa8bd5]"><code>guix pack</code></code></a> 现在改进了对 <code class="font-semibold text-[#aa8bd5]"><code>Singularity</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>Docker</code></code> 的镜像支持(新增 <code class="font-semibold text-[#aa8bd5]"><code>--entry-point</code></code> 选项)</li>
+        <li>有一个新的 <a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/manual/en/html_node/Invoking-guix-time_002dmachine.html"><code class="font-semibold text-[#aa8bd5]"><code>guix time-machine</code></code></a> 命令, 这符合你的期望 :-), 而且它受益于 <a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/manual/en/html_node/Invoking-guix-lint.html"><code class="font-semibold text-[#aa8bd5]"><code>guix lint</code></code></a> 改进了对 <code class="font-semibold text-[#aa8bd5]"><code>Software Heritage</code></code> 的集成</li>
+        <li><a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/manual/en/html_node/Invoking-guix-challenge.html"><code class="font-semibold text-[#aa8bd5]"><code>guix challenge</code></code></a> 现在新增了实时的 diff 对比功能, 这是近期可重现构造峰会(Reproducible Build Summit)的 <a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/blog/2019/reproducible-builds-summit-5th-edition/">成果</a></li>
+        <li>Guix 现在可以 publish/download lzip-compressed 的 substitutes, 这大大降低了带宽要求</li>
+        <li><code class="font-semibold text-[#aa8bd5]"><code>guix system</code></code> 现在支持 <code class="font-semibold text-[#aa8bd5]"><code>--target</code></code> 选项, 为完整系统的交叉编译提供了一些支持, 更多信息请见该 <a class="underline underline-offset-5 font-medium" href="https://fosdem.org/2020/schedule/event/ggaaattyp/">FOSDEM talk</a></li>
+        <li>Guix 现在 <a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/blog/2020/guile-3-and-guix/">运行于 Guile 3</a>, 这大大提高了性能</li>
+        <li>The manual 现在包括一本 <a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/cookbook/en/html_node/index.html">cookbook</a>, 其中包含 The manual 中未覆盖主题的教程</li>
+      </ul>
+      <p><br>以下是 <em>发行版(distro)</em> 方面的亮点:<br></p>
+      <ul class="list-disc ml-5">
+        <li>最大的变化是, 包的依赖关系图, <a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/blog/2019/guix-reduces-bootstrap-seed-by-50/">现在基于一组精简化的 “binary seed”</a> (实现可完全审查 bootstrap 的关键步骤), <a class="underline underline-offset-5 font-medium" href="https://fosdem.org/2020/schedule/event/gnumes/">更多内容即将推出</a></li>
+        <li><a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/manual/en/html_node/Guided-Graphical-Installation.html">Guix System 的图形安装程序</a> 已经历许多错误修复和改进, 根据 <a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/blog/2019/gnu-guix-1.0.1-released/">1.0.0 中发现的 bug</a>, 我们为其开发了 <a class="underline underline-offset-5 font-medium" href="https://issues.guix.gnu.org/issue/39729">自动化测试框架</a><br>CI 会针对不同配置自动测试(encrypted root, non-encrypted root, with or without a desktop environment)</li>
+        <li>添加了 <strong>3514</strong> 个包, 总计超过 <a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/packages"><strong>13000</strong> 个包</a>, 升级了 <strong>3368</strong> 个软件包<br></li>
+      </ul>
+      <p>该发行版附带了 <code class="font-semibold text-[#aa8bd5]"><code>GNU libc 2.29</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>GCC 9.3</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>GNOME 3.32</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>MATE 1.24.0</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Xfce 4.14.0</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>Linux-libre 5.4.28</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>LibreOffice 6.4.2.2</code></code> 等</p>
+      <ul class="list-disc ml-5">
+        <li>添加了 <strong>19</strong> 个新服务，特别新增了对运行 <a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/manual/devel/en/html_node/Network-File-System.html#index-nfs_002dservice_002dtype">NFS servers</a>, <a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/manual/devel/en/html_node/Networking-Services.html#index-nftables_002dservice_002dtype">nftables tables</a>, 甚至 high-level Web service, 如 <a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/manual/devel/en/html_node/Web-Services.html#index-patchwork_002dservice_002dtype">Patchworkk</a></li>
+        <li>构建系统增添了对 Node/Julia/Qt 的支持, 从而能更轻松地为这些生态编写包定义, 此外一个新的 <code class="font-semibold text-[#aa8bd5]"><code>copy-build-system</code></code> 可执行您可能期望的工作</li>
+      </ul>
+      <p><br>在 <code class="font-semibold text-[#aa8bd5]"><code>编程接口</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>底层架构</code></code>, 许多事情也发生了变化, 尤其是:<br></p>
+      <ul class="list-disc ml-5">
+        <li>新的 <code class="font-semibold text-[#aa8bd5]"><code>with-build-handler</code></code> 语法形式(form), 能够更好地支持 <a class="underline underline-offset-5 font-medium" href="../grafts">grafts</a> 机制中引入的动态依赖处理<br>在以后会有更多介绍, 但足以说明的是, 它修复了一个 <a class="underline underline-offset-5 font-medium" href="https://issues.guix.gnu.org/issue/28310">长期存在的 user interface</a> 和 <a class="underline underline-offset-5 font-medium" href="https://issues.guix.gnu.org/issue/22990">performance issue</a></li>
+        <li>模块 <code class="font-semibold text-[#aa8bd5]"><code>(guix remote)</code></code> 下的 <code class="font-semibold text-[#aa8bd5]"><code>remote-eval</code></code> 支持远程执行 作为 G-expression 的 Scheme 代码, 过程中会首先构建并部署该代码所依赖的所有组件<br>此功能是实现 <code class="font-semibold text-[#aa8bd5]"><code>guix deploy</code></code>(操控对象为远程主机) 与 <code class="font-semibold text-[#aa8bd5]"><code>guix system reconfigure</code></code>(系统重配置) 之间代码共享的技术基石<br>类似的, 新增的 <code class="font-semibold text-[#aa8bd5]"><code>eval/container</code></code> 可在 “由系统自动完成资源配置” 的容器环境中执行代码</li>
+        <li>新的 <code class="font-semibold text-[#aa8bd5]"><code>lower-gexp</code></code> 返回 G-expression 的低级 IR, <code class="font-semibold text-[#aa8bd5]"><code>remote-eval</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>eval/container</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>gexp->derivation</code></code> 均基于 <code class="font-semibold text-[#aa8bd5]"><code>lower-gexp</code></code> 实现</li>
+        <li><a class="underline underline-offset-5 font-medium" href="https://guix.gnu.org/manual/en/html_node/G_002dExpressions.html"><code class="font-semibold text-[#aa8bd5]"><code>with-parameters</code></code></a> 语法形式(form), 允许你将特定对象(比如 package) 固定到特定的系统, 或交叉编译的目标上</li>
+        <li>底层操作的执行效率得到 <a class="underline underline-offset-5 font-medium" href="https://lists.gnu.org/archive/html/guix-devel/2019-10/msg00650.html">显著提升</a></li>
+      </ul>
+      <p><br>这是个很长的列表! <a class="underline underline-offset-5 font-medium" href="https://git.savannah.gnu.org/cgit/guix.git/tree/NEWS?h=v1.1.0&amp;id=d62c9b2671be55ae0305bebfda17b595f33797f2">NEWS 文件</a> 列出了更多您可能感兴趣的更改与您在意的错误修复<br><br>Enjoy!</p>
+    </div>
+  </body>
+</html>

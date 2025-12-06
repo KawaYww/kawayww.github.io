@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>柳上川</title><meta name="description" content="柳上川的博客"/><link rel="shortcut icon" href="/images/blog/avatar.avif" type="image/avif"/><link rel="stylesheet" href="/styles/highlight.min.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Regular/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Italic/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Bold/result.css"/><link rel="stylesheet" href="/styles/catppuccin-macchiato.css"/><link rel="stylesheet" href="/iconfonts/iconfont.css"/><link rel="stylesheet" href="/styles/tailwind.css"/><script src="/scripts/highlight.min.js"> </script><script src="/scripts/rust.min.js"> </script><script src="/scripts/nix.min.js"> </script><script src="/scripts/scheme.min.js"> </script><script src="/scripts/htmx.min.js"> </script><script src="/scripts/prefetch.js"> </script><script src="/scripts/custom.js"> </script><meta name="darkreader-lock"></head>
+  <body>
+    <div id="content" class="flex flex-col mx-4 mb-20 scroll-smooth" lang="zh-Hans">
+      <div class="text-2xl sm:text-3xl my-4 w-full text-center">『CRDTs 让协作文本编辑成为 Zed 的核心』</div>
+      <div class="font-medium w-fit sm:mx-auto flex flex-col border-l-4 pl-2 sm:flex-row sm:border-l-0 sm:pl-0">
+        <p>[写自:2025-02-01</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>作者:柳上川</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>系列:<a class="underline underline-offset-5" href="/categories/zed-blog-translation" hx-get="/categories/zed-blog-translation/index.html" hx-target="body" hx-push-url="/categories/zed-blog-translation" hx-swap="innerHTML show:window:top">zed-blog-translation</a>]</p>
+      </div>
+      <div class="flex flex-col items-center m-4">
+        <div class="w-fit mx-auto text-lg font-semibold">摘要</div>
+        <div class="w-fit break-keep text-center sm:mx-[25%] *:inline">对博客 <a class="underline underline-offset-5 font-medium" href="https://zed.dev/blog/crdts">How CRDTs make multiplayer text editing part of Zed’s DNA</a> 的翻译</div>
+      </div>
+      <div class="flex flex-col my-10 w-fit border-2 border-slate-500">
+        <p><span class="text-2xl">目录:</span></p>
+        <div class="w-fit pr-2 my-2">
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">┌─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#xie-zuo-bian-ji-de-qian-shi">协作编辑的前史</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#yi-bu-xie-diao-de-tiao-zhan">异步协调的挑战</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#crdt&amp;-zui-zhong-yi-zhi-xing">CRDT &amp; 最终一致性</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#bu-wen-ding-wen-ben-zhong-de-wen-ding-yin-yong">不稳定文本中的稳定引用</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#shan-chu">删除</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#tong-yi-wei-zhi-tong-shi-cha-ru">同一位置同时插入</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#che-xiao-yu-zhong-zuo">撤销与重做</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">└─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#jie-lun">结论</a></span></div>
+        </div>
+      </div>
+      <figure class="p-2 mb-2">
+        <img class=" sm:w-[60%] mx-auto w-full rounded-lg" src="https://zed.dev/img/post/crdts/preview.png">
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">preview</figcaption>
+      </figure>
+      <p><br>程序员花费无数小时与他们的编辑器交互, 在你 commit/push 交付你的代码之前, 你必须先将手放在键盘上以将文本输入<br>没有其他任何一个工具比编辑器更能影响你创建应用时的本能与触觉体验<br><br>然而尽管编辑在程序员生涯中扮演着至关重要的角色, 但我从未找到我真正喜欢的编辑器, 所以 16 年前, 我打算自己构建一个<br>一次失败的尝试, 无数惨痛的教训, 以及才华横溢的朋友们的帮助, 我一直努力构建的工具最终在 Zed 的 135 千行 rust 代码中浮现出来<br><br>Zed 的第一个目标很简单: 构建一个我们喜欢使用的编辑器, 一个始终高性能, 帮助我们而不是妨碍我们, 看起来很棒但也可能会消失的工具<br>我们希望 Zed 站在文本编辑艺术的最前方, 结合其他编辑器的优势的同时, 避免它们的缺陷, 然后走得更远, 任何不足都不值得构建<br><br>但除开构建这些基础设施, 我们还看到了从根本上改变开发人员在协作方面的机会<br>通过将 协作 集成为代码创作环境的首要关注, Zed 能更容易地将对话链接到任何文本, 无论是去年提及的还是不久前刚刚写的<br>Zed 还将使 “编写代码” 和 “与其他开发人员实时讨论代码” 变得无缝!<br><br>对多人协作开发的关注是 Zed 的关键特性之一, 因此在我们的第一篇博客中, 我们想探讨下这内置于编辑器核心的技术<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="xie-zuo-bian-ji-de-qian-shi"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#xie-zuo-bian-ji-de-qian-shi">协作编辑的前史</a></h1>
+      <p>在 1968 年的 12 月, Douglas Engelbart 在旧金山向只能站着的观众演示了一系列技术<br>包括交互式编辑, 超文本, 鼠标, 他呈现的想法接下来塑造了现代计算<br>但当第一次观看他著名的演示时, 我惊讶地发现让所有人都惊讶的系统实际上是一个 <a class="underline underline-offset-5 font-medium" href="https://youtu.be/8UQyQ7Gvi4U?t=286"><em>协作文本编辑器</em></a><br>这正是我一直在努力构建的东西! 在 1968 年?!<br></p>
+      <figure class="p-2 mb-2">
+        <img class=" sm:w-[60%] mx-auto w-full rounded-lg" src="https://user-images.githubusercontent.com/1789/199089574-148fdec3-7b8c-476b-b29f-7d398887907d.png">
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">Bill Paxton 在交互式计算的初期与 Douglas Engelbart 视频聊天并协作编辑</figcaption>
+      </figure>
+      <p>为了构建他们的协作编辑器, Engelbart 的团队需要创建自己的编程语言/分时操作系统/阴极射线管显示器<br>当着手构建 Zed 时, 我们的任务显然在几乎所有方面都比他们容易得多, 但我们确实遇到了一个他们没有的问题: <em>异步协调</em><br><br>在 Engelbart 的系统中, 协作者通过单独的终端连接到同一台物理设备<br>我不确定他们的工具是否曾支持过细粒度的并发编辑, 但至少在理论上它能用互斥锁将编辑同步到共享的缓冲区, 但这不是当今计算机的组织方式:<br>我们并非通过直接连接的终端共享机器, 而是通过互联网连接个人计算机, 而且彼此间的距离要远得多<br>即使以光速同步两个不同大陆间共享缓冲区的访问, 也会带来令人望而却步的编辑延迟<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="yi-bu-xie-diao-de-tiao-zhan"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#yi-bu-xie-diao-de-tiao-zhan">异步协调的挑战</a></h1>
+      <p>为通过互联网进行协作, 我们需要一种方法: 允许某个人独立编辑自己的文本, 并在异步交换数据后让他们的文档收敛至相同内容<br>事实证明, 这是个难题<br><br>下面的动画阐述了最基本的挑战的模样:<br>我们从文本 <code class="font-semibold text-[#aa8bd5]"><code>In 1968</code></code> 的两个 <em>replicas(副本)</em> 开始, 随后将不同内容插入到每个副本, 并将编的指令传输至另一个副本<br>如果我们仅仅天真地远程编辑而一点不考虑并发更改, 最终可能会将其应用于无效的位置, 导致副本的内容发散<br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/crdts/divergence.webm"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">存在并发时, 天真的复制操作会导致分歧</figcaption>
+      </figure>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="crdt&amp;-zui-zhong-yi-zhi-xing"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#crdt&amp;-zui-zhong-yi-zhi-xing">CRDT &amp; 最终一致性</a></h1>
+      <p>一种解决方案是: 用某种方式转换传入的编辑以反映并发更改<br>在下面的动画中, 你能看见我们如何转换蓝色的插入，将其位置从 <code class="font-semibold text-[#aa8bd5]"><code>8</code></code> 更改为 <code class="font-semibold text-[#aa8bd5]"><code>20</code></code><br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/crdts/ot.webm"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full"><em>Operational Transformation</em> 侧重于转换传入的操作以考虑并发编辑</figcaption>
+      </figure>
+      <p>这在概念上很简单, 但定义一个可以转换 <code class="font-semibold text-[#aa8bd5]"><code>Operation</code></code> 的 <em>正确且高性能的函数</em> 并非易事<br>这是计算机科学研究中的某个主题: <em>Operational Transformation(OT, 操作变换)</em>, 我们在 2017 年首次探索协作编辑时尝试了该方法<br><br>译者注:<br>一些文本编辑库中也存在类似的 <em>保持文本一致性的技术(Transaction)</em>, 但很多仅针对单用户场景, 不涉及冲突解决与并发操作<br>如果你仅想了解单用户编辑时的正确性, 可以去读读具体代码, 比如 helix 的 <a class="underline underline-offset-5 font-medium" href="https://github.com/helix-editor/helix/blob/master/helix-core/src/transaction.rs">helix-core/src/transaction.rs</a><br>再如 quill 的 <a class="underline underline-offset-5 font-medium" href="https://quilljs.com/docs/delta">delta</a> 模型, 就将文本的转换抽象为三种指令: <em>Insert</em>, <em>Delete</em>, <em>Retain</em>, 你可以基于此额外实现 <em>OT</em><br>再如 CodeMirror 也提供了对协作编辑的 <a class="underline underline-offset-5 font-medium" href="https://codemirror.net/examples/collab/">介绍</a><br><br>但最终我们还是选择了另一个名为 <em>Conflict-Free Replicated Data Types(CRDTs, 无冲突复制数据类型)</em> 的理论作为替代<br>我们发现它更强大, 也更直观<br><br>使用 <em>CRDT</em>，我们不通过变换并发的 <em>Operation</em>(以便以不同的顺序被应用), 而是去构建 <em>使并发操作本质上具有交换性</em> 的数据<br>这允许我们直接将它们应用于任何副本, 而无需进行操作变换<br><br>但是我们如何使文本编辑具有 <em>可交换性</em> 呢?<br><br>关键是用 <em>logical locations(逻辑位置)</em> 而不是 <em>absolute offsets(绝对的偏移量)</em> 来表示编辑<br>在上面的动画示例中, 当我们不用数字偏移量来描述插入位置, 而是通过 <em>content(上下文/内容)</em> 来描述它们时会发生什么?<br>此时, “并发编辑是否移动了文本” 就已经变得无关紧要了, 因为我们只依赖 content 来解析 remote-edit 时的位置<br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/crdts/content-based-addresses.webm"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">如果能根据内容确定编辑位置, 那么就可以直接应用 <em>Operation</em> 而无需进行变换</figcaption>
+      </figure>
+      <p>这种方法显然在实践中行不通, 因为文本 <code class="font-semibold text-[#aa8bd5]"><code>68</code></code> 可能会出现多次, 并发的编辑也可能已经完全删除了这段被当作地址引用的 content<br>要使用这种基于 content 的逻辑寻址, 我们需要在存在 “并发更改” 的情况下也依然持久有效的方法进行实现, 但该怎么做呢?<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="bu-wen-ding-wen-ben-zhong-de-wen-ding-yin-yong"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#bu-wen-ding-wen-ben-zhong-de-wen-ding-yin-yong">不稳定文本中的稳定引用</a></h1>
+      <p>根据缓冲区的当前内容表示逻辑位置的问题, 在于文本并不稳定<br>但有一点是稳定的, 那就是 <em>编辑的历史记录</em><br><br>我们可以将每一段被插入的文本都视作不可变: 接下来的编辑可能会对文本进行拆分或删除, 但这不会改变最初插入的文本<br>如果为每段插入分配一个唯一的 id, 那我们就可以将 id 与 offset(偏移量) 结合, 来明确引用插入文本中的某个 logical-location<br>我们将这些 <code class="font-semibold text-[#aa8bd5]"><code>(insertion id, offset)</code></code> 称为 <em>anchors(锚点)</em><br><br>为了确保 <code class="font-semibold text-[#aa8bd5]"><code>insertion id</code></code> 的唯一性, 我们在创建每个副本时都分配某个唯一的 id, 然后将其与递增的序列号组合起来<br>通过从副本的 id 继承唯一性, 副本可以并发地生成唯一的 <code class="font-semibold text-[#aa8bd5]"><code>insertion id</code></code>, 避免了冲突风险<br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/crdts/id-distribution.webm"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">将副本集中起来分配各自的 id 后, 每个副本就能独立生成唯一 id</figcaption>
+      </figure>
+      <p>当协作开始时，参与者会被分配副本的 id<br>副本0 为缓冲区的初始文本分配 id <code class="font-semibold text-[#aa8bd5]"><code>0.0</code></code>, 然后复制一份内容传输至 副本1<br>这段初始文本, <code class="font-semibold text-[#aa8bd5]"><code>0.0</code></code>, 是第一次的插入, 将在缓冲区的生命周期内保持不可变<br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/crdts/crdt-start-collaborating.webm"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">缓冲区的初始文本总是由主机分配 id 为 <code class="font-semibold text-[#aa8bd5]"><code>0.0</code></code>, 主机是 副本0, 它们将缓冲区复制给新加入的协作者</figcaption>
+      </figure>
+      <p>现在, 每个参与者并发地插入新文本, 通过相对于 <code class="font-semibold text-[#aa8bd5]"><code>insertion 0.0</code></code> 的 offset(偏移量) 来描述新插入文本的位置<br>每个新插入的文本都会被分配唯一的 id, 当 副本0 在偏移量 <code class="font-semibold text-[#aa8bd5]"><code>3</code></code> 处插入 <code class="font-semibold text-[#aa8bd5]"><code>insertion 0.0</code></code> 内的 <code class="font-semibold text-[#aa8bd5]"><code>December of</code></code> 时, 标记为 <code class="font-semibold text-[#aa8bd5]"><code>0.0</code></code> 的文本会分割成两份<br>副本1 将文本 <code class="font-semibold text-[#aa8bd5]"><code>Douglas Engelbart</code></code> 追加至 <code class="font-semibold text-[#aa8bd5]"><code>insertion 0.0</code></code> 的末尾(即偏移量 <code class="font-semibold text-[#aa8bd5]"><code>8</code></code>)<br>两位参与者还将他们的操作传输给另一方<br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/crdts/crdt-concurrent-insertion-part-1.webm"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full"><code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 被分配唯一的 id, 并描述其相对于现有 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 的位置, 本例中为初始的 <code class="font-semibold text-[#aa8bd5]"><code>0.0</code></code></figcaption>
+      </figure>
+      <p>现在, 副本还得应用彼此的 <code class="font-semibold text-[#aa8bd5]"><code>operations</code></code><br>首先, 副本1 合并了 id 为 <code class="font-semibold text-[#aa8bd5]"><code>0.1</code></code> 的红色 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code>, 将 <code class="font-semibold text-[#aa8bd5]"><code>insertion 0.0</code></code> 一分为二, 如同 副本0 最初插入此文本时那样<br>然后 副本0 合并了 id 为 <code class="font-semibold text-[#aa8bd5]"><code>1.0</code></code> 的蓝色 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code><br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/crdts/crdt-concurrent-insertion-part-2.webm"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">同步远程 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code> 时, 扫描本地文本以查找包含 <em><code class="font-semibold text-[#aa8bd5]"><code>parent insertion</code></code> 中指定 offset的 fragment</em></figcaption>
+      </figure>
+      <p>它扫描其 <code class="font-semibold text-[#aa8bd5]"><code>fragments(片段)</code></code>, 搜索 <code class="font-semibold text-[#aa8bd5]"><code>insertion 0.0</code></code> 的偏移量 <code class="font-semibold text-[#aa8bd5]"><code>8</code></code><br>第一个 fragment 属于 <code class="font-semibold text-[#aa8bd5]"><code>0.0</code></code>, 但其长度只有 <code class="font-semibold text-[#aa8bd5]"><code>3</code></code>, 第二个 fragment 属于不同的 <code class="font-semibold text-[#aa8bd5]"><code>insertion 0.1</code></code> 因此跳过<br>最后, 我们到达第二个包含来自 <code class="font-semibold text-[#aa8bd5]"><code>insertion 0.0</code></code> 的 fragment, 它包含偏移量 <code class="font-semibold text-[#aa8bd5]"><code>8</code></code>, 因此我们在其中插入蓝色文本, 副本得到收敛<br><br>该过程可以继续递归下去, <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 在树中相互构建彼此<br>在下面的动画中, 两个副本都在 id 为 <code class="font-semibold text-[#aa8bd5]"><code>1.0</code></code> 的蓝色 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 中以不同偏移量插入其他文本<br>为了应用这些远程的 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code>, 我们再次扫描文本, 查找包含指定偏移量的 <code class="font-semibold text-[#aa8bd5]"><code>insertion 1.0</code></code> 的 fragment<br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/crdts/crdt-concurrent-insertion-part-3.webm"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">过去的 insertion 可以成为新的 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 的 parent</figcaption>
+      </figure>
+      <p>在这些示例中, 我们一次插入多个字符, 但实践中, 协作者往往会插入单个字符, 而非直接从剪贴板上粘贴一整段文本<br>以每个字符为单位跟踪所有元数据的开销似乎很大, 但实际上这在现代计算硬件上并非问题<br>即使是很长的编辑历史也几乎无法与因 Zed 不使用 Electron 构建而节省的内存相提并论<br><br>您可能还会问, 像这样扫描整个文档以应用远程 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code> 不是会很慢吗?<br>在以后的文章中, 我们将解释我们如何使用 <em>copy-on-write B-tree(写时复制的B树)</em> 来索引这些 fragments 以避免线性扫描<br>以上的简化解释应该为你提供了一个基本框架, 让您了解到了协作编辑在 Zed 中是如何工作的<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="shan-chu"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#shan-chu">删除</a></h1>
+      <p>如果每个 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 都是不可变的, 那么当用户删除文本时, 我们如何从文档中删除文本?<br>我们不改变插入的文本, 而是对想要删除的 fragment 添加 <code class="font-semibold text-[#aa8bd5]"><code>tombstones(墓碑)</code></code> 的标记(即 <em>墓碑机制</em>)<br>在向用户渲染呈现文本时, 具有 <code class="font-semibold text-[#aa8bd5]"><code>tombstones(墓碑)</code></code> 标记的 fragment 会被隐藏, 但它们仍可用于解析 <code class="font-semibold text-[#aa8bd5]"><code>logical-anchors(逻辑锚点)</code></code> 为文档中的具体位置!<br><br>在下面的动画中, 我们在 副本1 中插入一段文本, 该位置在 副本0 中并发地被删除<br>由于 “被删除的文本” 事实上仅仅被隐藏, 我们仍可以在 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 到达 副本0 时应用它<br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/crdts/insert-delete.webm"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">已删除的 fragment 其实被 <code class="font-semibold text-[#aa8bd5]"><code>tombstones(墓碑)</code></code> 标记以进行隐藏</figcaption>
+      </figure>
+      <p>如果删除操作仅编码了一个区间, 那么在待删除区间内并发插入文本时, 就可能出现分歧<br>在如下示例中, 请注意黄色的 <code class="font-semibold text-[#aa8bd5]"><code>C</code></code>, 其在 副本0 中是可见的, 但在 副本1 中却被隐藏<br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/crdts/delete-divergence.webm"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">如果在删除时未表示什么 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code> 是可见的, 在待删除区间并发插入文本可能导致分歧</figcaption>
+      </figure>
+      <p>为避免这个问题, 我们还需将 <code class="font-semibold text-[#aa8bd5]"><code>deletion</code></code> 与 <em>vector timestamp(向量时间戳)</em> 进行关联<br>该时间戳对每个副本最新观察到的序列号进行编码, 以便我们排除并发产生的的插入操作, 仅隐藏执行删除操作的用户实际可见到的文本<br><br>下面的动画与上面的非常相似, 只是这次我们为删除操作增加了一个 <em>version vector(版本向量)</em><br>当我们在 副本1 上进行删除时, 我们会排除黄色的 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code>, 因为其 id 包含了未被删除操作的 <code class="font-semibold text-[#aa8bd5]"><code>version vector</code></code> 所涵盖的序列号<br>这导致黄色的 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 在两个副本上都保持可见, 从而保留了执行删除操作的用户的意图<br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/crdts/delete-convergence.webm"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">将删除与版本向量相关联，可以让我们从逻辑删除中排除并发插入</figcaption>
+      </figure>
+      <p>与 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 一样, <code class="font-semibold text-[#aa8bd5]"><code>deletion</code></code> 也与唯一的 id 进行关联, 我们会将其记录在 <code class="font-semibold text-[#aa8bd5]"><code>tombstone(墓碑)</code></code> 上<br>稍后讨论 <em>undo(撤消)</em> 和 <em>redo(重做)</em> 操作时, 我们将了解这些 <code class="font-semibold text-[#aa8bd5]"><code>deletion id</code></code> 的作用<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="tong-yi-wei-zhi-tong-shi-cha-ru"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#tong-yi-wei-zhi-tong-shi-cha-ru">同一位置同时插入</a></h1>
+      <p>当插入并发发生于同一位置上时, 我们并不关心如何对 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 进行排序的过程, 关键是它们得在所有副本中保持一致的顺序<br>实现一致性的某种方法是按 <code class="font-semibold text-[#aa8bd5]"><code>insertion id</code></code> 进行排序<br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/crdts/order-insertions-by-id.webm"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">按 <code class="font-semibold text-[#aa8bd5]"><code>insertion id</code></code> 对同一位置的 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 进行排序, 以实现在所有副本上保持一致顺序</figcaption>
+      </figure>
+      <p>但该方法有个问题: 某些副本可能无法在已被观察到的 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 前插入文本<br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/crdts/order-by-id-intention-violation.webm"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">若按 <code class="font-semibold text-[#aa8bd5]"><code>insertion id</code></code> 在同一位置进行排序, 当插入到现有的 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 前面时, 无法保留用户的意图</figcaption>
+      </figure>
+      <p>这需要对这些 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 进行排序并尊重因果关系, 我们的解决方案是为 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 增加 <em>Lamport timestamps(Lamport 时间戳)</em><br>这些逻辑时间戳派生自在每个副本上维护的 <em>scalar-valued Lamport clock(标量 Lamport 时钟)</em><br><br>每当副本生成 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code> 时, 它会通过其 <em>Lamport clock</em> 的自增来派生新的时间戳<br>每当副本收到 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code> 时, 它会将本地的 <em>Lamport clock</em> 设置为该 clock 的当前值与传入 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code> 的时间戳中的较大者<br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/crdts/lamport-clock.webm"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">如果某个 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code> 在另一个 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code> 被观察到后生成, 则其将具有较高的时间戳</figcaption>
+      </figure>
+      <p>该机制保证了: 如果某个 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code> 在另一个 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code> 发生时已经存在, 则其将具有较低的时间戳<br>换句话说: <em>Lamport 时间戳</em> 允许我们按 <em>因果顺序</em> 对 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code> 进行排序<br>但反过来并不成立: 当 <code class="font-semibold text-[#aa8bd5]"><code>A</code></code> 的 <em>Lamport 时间戳</em> 低于 <code class="font-semibold text-[#aa8bd5]"><code>B</code></code> 时, 不一定意味着 <code class="font-semibold text-[#aa8bd5]"><code>A</code></code> 发生在 <code class="font-semibold text-[#aa8bd5]"><code>B</code></code> 之前<br>因为对于并发操作, 我们无法保证 <em>Lamport 时间戳</em> 之间的关系, 但我们实际上不关心并发插入是如何排序的, 只要排序是一致的就行<br><br>译者注:<br>上述的 <em>一致性</em> 指各个副本中 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 的顺序是一样的, 要么都 <code class="font-semibold text-[#aa8bd5]"><code>AB</code></code> 要么都 <code class="font-semibold text-[#aa8bd5]"><code>BA</code></code>, 不会出现 副本0 中是 <code class="font-semibold text-[#aa8bd5]"><code>AB</code></code>, 副本1 中是 <code class="font-semibold text-[#aa8bd5]"><code>BA</code></code><br>通过按 <em>Lamport 时间戳</em> 对 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 进行降序排列, 并在时间戳相同时根据 <em>副本ID</em> 进行区分, 我们实现了一种具有一致性且尊重因果关系的排序方案<br></p>
+      <figure class="p-2 mb-2">
+        <video class=" sm:w-[60%] mx-auto w-full rounded-lg" preload="auto"><source src="https://zed.dev/img/post/crdts/order-by-lamport.webm"></video>
+        <figcaption class=" sm:w-[60%] mx-auto bg-[#212220] text-center w-full">按时间戳对在同一位置的 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 进行排序，则可以保留用户意图，且在所有副本中保持排序一致</figcaption>
+      </figure>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="che-xiao-yu-zhong-zuo"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#che-xiao-yu-zhong-zuo">撤销与重做</a></h1>
+      <p>在非协作系统中，<em>undo(撤消)</em> 和 <em>redo(重做)</em> 的历史可表示为简单的 <em>记录 operation 的 stack(栈)</em><br>当你想撤销时, 只需在 <em>undo stack(撤销栈)</em> 的顶部将一次 edit 的 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code> 弹出, 将其逆版本的 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code> 应用于当前文本, 然后 push 到 <em>redo stack(重做栈)</em><br>但这只允许整个文档具有单一的全局撤消历史<br><br>历史中任何 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code> 的 <code class="font-semibold text-[#aa8bd5]"><code>offset</code></code> 仅在文档最初应用它时有效, 这意味着它必须严格按照发生的相反顺序进行撤销<br><br>但在协作编辑时, 整个缓冲区使用单一的撤消历史并不可行, 您希望撤消您自己输入的文本, 因此每个参与者都需要自己的 <em>undo stack</em><br>这意味着我们需要能够以任意顺序进行 <code class="font-semibold text-[#aa8bd5]"><code>undo/redo operation</code></code>, 一个记录编辑操作的全局共享 stack 是不够的<br><br>相反，我们维护一个 <em>undo map(撤销映射表)</em>, 它将 <code class="font-semibold text-[#aa8bd5]"><code>operation id</code></code> 与一个 <code class="font-semibold text-[#aa8bd5]"><code>count(计数)</code></code> 关联起来:<br></p>
+      <ul class="list-disc ml-5">
+        <li>如果 <code class="font-semibold text-[#aa8bd5]"><code>count</code></code> 为零, 则表示该 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code> 尚未进行撤销</li>
+        <li>如果 <code class="font-semibold text-[#aa8bd5]"><code>count</code></code> 为奇, 则表示该 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code> 已撤销(undo)</li>
+        <li>如果 <code class="font-semibold text-[#aa8bd5]"><code>count</code></code> 为偶, 则表示该 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code> 已重做(redo)</li>
+      </ul>
+      <p><br>不管撤销还是重做, 都只是更新该映射表中特定 <code class="font-semibold text-[#aa8bd5]"><code>operation id</code></code> 的 <code class="font-semibold text-[#aa8bd5]"><code>count</code></code><br>当决定某个 fragment 的可见性时, 我们首先检查该 <code class="font-semibold text-[#aa8bd5]"><code>insertion</code></code> 是否已撤消(<code class="font-semibold text-[#aa8bd5]"><code>undo count</code></code> 是奇数)<br>然后检查其是否被任何删除操作标记上 <code class="font-semibold text-[#aa8bd5]"><code>tombstone(墓碑)</code></code>, 以及这些删除文本的 <code class="font-semibold text-[#aa8bd5]"><code>undo count</code></code> 是否为偶数<br><br>发生 <code class="font-semibold text-[#aa8bd5]"><code>undo/redo operation</code></code> 时, 直接分配这些 <code class="font-semibold text-[#aa8bd5]"><code>undo count</code></code> 是没有问题的, 当两个人同时 undo 了同一个 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code>, 则最终会将 <code class="font-semibold text-[#aa8bd5]"><code>undo count</code></code> 设置为相同的值<br>这符合他们的意图，因为他们都想撤消或重做它, 事实上, 我们目前只允许用户撤销自己的 <code class="font-semibold text-[#aa8bd5]"><code>operation</code></code>, 但最终可能可以撤销协作者的<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="jie-lun"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#jie-lun">结论</a></h1>
+      <p>显然还有更多内容值得深入探讨:<br>我们现实里是如何高效地实现这个方案的?<br>我们如何将 CRDT 集成到一个更广泛的系统中, 以制造共享工作区的错觉?<br>我们如何使这样复杂的分布式系统可靠? 除了协作编辑, 我们还能用 CRDT 做什么呢?<br><br>然后是编辑器的其余部分, <code class="font-semibold text-[#aa8bd5]"><code>Rope</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>gpui</code></code>(我们的 gpu 加速框架), <code class="font-semibold text-[#aa8bd5]"><code>tree-sitter</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>terminal</code></code>……<br>我们期待着在未来能深入探讨这一切, 更重要的是, 我们期待着应用这些技术, 打造一个让您更快乐的高效编辑器<br><br>感谢阅读!!<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <div class="flex flex-col sm:mx-2 *:my-2"><a class="flex items-center border-2 border-slate-500 w-full sm:rounded-md hover:border-white  justify-start " href="/posts/zed-blog-translation/zed-decoded-rope-sumtree" hx-get="/posts/zed-blog-translation/zed-decoded-rope-sumtree/index.html" hx-target="body" hx-push-url="/posts/zed-blog-translation/zed-decoded-rope-sumtree" hx-swap="innerHTML show:window:top"><span class="text-2xl sm:text-4xl sm:p-2 pl-2 pr-1 order-first ">&lt;</span> <span class="text-xl sm:text-2xl sm:p-2">Rope &amp; SumTree</span></a> <a class="flex items-center border-2 border-slate-500 w-full sm:rounded-md hover:border-white  justify-end " href="/posts/zed-blog-translation/zed-decoded-tasks" hx-get="/posts/zed-blog-translation/zed-decoded-tasks/index.html" hx-target="body" hx-push-url="/posts/zed-blog-translation/zed-decoded-tasks" hx-swap="innerHTML show:window:top"><span class="text-2xl sm:text-4xl sm:p-2 pr-2 pl-1 order-last ">></span> <span class="text-xl sm:text-2xl sm:p-2">基于 Tree-Sitter 生成语法感知的任务</span></a></div>
+    </div>
+  </body>
+</html>

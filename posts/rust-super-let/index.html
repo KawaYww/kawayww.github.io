@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>柳上川</title><meta name="description" content="柳上川的博客"/><link rel="shortcut icon" href="/images/blog/avatar.avif" type="image/avif"/><link rel="stylesheet" href="/styles/highlight.min.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Regular/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Italic/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Bold/result.css"/><link rel="stylesheet" href="/styles/catppuccin-macchiato.css"/><link rel="stylesheet" href="/iconfonts/iconfont.css"/><link rel="stylesheet" href="/styles/tailwind.css"/><script src="/scripts/highlight.min.js"> </script><script src="/scripts/rust.min.js"> </script><script src="/scripts/nix.min.js"> </script><script src="/scripts/scheme.min.js"> </script><script src="/scripts/htmx.min.js"> </script><script src="/scripts/prefetch.js"> </script><script src="/scripts/custom.js"> </script><meta name="darkreader-lock"></head>
+  <body>
+    <div id="content" class="flex flex-col mx-4 mb-20 scroll-smooth" lang="zh-Hans">
+      <div class="text-2xl sm:text-3xl my-4 w-full text-center">『rust 中的 "临时值生命周期" 与 "super-let"』</div>
+      <div class="font-medium w-fit sm:mx-auto flex flex-col border-l-4 pl-2 sm:flex-row sm:border-l-0 sm:pl-0">
+        <p>[写自:2025-08-15</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>作者:柳上川 ]</p>
+      </div>
+      <div class="flex flex-col items-center m-4">
+        <div class="w-fit mx-auto text-lg font-semibold">摘要</div>
+        <div class="w-fit break-keep text-center sm:mx-[25%] *:inline">博客 <a class="underline underline-offset-5 font-medium" href="https://blog.m-ou.se/super-let/">Rust Temporary Lifetimes and “Super Let”</a> 的翻译<br>已获得原作者的翻译授权许可<br></div>
+      </div>
+      <div class="flex flex-col my-10 w-fit border-2 border-slate-500">
+        <p><span class="text-2xl">目录:</span></p>
+        <div class="w-fit pr-2 my-2">
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">┌─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#lin-shi-zhi">临时值</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#zai-let-zhong">在 let 中</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#zai-qian-tao-diao-yong-zhong">在嵌套调用中</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#zai-if-zhong">在 if 中</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#zai-if-let-zhong">在 if-let 中</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#sheng-ming-zhou-qi-yan-chang">生命周期延长</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#chang-liang-ti-sheng">常量提升</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#kuai-ji-bie-de-yan-chang">块级别的延长</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#ju-xian-xing">局限性</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#hong">宏</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#format_args!">format_args!</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#pin!">pin!</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#super-let">super-let</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#yong-hu-you-shan-du">用户友善度</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├───</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#qian-zai-kuo-zhan-fang-xiang">潜在扩展方向</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#2024-rfc">2024-RFC</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">└─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#fan-kui">反馈</a></span></div>
+        </div>
+      </div>
+      <blockquote class="border-l-4 border-solid border-gray-300 mx-1 my-3 px-4 opacity-60">非常感谢 <em>Mara Bos</em>(rust-leadership 委员会的成员之一) 的翻译授权, 之后应该还会再翻几篇<span style="display: inline-block"><del>(咳咳可能吧)</del></span><br>本文中所述的 <em>super-let</em>, rust 编译器已经在内部开始使用了, 使得比如 <code class="font-semibold text-[#aa8bd5]"><code>format-args!</code></code> 现在能被 let 绑定<br>夜间版本现在可通过 <code class="font-semibold text-[#aa8bd5]"><code>#![feature(super_let)]</code></code> 使用该特性, 更多详情请关注 <a class="underline underline-offset-5 font-medium" href="https://github.com/rust-lang/rust/issues/139076">Tracking Issue for super-let</a> 喵 <br>值得一提的是相关 PR 也是 <em>Mara Bos</em> 姐姐写的 :)<br></blockquote>
+      <p><br>rust 中临时变量的生命周期是个复杂却常被忽略的话题<br>简单场景下, rust 会精准控制临时值的存续周期, 使得开发者无需刻意在乎它们<br>然并卵! 现实中存在诸多没法立刻符合预期的情况<br><br>在本文中, 我们将(重新)发现关于临时值生命周期的规则, 回顾临时值生命周期延长的例子, 探索一种新的语言构想: <code class="font-semibold text-[#aa8bd5]"><code>super-let</code></code>, 以提供更多更强的控制权<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="lin-shi-zhi"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#lin-shi-zhi">临时值</a></h1>
+      <p>下面是一条 rust 语句, 使用了一个 <code class="font-semibold text-[#aa8bd5]"><code>String</code></code> 类型的 <em>临时值(temporary)</em>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">f(&amp;String::from('🦀'));</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>该临时字符串能活多久? 如果今天换作我们来设计 rust, 基本上可以在两个选项间进行选择:<br></p>
+      <ol class="list-decimal ml-9">
+        <li>在调用 <code class="font-semibold text-[#aa8bd5]"><code>f</code></code> 前, 字符串会被立刻 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code></li>
+        <li>只有在调用 <code class="font-semibold text-[#aa8bd5]"><code>f</code></code> 后, 字符串才被 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code></li>
+      </ol>
+      <p><br>若我们选择前者, 上面的语句将导致 <em>借用检查器(borrow checker)</em> 报错, 因为 <code class="font-semibold text-[#aa8bd5]"><code>f</code></code> 不该借用已经消失的玩意<br>因此, rust 选择了后者: 字符串先被分配, 然后将其引用传递给 <code class="font-semibold text-[#aa8bd5]"><code>f</code></code>, 函数返回后才删除该临时值<br></p>
+      <h2 class="flex items-center w-fit my-6" id="zai-let-zhong"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#zai-let-zhong">在 let 中</a></h2>
+      <p>稍微难点:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let a = f(&amp;String::from('🦀'));
+// ......
+g(&amp;a);</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>再来一遍, 该临时字符串能活多久?<br></p>
+      <ol class="list-decimal ml-9">
+        <li>字符串被 <code class="font-semibold text-[#aa8bd5]"><code>let</code></code> 语句的末尾被 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code>: 这个时刻在 <code class="font-semibold text-[#aa8bd5]"><code>f</code></code> 返回后, 但在调用 <code class="font-semibold text-[#aa8bd5]"><code>g</code></code> 前</li>
+        <li>字符串与 <code class="font-semibold text-[#aa8bd5]"><code>a</code></code> 同时被 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code>: 这个时刻在调用 <code class="font-semibold text-[#aa8bd5]"><code>g</code></code> 后</li>
+      </ol>
+      <p><br>这次, 选项1 可能会起作用, 但这取决于 <code class="font-semibold text-[#aa8bd5]"><code>f</code></code> 的签名<br>若 <code class="font-semibold text-[#aa8bd5]"><code>f</code></code> 被定义为 <code class="font-semibold text-[#aa8bd5]"><code>fn f（s： &amp;str） -> usize</code></code>(如 <code class="font-semibold text-[#aa8bd5]"><code>str::len</code></code>), 那么 “立刻 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code> 掉 <code class="font-semibold text-[#aa8bd5]"><code>let</code></code> 语句后的字符串” 是完全可以的<br>但若 <code class="font-semibold text-[#aa8bd5]"><code>f</code></code> 被定义为 <code class="font-semibold text-[#aa8bd5]"><code>fn f（s： &amp;str） -> &amp;[u8]</code></code>(如 <code class="font-semibold text-[#aa8bd5]"><code>str::as_bytes</code></code>), 那么 <code class="font-semibold text-[#aa8bd5]"><code>a</code></code> 将借用临时值, 当我们让 <code class="font-semibold text-[#aa8bd5]"><code>a</code></code> 活的比其更长, 就会遇到借用检查错误<br><br>那么选择第 2 种方案呢? 其在上面两种情况下都能正常编译, 但这可能会导致不必要地延长了临时值的生命周期<br>这可能导致 “资源浪费” 或 “引发难以察觉的缺陷”, 例如 <code class="font-semibold text-[#aa8bd5]"><code>MutexGuard</code></code> 的释放时机晚于预期时会产生死锁<br><br>我们可能想选择第三种方案: 让时机依赖于 <code class="font-semibold text-[#aa8bd5]"><code>f</code></code> 的签名:<br>然而, rust 的借用检查器仅执行检查, 而不会影响代码的行为, 该特性出于各种原因显得非常重要且有用<br>举例而言, 将 <code class="font-semibold text-[#aa8bd5]"><code>fn f(s: &amp;str) -> &amp;[u8]</code></code>(返回值借用了参数) 改为 <code class="font-semibold text-[#aa8bd5]"><code>fn f(s: &amp;str) -> &amp;'static [u8]</code></code>(返回值不借用参数) 时, <em>调用处(call site)</em> 的行为不会改变<br>嗯, 比如临时值被 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code> 的时机! 其不会由于签名变化而跟着发生改变!<br><br>因此, rust 在二选一中选择了前者: 在 <code class="font-semibold text-[#aa8bd5]"><code>let</code></code> 语句结束时 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code> 临时值<br>若想延长上述例子中字符串的生命周期, 手动移动至单独的 <code class="font-semibold text-[#aa8bd5]"><code>let</code></code> 语句也很简单:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let s = String::from('🦀'); // Moved to its own `let` to give it a longer lifetime.
+let a = f(&amp;s);
+// ......
+g(&amp;a);</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <h2 class="flex items-center w-fit my-6" id="zai-qian-tao-diao-yong-zhong"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#zai-qian-tao-diao-yong-zhong">在嵌套调用中</a></h2>
+      <p>Okay, 继续!<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">g(f(&amp;String::from('🦀')));</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>还是有两个选项:<br></p>
+      <ol class="list-decimal ml-9">
+        <li>字符串被 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code> 的时机在 <code class="font-semibold text-[#aa8bd5]"><code>f</code></code> 被调用后, 但在 <code class="font-semibold text-[#aa8bd5]"><code>g</code></code> 被调用前</li>
+        <li>字符串被 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code> 的时机在该语句末尾, 但在 <code class="font-semibold text-[#aa8bd5]"><code>g</code></code> 被调用后</li>
+      </ol>
+      <p><br>该代码段与先前一个几乎相同: 将临时值的引用传递给 <code class="font-semibold text-[#aa8bd5]"><code>f</code></code>, 并将 <code class="font-semibold text-[#aa8bd5]"><code>f</code></code> 的返回值传递给 <code class="font-semibold text-[#aa8bd5]"><code>g</code></code><br>不过这次, 整段操作都以单个语句的形式表达, 使用了嵌套的调用表达式<br><br>根据 <code class="font-semibold text-[#aa8bd5]"><code>f</code></code> 的签名, 选项1 可能有效也可能无效, 并且 选项2 可能会像先前所述, 使得临时值的生命周期被不必要的延长<br>然而这一次, 选项1 会给程序员带来更多的 “惊喜/吓”, 即使是像 <code class="font-semibold text-[#aa8bd5]"><code>String::from('🦀').as_bytes().contains(&amp;0x80)</code></code> 的简单代码也不会通过编译<br>若选择选项1, 上面的字符串被 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code> 的时机, 将位于 <code class="font-semibold text-[#aa8bd5]"><code>as_bytes (f)</code></code> 之后, 在 <code class="font-semibold text-[#aa8bd5]"><code>contains(g)</code></code> 调用之前<br><br>我们也可以认为, 暂时保留这些临时变量稍久点的代价是可以接受的, 毕竟它们仍会在语句结束时被 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code> 掉<br>因此, rust 在嵌套调用的场景中采用了后者: 无论 <code class="font-semibold text-[#aa8bd5]"><code>f</code></code> 的签名如何, 临时值都将保持存活, 直到语句末尾, 直到 <code class="font-semibold text-[#aa8bd5]"><code>g</code></code> 被调用之后<br></p>
+      <h2 class="flex items-center w-fit my-6" id="zai-if-zhong"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#zai-if-zhong">在 if 中</a></h2>
+      <p>现在让我们继续讨论一个简单的 <code class="font-semibold text-[#aa8bd5]"><code>if</code></code> 语句:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">if f(&amp;String::from('🦀')) {
+    // ......
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>Again, 何时将字符串 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code> 掉?<br></p>
+      <ol class="list-decimal ml-9">
+        <li>在 <code class="font-semibold text-[#aa8bd5]"><code>if</code></code> 中的条件被求值后, 但在执行其主体前(即 <code class="font-semibold text-[#aa8bd5]"><code>{</code></code> 前)</li>
+        <li>在执行其主体后(即 <code class="font-semibold text-[#aa8bd5]"><code>}</code></code> 后)</li>
+      </ol>
+      <p><br>我们没有理由让临时变量在 <code class="font-semibold text-[#aa8bd5]"><code>if</code></code> 的主体中也存活, 条件会产生一个 <code class="font-semibold text-[#aa8bd5]"><code>bool</code></code> 值(<code class="font-semibold text-[#aa8bd5]"><code>true</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>false</code></code>)<br>根据 <code class="font-semibold text-[#aa8bd5]"><code>bool</code></code> 的定义, 它不会借用任何东西, 因此 rust 选择了前者!<br><br>下面关于 <code class="font-semibold text-[#aa8bd5]"><code>Mutex::lock</code></code> 的例子蛮有用的, 其返回一个临时值 <code class="font-semibold text-[#aa8bd5]"><code>MutexGuard</code></code>, 该临时值被 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code> 时会进行 <code class="font-semibold text-[#aa8bd5]"><code>unlock</code></code> 操作:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn example(m: &amp;Mutex&lt;String>) {
+    if m.lock().unwrap().is_empty() {
+        println!("the string is empty!");
+    }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这里, 临时值 <code class="font-semibold text-[#aa8bd5]"><code>MutexGuard</code></code> 来自于 <code class="font-semibold text-[#aa8bd5]"><code>m.lock().unwrap()</code></code>, 在 <code class="font-semibold text-[#aa8bd5]"><code>.is_empty()</code></code> 后立刻被 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code> 掉<br>如此如此, <code class="font-semibold text-[#aa8bd5]"><code>Mutex</code></code> 在 <code class="font-semibold text-[#aa8bd5]"><code>println!</code></code> 期间便不会保持不必要的锁定状态<br></p>
+      <h2 class="flex items-center w-fit my-6" id="zai-if-let-zhong"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#zai-if-let-zhong">在 if-let 中</a></h2>
+      <p>在 <code class="font-semibold text-[#aa8bd5]"><code>if-let</code></code>(与 <code class="font-semibold text-[#aa8bd5]"><code>match</code></code>) 中的情景又有所不同, 因为我们的表达式不一定是 <code class="font-semibold text-[#aa8bd5]"><code>bool</code></code> 类型<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">if let … = f(&amp;String::from('🦀')) {
+    // ......
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>仍然有两个选项:<br></p>
+      <ol class="list-decimal ml-9">
+        <li>字符串被 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code> 的时机位于模式匹配之后, <code class="font-semibold text-[#aa8bd5]"><code>if-let</code></code> 的主体之前(即 <code class="font-semibold text-[#aa8bd5]"><code>{</code></code> 前)</li>
+        <li>字符串被 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code> 的时机位于 <code class="font-semibold text-[#aa8bd5]"><code>if-let</code></code> 的主体后(即 <code class="font-semibold text-[#aa8bd5]"><code>}</code></code> 后)</li>
+      </ol>
+      <p><br>这次我们有理由选择后者而非前者, <code class="font-semibold text-[#aa8bd5]"><code>if-let</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>match</code></code> 的匹配分支中借用某些值是很常见的<br>因此在该情景中, rust 选择了后者<br><br>比如, 当我们有一个类型为 <code class="font-semibold text-[#aa8bd5]"><code>Mutex&lt;Vec&lt;T>></code></code> 的变量 <code class="font-semibold text-[#aa8bd5]"><code>vec</code></code>, 下面的代码可以通过编译:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">if let Some(x) = vec.lock().unwrap().first() {
+    // The mutex is still locked here. :)
+    // This is necessary, because we're borrowing `x` from the `Vec`. (`x` is a `&amp;T`)
+    println!("first item in vec: {x}");
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我们通过 <code class="font-semibold text-[#aa8bd5]"><code>m.lock().unwrap()</code></code> 得到一个临时值 <code class="font-semibold text-[#aa8bd5]"><code>MutexGuard</code></code>, 随后使用 <code class="font-semibold text-[#aa8bd5]"><code>.first()</code></code> 借用第一个元素<br>该借用将在 <code class="font-semibold text-[#aa8bd5]"><code>if-let</code></code> 的整个主体内持续存活, 毕竟 <code class="font-semibold text-[#aa8bd5]"><code>MutexGuard</code></code> 仅在最后的 <code class="font-semibold text-[#aa8bd5]"><code>}</code></code> 处才被 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code><br><br>然而也存在我们不想要的情况, 比如我们使用 <code class="font-semibold text-[#aa8bd5]"><code>pop</code></code> 而非 <code class="font-semibold text-[#aa8bd5]"><code>first</code></code>, 其返回一个值而不是引用<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">if let Some(x) = vec.lock().unwrap().pop() {
+    // The mutex is still locked here. :(
+    // This is unnecessary, because we don't borrow anything from the `Vec`. (`x` is a `T`)
+    println!("popped item from the vec: {x}");
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这出人意料, 并导致难以察觉的错误或性能下降<br>或许这表明 rust 在此处的选择并非正确, 未来版本中也可能会对此处产生是否要进行修改的争议<br>关于如何调整这些规则的具体思路, 可参阅 <em>Niko</em> 关于相关主题撰写的博客文章: <a class="underline underline-offset-5 font-medium" href="https://smallcultfollowing.com/babysteps/blog/2023/03/15/temporary-lifetimes/">传送门</a><br><br>目前解决该问题的方式是使用单独的 <code class="font-semibold text-[#aa8bd5]"><code>let</code></code> 语句, 以限制临时值的生命周期:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let x = vec.lock().unwrap().pop(); // The MutexGuard is dropped after this statement.
+if let Some(x) = x {
+    // ......
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="sheng-ming-zhou-qi-yan-chang"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#sheng-ming-zhou-qi-yan-chang">生命周期延长</a></h1>
+      <p>请考虑如下情况:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let a = &amp;String::from('🦀');
+// ......
+f(&amp;a);</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <ol class="list-decimal ml-9">
+        <li>字符串在 <code class="font-semibold text-[#aa8bd5]"><code>let</code></code> 语句的末尾被 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code></li>
+        <li>字符串在 <code class="font-semibold text-[#aa8bd5]"><code>f</code></code> 调用完毕后, 与 <code class="font-semibold text-[#aa8bd5]"><code>a</code></code> 同一时刻被 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code></li>
+      </ol>
+      <p><br>前者会导致编译时的借用检查错误, 因此后者才更有意义<br>这确实是 rust 今天的工作方式: 临时值的生命周期被 <em>延长(extended)</em>, 以便上面的代码可以正常编译<br>这种 “临时值存活的时间比其出现的语句更长” 的现象, 被称为 <em>临时值的生命周期延长(temporary lifetime extension)</em><br><br>我们先前其实见识过, 该现象并不适用于所有出现临时值的 <code class="font-semibold text-[#aa8bd5]"><code>let</code></code> 语句<br>比如 <code class="font-semibold text-[#aa8bd5]"><code>let a = f(&amp;String::from('🦀'));</code></code> 中的临时值字符串并不会比其所在的 <code class="font-semibold text-[#aa8bd5]"><code>let</code></code> 语句活得更长<br>而在 <code class="font-semibold text-[#aa8bd5]"><code>let a = &amp;f(&amp;String::from('🦀'));</code></code>(注意第一个 <code class="font-semibold text-[#aa8bd5]"><code>&amp;</code></code>), 该现象适用于最外层的 <code class="font-semibold text-[#aa8bd5]"><code>&amp;</code></code>, 其借用了临时的 <code class="font-semibold text-[#aa8bd5]"><code>f</code></code>(即返回值), 但不适用内部的 <code class="font-semibold text-[#aa8bd5]"><code>&amp;</code></code>, 其借用了临时字符串<br><br>例如, 当我们用 <code class="font-semibold text-[#aa8bd5]"><code>str::len</code></code> 来代入 <code class="font-semibold text-[#aa8bd5]"><code>f</code></code>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let a: &amp;usize = &amp;String::from('a').len();</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>上行代码中, 字符串在 <code class="font-semibold text-[#aa8bd5]"><code>let</code></code> 语句的末尾被 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code>, 但 <code class="font-semibold text-[#aa8bd5]"><code>.len()</code></code> 返回的 <code class="font-semibold text-[#aa8bd5]"><code>usize</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>a</code></code> 活的一样久<br>不限于如上的 <code class="font-semibold text-[#aa8bd5]"><code>let</code></code> 语法, 下面临时值字符串的生命周期也将被延长, 毕竟即使对 <code class="font-semibold text-[#aa8bd5]"><code>Person</code></code> 一无所知, 我们也确信这对生成的对象实例来讲是必要的<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let a = Person {
+    name: &amp;String::from('🦀'), // Extended!
+    address: &amp;String::from('🦀'), // Extended!
+};</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>关于 <code class="font-semibold text-[#aa8bd5]"><code>let</code></code> 语句中的 “临时值的生命周期延长” 相关规则, <a class="underline underline-offset-5 font-medium" href="https://doc.rust-lang.org/stable/reference/destructors.html#temporary-lifetime-extension">rust references</a> 中已经阐明<br>你可以仅在语法层面, 就能判断出延长临时值的生命周期是否必要, 与任何类型, 函数签名, <code class="font-semibold text-[#aa8bd5]"><code>trait</code></code> 实现都无关:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let a = &amp;temporary().field; // Extended!
+let a = MyStruct { field: &amp;temporary() }; // Extended!
+let a = &amp;MyStruct { field: &amp;temporary() }; // Both extended!
+let a = [&amp;temporary()]; // Extended!
+let a = { …; &amp;temporary() }; // Extended!
+
+let a = f(&amp;temporary()); // Not extended, because it might not be necessary.
+let a = temporary().f(); // Not extended, because it might not be necessary.
+let a = temporary() + temporary(); // Not extended, because it might not be necessary.</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>虽然这看似合理, 但当我们意识到构建 <em>元组结构体(tuple struct)</em> 或 <em>元组变体(tuple variant)</em> 的语法实际上是个函数调用时, 仍会感到意外<br>从语法层面看, <code class="font-semibold text-[#aa8bd5]"><code>Some(123)</code></code> 是对函数 <code class="font-semibold text-[#aa8bd5]"><code>Some</code></code> 的一次函数调用:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let a = Some(&amp;temporary()); // Not extended! (Because `Some` could have any signature...)
+let a = Some { 0: &amp;temporary() }; // Extended! (I bet you have never used this syntax.)</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这可能会非常困惑, 所以我们才会考虑重新审视这些规则: <a class="underline underline-offset-5 font-medium" href="https://smallcultfollowing.com/babysteps/blog/2023/03/15/temporary-lifetimes/#design-principles">传送门</a><br></p>
+      <h2 class="flex items-center w-fit my-6" id="chang-liang-ti-sheng"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#chang-liang-ti-sheng">常量提升</a></h2>
+      <p><em>临时值的生命周期延长(temporary lifetime extension)</em> 很容易与另一种被称为 <em>常量提升(constant promotion)</em> 的概率相混淆<br>在 <code class="font-semibold text-[#aa8bd5]"><code>&amp;123</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>&amp;None</code></code> 等表达式中, 值被视作 <em>常量(constant)</em>(<a class="underline underline-offset-5 font-medium" href="https://doc.rust-lang.org/stable/reference/destructors.html#constant-promotion">没有 <em>内部可变性(interior mutability)</em> 与 <em>析构函数(desctructors)</em></a>)<br>因此它们被自动提升至永久存活, 即这些引用将具有以 <code class="font-semibold text-[#aa8bd5]"><code>'static</code></code> 描述的生命周期<br><br>举个例子:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let x = f(&amp;3); // The &amp;3 here is 'static, regardless if that's necessary for `f()`.
+let x = f(&amp;(1 + 2)); // The &amp;3 here is 'static.</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>当这两者概念都适用时, 那么编译器会选择 <em>常量提升</em>, 毕竟这可以让生命周期延长得最远<br>下面的代码中, <code class="font-semibold text-[#aa8bd5]"><code>x</code></code> 是一个 <code class="font-semibold text-[#aa8bd5]"><code>'static</code></code> 的引用, 值 <code class="font-semibold text-[#aa8bd5]"><code>1</code></code> 甚至比 <code class="font-semibold text-[#aa8bd5]"><code>x</code></code> 本身活得更久<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let x = &amp;1; // constant promotion, not temporary lifetime extension.</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <h2 class="flex items-center w-fit my-6" id="kuai-ji-bie-de-yan-chang"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#kuai-ji-bie-de-yan-chang">块级别的延长</a></h2>
+      <p>假设我们有一个类型 <code class="font-semibold text-[#aa8bd5]"><code>Writer</code></code>, 其保存对待写入文件(<code class="font-semibold text-[#aa8bd5]"><code>File</code></code>) 的引用:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">pub struct Writer&lt;'a> {
+    pub file: &amp;'a File
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>还有一些构造 <code class="font-semibold text-[#aa8bd5]"><code>Writer</code></code> 来写入新创建文件的代码:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">println!("opening file...");
+let filename = "hello.txt";
+let file = File::create(filename).unwrap();
+let writer = Writer { file: &amp;file };</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>当前作用域包含了 <code class="font-semibold text-[#aa8bd5]"><code>filename</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>file</code></code>, <code class="font-semibold text-[#aa8bd5]"><code>writer</code></code>, 但我们其实只会用到 <code class="font-semibold text-[#aa8bd5]"><code>writer</code></code>, 因此在之后的作用域中, <code class="font-semibold text-[#aa8bd5]"><code>filename</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>file</code></code> 理想情况下应当不可见<br>由于 “临时值的生命周期延长” 也适用于代码块, 因此我们可以如下实现:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let writer = {
+    println!("opening file...");
+    let filename = "hello.txt";
+    Writer { file: &amp;File::create(filename).unwrap() }
+};</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>目前, <code class="font-semibold text-[#aa8bd5]"><code>Writer</code></code> 的构造被巧妙地封装在其自身的作用域内, 外部的作用域只能看见 <code class="font-semibold text-[#aa8bd5]"><code>writer</code></code>, 而无法访问其他内容<br>得益于规则, 作为临时值在内部作用域内创建的 <code class="font-semibold text-[#aa8bd5]"><code>file</code></code> 会与 <code class="font-semibold text-[#aa8bd5]"><code>writer</code></code> 活得一样久<br></p>
+      <h2 class="flex items-center w-fit my-6" id="ju-xian-xing"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#ju-xian-xing">局限性</a></h2>
+      <p>现在, 若我们想将字段 <code class="font-semibold text-[#aa8bd5]"><code>file</code></code> 的可见性设置为私有, 并用 <code class="font-semibold text-[#aa8bd5]"><code>new</code></code> 方法进行封装:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">pub struct Writer&lt;'a> {
+    file: &amp;'a File
+}
+
+impl&lt;'a> Writer&lt;'a> {
+    pub fn new(file: &amp;'a File) -> Self {
+        Self { file }
+    }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我们不用进行太多改动:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">println!("opening file...");
+let filename = "hello.txt";
+let file = File::create(filename).unwrap();
+let writer = Writer::new(&amp;file); // Only this line changed.</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>但 “不用进行太多更改” 并不适用于先前的作用域版本:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let writer = {
+    println!("opening file...");
+    let filename = "hello.txt";
+    Writer::new(&amp;File::create(filename).unwrap()) // Error: Does not live long enough!
+};
+
+writer.something(); // Error: File no longer alive here!</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>正如我们先前所述, 延长虽然可以因 <code class="font-semibold text-[#aa8bd5]"><code>Writer {}</code></code> 这一 “构造语法” 被传递, 但无法通过 <code class="font-semibold text-[#aa8bd5]"><code>Writer::new()</code></code> 这一 “调用语法” 来传递<br>因为其函数签名可以是 <code class="font-semibold text-[#aa8bd5]"><code>fn new(&amp;File) -> Self&lt;'static></code></code> 或 <code class="font-semibold text-[#aa8bd5]"><code>fn new(&amp;File) -> i32</code></code>(后者不需延长)<br><br>遗憾的是, 我们无法明确强制要求延长临时值的生命周期<br>我们只好将 <code class="font-semibold text-[#aa8bd5]"><code>let file</code></code> 放在外层的作用域, 今天我们能做的最好的事情, 就是使用 <a class="underline underline-offset-5 font-medium" href="https://doc.rust-lang.org/nomicon/checked-uninit.html">延迟初始化(delayed intialization)</a>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let file;
+let writer = {
+    println!("opening file...");
+    let filename = "hello.txt";
+    file = File::create(filename).unwrap();
+    Writer::new(&amp;file)
+};</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>但这又会使得 <code class="font-semibold text-[#aa8bd5]"><code>file</code></code> 回到先前的作用域, 而这又是我们先前试图避免的 :(<br>虽然将 <code class="font-semibold text-[#aa8bd5]"><code>let file</code></code> 放在作用域外也没啥大不了的, 但这种解决方法对大多数 rust 程序员并不明显<br>延迟初始化也并不是常用特性, 编译器目前报错时也不会主动建议该方案, 即使编译器能做到, 自动提出这样的建议也绝非易事<br><br>以某种方式或许可以很好地解决该问题<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="hong"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#hong">宏</a></h1>
+      <p>或许有个既能创建文件又可以返回 <code class="font-semibold text-[#aa8bd5]"><code>Writer</code></code> 的函数会很有用, 例如:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let writer = Writer::new_file("hello.txt");</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>但由于 <code class="font-semibold text-[#aa8bd5]"><code>Writer</code></code> 仅借用 <code class="font-semibold text-[#aa8bd5]"><code>File</code></code>, 这将要求 <code class="font-semibold text-[#aa8bd5]"><code>new_file</code></code> 将 <code class="font-semibold text-[#aa8bd5]"><code>File</code></code> 存储在哪里<br>其可以主动 <code class="font-semibold text-[#aa8bd5]"><code>leak</code></code> 该 <code class="font-semibold text-[#aa8bd5]"><code>File</code></code>, 亦或者以某种方式将它存储在 <code class="font-semibold text-[#aa8bd5]"><code>'static</code></code> 的变量里, 但目前无法使得 <code class="font-semibold text-[#aa8bd5]"><code>File</code></code> 的存活时间与返回的 <code class="font-semibold text-[#aa8bd5]"><code>Writer</code></code> 一样长 因此, 我们改用 <em>宏(macro)</em> 来定义 <code class="font-semibold text-[#aa8bd5]"><code>File</code></code> 和 <code class="font-semibold text-[#aa8bd5]"><code>Writer</code></code>, 无论在哪调用都行:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">macro_rules! let_writer_to_file {
+    ($writer:ident, $filename:expr) => {
+        let file = std::fs::File::create($filename).unwrap();
+        let $writer = Writer::new(&amp;file);
+    };
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>用法如下所示:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let_writer_to_file!(writer, "hello.txt");
+
+writer.something();</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>得益于 rust 中宏的 <a class="underline underline-offset-5 font-medium" href="https://veykril.github.io/tlborm/decl-macros/minutiae/hygiene.html">卫生性</a>, 该作用域内无法访问 <code class="font-semibold text-[#aa8bd5]"><code>file</code></code><br>这很有效, 但如果其看起来更像个常规的函数调用岂不是更好?<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let writer = writer_to_file!("hello.txt");
+
+writer.something();</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>如先前所述, 要在 <code class="font-semibold text-[#aa8bd5]"><code>let writer = ..;</code></code> 我们可以通过先前的规则, 使得 <code class="font-semibold text-[#aa8bd5]"><code>File</code></code> 类型的临时值的生命周期被延长至足够久:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">macro_rules! writer_to_file {
+    ($filename:expr) => {
+        Writer { file: &amp;File::create($filename).unwrap() }
+    };
+}
+
+let writer = writer_to_file!("hello.txt");</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>宏调用将被展开为:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let writer = Writer { file: &amp;File::create("hello.txt").unwrap() };</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这将在必要时延长类型为 <code class="font-semibold text-[#aa8bd5]"><code>File</code></code> 的临时值的生命周期<br>但若 <code class="font-semibold text-[#aa8bd5]"><code>file</code></code> 的可见性不是公开的, 我们就得用 <code class="font-semibold text-[#aa8bd5]"><code>Writer::new()</code></code> 来替代 <code class="font-semibold text-[#aa8bd5]"><code>Writer {}</code></code>, 宏必须得做到 “在 <code class="font-semibold text-[#aa8bd5]"><code>let writer</code></code> 前插入 <code class="font-semibold text-[#aa8bd5]"><code>let file</code></code>”<br>而这是不可能的<br></p>
+      <h2 class="flex items-center w-fit my-6" id="format_args!"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#format_args!">format_args!</a></h2>
+      <p>该 issue 同时导致了 <code class="font-semibold text-[#aa8bd5]"><code>format_args!</code></code> 的返回结果无法被 <code class="font-semibold text-[#aa8bd5]"><code>let</code></code> 语句存储:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let f = format_args!("{}", 1); // Error!
+something.write_fmt(f);</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>原因是 <code class="font-semibold text-[#aa8bd5]"><code>format_args!</code></code> 被展开为 <code class="font-semibold text-[#aa8bd5]"><code>fmt::Arguments::new(&amp;Argument::display(&amp;arg), …)</code></code>, 其中某些参数是对临时值的引用<br>“临时值的生命周期延长规则” 并不适用于函数调用中的参数, 因此 <code class="font-semibold text-[#aa8bd5]"><code>fmt::Arguments</code></code> 的对象实例只能在同一语句中使用<br><br>要是能解决这个问题就好了<br></p>
+      <h2 class="flex items-center w-fit my-6" id="pin!"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#pin!">pin!</a></h2>
+      <p>另一种通常由宏创建的类型是 <code class="font-semibold text-[#aa8bd5]"><code>Pin</code></code>, 简单地说, 这表示对永远不会 <em>移动(move)</em> 的东西的引用 (确切细节非常复杂, 现在并非重点)<br>其是通过 <code class="font-semibold text-[#aa8bd5]"><code>unsafe</code></code> 函数 <code class="font-semibold text-[#aa8bd5]"><code>Pin::new_unchecked</code></code> 创建的, 因为你得主动承诺会遵守约定: 它引用的值永远不该被移动, 即使 <code class="font-semibold text-[#aa8bd5]"><code>Pin</code></code> 本身消失后<br><br>使用该函数的最佳方式是通过 <em>变量遮蔽(variable shadowing)</em>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let mut thing = Thing { … };
+let thing = unsafe { Pin::new_unchecked(&amp;mut thing) };</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>由于第二个 <code class="font-semibold text-[#aa8bd5]"><code>thing</code></code> 将第一个 <code class="font-semibold text-[#aa8bd5]"><code>thing</code></code> 遮蔽了, 第一个 <code class="font-semibold text-[#aa8bd5]"><code>thing</code></code>(但仍然存在) 无法再被命名<br>因为其无法再被命名, 我们可以确信其不可被移动(即使是在第二个 <code class="font-semibold text-[#aa8bd5]"><code>thing</code></code> 被 <code class="font-semibold text-[#aa8bd5]"><code>Drop</code></code> 掉之后)<br>这就是我们对 <code class="font-semibold text-[#aa8bd5]"><code>unsafe</code></code> 代码块的的承诺!<br><br>由于这是一种常见的情况, 该模式通常会被封装在宏里面<br>例如, 可以定义一个 <code class="font-semibold text-[#aa8bd5]"><code>let_pin!</code></code> 宏:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">macro_rules! let_pin {
+    ($name:ident, $init:expr) => {
+        let mut $name = $init;
+        let $name = unsafe { Pin::new_unchecked(&amp;mut $name) };
+    };
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>用法跟我们先前使用的 <code class="font-semibold text-[#aa8bd5]"><code>let_writer_to_file!</code></code> 宏类似:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let_pin!(thing, Thing { … });
+
+thing.something();</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这很好地封装与隐藏了 <code class="font-semibold text-[#aa8bd5]"><code>unsafe</code></code> 相关的代码<br>但就像我们的 <code class="font-semibold text-[#aa8bd5]"><code>Writer</code></code> 示例一般, 如果其能像那样子工作不是更爽吗?<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let thing = pin!(Thing { … });</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>众所周知, 想使其可以被做到, 我们就得利用上延长规则, 换句话说, 这只有当我们能够使用 <code class="font-semibold text-[#aa8bd5]"><code>Pin {}</code></code> 的 “构造语法”才有可能<br>若使用 <code class="font-semibold text-[#aa8bd5]"><code>Pin { pinned: &amp;mut Thing { … } }</code></code> 的形式, 那么可以, 但是 <code class="font-semibold text-[#aa8bd5]"><code>Pin::new_unchecked(&amp;mut Thing { … })</code></code> 不行<br>让 <code class="font-semibold text-[#aa8bd5]"><code>Pin</code></code> 内部字段的可见性变为公开, 将会违背其初衷: 当字段私有时, <code class="font-semibold text-[#aa8bd5]"><code>Pin</code></code> 的保证才有意义<br><br>不幸的是, 我们今天无法成功编写出符合初衷的 <code class="font-semibold text-[#aa8bd5]"><code>pin!</code></code> 宏, 更不幸的是, 标准库选择了这样做(<a class="underline underline-offset-5 font-medium" href="https://doc.rust-lang.org/stable/std/pin/macro.pin.html">传送门</a>), 这犯下了可怕的罪行:<br><code class="font-semibold text-[#aa8bd5]"><code>Pin</code></code> 的 “private” 字段实际上被定义为了 <code class="font-semibold text-[#aa8bd5]"><code>pub</code></code>, 也被标记为了 <code class="font-semibold text-[#aa8bd5]"><code>unstable</code></code>, 编译器会在你使用它时发出警告<br><br>要是不需要这个 hack 的技巧就好了<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="super-let"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#super-let">super-let</a></h1>
+      <p>我们已经遭遇多种延长规则受到限制的情况:<br></p>
+      <ul class="list-disc ml-5">
+        <li>尝试使 <code class="font-semibold text-[#aa8bd5]"><code>let writer = { … };</code></code> 保持一个优雅的作用域, 失败<br></li>
+        <li>尝试实现 <code class="font-semibold text-[#aa8bd5]"><code>let writer = writer_to_file!(…);</code></code>, 失败</li>
+        <li>尝试实现 <code class="font-semibold text-[#aa8bd5]"><code>let f = format_args!(…);</code></code>, 失败</li>
+        <li>标准库为了让 <code class="font-semibold text-[#aa8bd5]"><code>pin!</code></code> 工作而采取了糟糕的 hack 技巧</li>
+      </ul>
+      <p><br>如果我们有办法延长生命周期, 那么这些全都能有很好的解决方案<br>考虑让我们定义一种特殊的 <code class="font-semibold text-[#aa8bd5]"><code>let</code></code> 语句, 让变量的生命周期比普通的 <code class="font-semibold text-[#aa8bd5]"><code>let</code></code> 更长会怎么样?<br>如同拥有超能力(或者说是在 “super” 作用域下) 的 <code class="font-semibold text-[#aa8bd5]"><code>let</code></code>, 我们不妨称呼它为 <code class="font-semibold text-[#aa8bd5]"><code>super-let</code></code><br><br>我假设 <code class="font-semibold text-[#aa8bd5]"><code>super-let</code></code> 语句可以像这样工作:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let writer = {
+    println!("opening file...");
+    let filename = "hello.txt";
+    super let file = File::create(filename).unwrap();
+    Writer::new(&amp;file)
+};</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>关键字 <code class="font-semibold text-[#aa8bd5]"><code>super</code></code> 使得 <code class="font-semibold text-[#aa8bd5]"><code>file</code></code> 活得跟 <code class="font-semibold text-[#aa8bd5]"><code>writer</code></code>(外面代码块生成的那个 <code class="font-semibold text-[#aa8bd5]"><code>Writer</code></code> 对象) 一样久<br><code class="font-semibold text-[#aa8bd5]"><code>super-let</code></code> 的具体规则尚待商榷, 但其主要目的是实现 “临时值的生命周期延长” 的 <em>脱糖化(desugaring)</em> 处理:<br></p>
+      <ul class="list-disc ml-5">
+        <li><code class="font-semibold text-[#aa8bd5]"><code>let a = &amp;temporary();</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>let a = { super let t = temporary(); &amp;t };</code></code> 应该等价<br></li>
+      </ul>
+      <p>这将使得 <code class="font-semibold text-[#aa8bd5]"><code>pin!</code></code> 宏可以在没有任何 hack 技巧的情况下进行定义:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">macro_rules! pin {
+    ($init:expr) => {
+        {
+            super let pinned = $init;
+            unsafe { Pin::new_unchecked(&amp;pinned) }
+        }
+    };
+}
+
+let thing = pin!(Thing { … });</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>同理, <code class="font-semibold text-[#aa8bd5]"><code>format_args!</code></code> 宏内的定义也可以对临时值使用 <code class="font-semibold text-[#aa8bd5]"><code>super-let</code></code>, 以便结果能作为<code class="font-semibold text-[#aa8bd5]"><code>let a = format_args!()</code></code> 对一部分被存储:<br></p>
+      <h2 class="flex items-center w-fit my-6" id="yong-hu-you-shan-du"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#yong-hu-you-shan-du">用户友善度</a></h2>
+      <p>同时拥有语义不同的 <code class="font-semibold text-[#aa8bd5]"><code>let</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>super-let</code></code> 听上去不是啥好主意, 其解决了一些问题, 尤其是宏<br>但对于试图理解两者之间的区别而产生的困惑, 这一切真的值得吗?<br><br>我的答案是: yes!<br>只要我们确保编译器尽可能对 <code class="font-semibold text-[#aa8bd5]"><code>let</code></code> 是否要添加/移除 <code class="font-semibold text-[#aa8bd5]"><code>super</code></code> 给出建议即可<br>想象下, 有人这么写:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let output: Option&lt;&amp;mut dyn Write> = if verbose {
+    let mut file = std::fs::File::create("log")?;
+    Some(&amp;mut file)
+} else {
+    None
+};</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>今天, 这会导致以下错误:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">error[E0597]: `file` does not live long enough
+  --> src/main.rs:16:14
+   |
+14 |     let output: Option&lt;&amp;mut dyn Write> = if verbose {
+   |         ------ borrow later stored here
+15 |         let mut file = std::fs::File::create("log")?;
+   |             -------- binding `file` declared here
+16 |         Some(&amp;mut file)
+   |              ^^^^^^^^^ borrowed value does not live long enough
+17 |     } else {
+   |     - `file` dropped here while still borrowed</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>虽然问题所在相对清晰, 但编译器并未提供解决方案<br>经常会有 rust 程序员带着类似的例子来寻求我的帮助, 导致我为他们解释 <em>延迟初始化(delayed initialization)</em>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">let mut file;
+let output: Option&lt;&amp;mut dyn Write> = if verbose {
+    file = std::fs::File::create("log")?;
+    Some(&amp;mut file)
+} else {
+    None
+};</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这个解决方案对大多数人来讲并不显然, 也许是对在 <code class="font-semibold text-[#aa8bd5]"><code>else</code></code> 分支中的 <code class="font-semibold text-[#aa8bd5]"><code>file</code></code> 未初始化感到奇怪<br>如果报错信息如下, 岂不是会更好?<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">error[E0597]: `file` does not live long enough
+  --> src/main.rs:16:14
+   |
+15 |         let mut file = std::fs::File::create("log")?;
+   |             --------
+   |
+help: try using `super let`
+   |
+15 |         super let mut file = std::fs::File::create("log")?;
+   |         +++++</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>即使他们对 <code class="font-semibold text-[#aa8bd5]"><code>super-let</code></code> 及其确切语义了解不多, 编译器也提供了解决问题的清晰简洁的方案, 告诉他们 <code class="font-semibold text-[#aa8bd5]"><code>super</code></code> 可以让变量活得更久<br>同样的, 当不必使用 <code class="font-semibold text-[#aa8bd5]"><code>super-let</code></code> 时, 编译器也可以发出建议移除 <code class="font-semibold text-[#aa8bd5]"><code>super</code></code>的提示:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">warning: unnecessary use of `super let`
+  --> src/main.rs:16:14
+   |
+15 |         super let mut file = std::fs::File::create("log")?;
+   |         ^^^^^ help: remove this
+   |
+   = note: `file` would live long enough with a regular `let`</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>我相信这些足以让 rust 程序员开始使用 <code class="font-semibold text-[#aa8bd5]"><code>super-let</code></code>, 即使他们以前从未接触过这玩意<br></p>
+      <h2 class="flex items-center w-fit my-6" id="qian-zai-kuo-zhan-fang-xiang"><span class="text-2xl m-2 text-cyan-500">></span> <a class="text-2xl hover:underline underline-offset-8" href="#qian-zai-kuo-zhan-fang-xiang">潜在扩展方向</a></h2>
+      <p>一项未来潜在的扩展方向, 是允许在函数作用域内使用 <code class="font-semibold text-[#aa8bd5]"><code>super-let</code></code>, 也就是说此时 <code class="font-semibold text-[#aa8bd5]"><code>super</code></code> 将表示函数的 <em>调用者(caller)</em><br>正如 <a class="underline underline-offset-5 font-medium" href="https://hachyderm.io/@lorepozo@tech.lgbt/111499621692587962">@lorepozo@tech.lgbt on Mastodon</a> 上所提到的, 这将使 <code class="font-semibold text-[#aa8bd5]"><code>pin!</code></code> 能作为函数而非宏存在<br>同理, <code class="font-semibold text-[#aa8bd5]"><code>Writer::new_file(...)</code></code> 也将无需借助宏即可实现<br><br>其本质上的运作机制: 允许特定函数将对象放置到调用者的 <em>栈帧(stack frame)</em> 中, 这些对象可以从返回值中被引用<br>这并非适用于所有常规函数, 通常调用者不会为函数预留待放入对象的空间, 因此该特性需要函数签名也配合更改<br><br>或许像这样:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">pub placing fn new_file(filename: &amp;str) -> Writer {
+    super let mut file = File::create(filename).unwrap(); // Placed into caller's stack frame
+    Writer::new(&amp;file) // So we can borrow it in the return value!
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这虽然不在我当前提议的范畴内, 但想象一下总归是蛮有趣的 :)<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="2024-rfc"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#2024-rfc">2024-RFC</a></h1>
+      <p>几个月前, 我曾与 <a class="underline underline-offset-5 font-medium" href="https://github.com/nikomatsakis">Niko Matsakis</a>, <a class="underline underline-offset-5 font-medium" href="https://github.com/dingxiangfei2009">丁向飞</a> 分享过关于 <code class="font-semibold text-[#aa8bd5]"><code>super-let</code></code> 的构想, 他们对于这种 “脱糖” 临时值生命周期扩展的方法感到兴奋<br>目前, 他们正投入到制定 <code class="font-semibold text-[#aa8bd5]"><code>super-let</code></code> 的精确定义和详细规则的全力工作中, 同时为下一版 rust 设计若干关于临时值在生命周期方面的新规则<br><br>这项整合性的 <a class="underline underline-offset-5 font-medium" href="https://rust-lang.zulipchat.com/#narrow/stream/403629-t-lang.2Ftemporary-lifetimes-2024">“temporary lifetimes 2024” effort</a> 正在逐步形成一份 RFC 提案<br>其核心建议是尽可能缩短临时值的生命周期, 防止 <code class="font-semibold text-[#aa8bd5]"><code>if-let</code></code>/<code class="font-semibold text-[#aa8bd5]"><code>match</code></code> 中因 <code class="font-semibold text-[#aa8bd5]"><code>MutexGuard</code></code> 类型的临时值而导致死锁, 同时引入 <code class="font-semibold text-[#aa8bd5]"><code>super-let</code></code> 作为延长机制<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="fan-kui"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#fan-kui">反馈</a></h1>
+      <p>你是否曾主动运用过本文介绍的延长规则? 它是否曾经困扰过你?<br>对于 <code class="font-semibold text-[#aa8bd5]"><code>super-let</code></code> 有何看法? 会考虑使用吗? 或者有更优的解决方案?<br>欢迎在 gitHub 上分享见解, 也可加入 reddit, twitter, mastodon 等平台进行讨论!<br></p>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>柳上川</title><meta name="description" content="柳上川的博客"/><link rel="shortcut icon" href="/images/blog/avatar.avif" type="image/avif"/><link rel="stylesheet" href="/styles/highlight.min.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Regular/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Italic/result.css"/><link rel="stylesheet" href="/fonts/MapleMono-NF-CN-Bold/result.css"/><link rel="stylesheet" href="/styles/catppuccin-macchiato.css"/><link rel="stylesheet" href="/iconfonts/iconfont.css"/><link rel="stylesheet" href="/styles/tailwind.css"/><script src="/scripts/highlight.min.js"> </script><script src="/scripts/rust.min.js"> </script><script src="/scripts/nix.min.js"> </script><script src="/scripts/scheme.min.js"> </script><script src="/scripts/htmx.min.js"> </script><script src="/scripts/prefetch.js"> </script><script src="/scripts/custom.js"> </script><meta name="darkreader-lock"></head>
+  <body>
+    <div id="content" class="flex flex-col mx-4 mb-20 scroll-smooth" lang="zh-Hans">
+      <div class="text-2xl sm:text-3xl my-4 w-full text-center">『gleam: use-expression』</div>
+      <div class="font-medium w-fit sm:mx-auto flex flex-col border-l-4 pl-2 sm:flex-row sm:border-l-0 sm:pl-0">
+        <p>[写自:2024-05-19</p>
+        <div class="px-2 hidden sm:inline">│</div>
+        <p>作者:柳上川 ]</p>
+      </div>
+      <div class="flex flex-col items-center m-4">
+        <div class="w-fit mx-auto text-lg font-semibold">摘要</div>
+        <div class="w-fit break-keep text-center sm:mx-[25%] *:inline">了解下 gleam 语言中的 use 表达式吧</div>
+      </div>
+      <div class="flex flex-col my-10 w-fit border-2 border-slate-500">
+        <p><span class="text-2xl">目录:</span></p>
+        <div class="w-fit pr-2 my-2">
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">┌─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#abc">背景</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#suo-jin-wen-ti">缩进问题</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">├─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#usebiao-da-shi">use表达式</a></span></div>
+          <div class="leading-5"><span class="pl-2"><span class="font-bold text-sm">└─►</span><a class="text-sm hover:text-sky-500 hover:font-semibold hover:underline underline-offset-5" href="#zong-jie">总结</a></span></div>
+        </div>
+      </div>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="abc"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#abc">背景</a></h1>
+      <p>gleam 是一门类型安全, 高度扩展, 语法友善, 表达力强的现代编程语言<br>gleam 在 v0.25 版本中引入了一种期待已久的新功能: <code class="font-semibold text-[#aa8bd5]"><code>use</code></code><br><br>当我们敲代码 <code class="font-semibold text-[#aa8bd5]"><code>open</code></code> 一个 <code class="font-semibold text-[#aa8bd5]"><code>File</code></code> 时, 使用完毕之后就得调用对应的 <code class="font-semibold text-[#aa8bd5]"><code>close</code></code> 方法, 保证文件正确关闭<br>倘若每次都得由程序员手动保证调用 close, 不仅繁琐而且容易出错<br><br>在主流语言中, 你会发现各种各样的, 管理与释放资源的不同姿势:<br></p>
+      <ul class="list-disc ml-5">
+        <li>go/zig 中的 <code class="font-semibold text-[#aa8bd5]"><code>defer</code></code> 语句, 将在函数/代码块结束之前被调用</li>
+        <li>java 中的 <code class="font-semibold text-[#aa8bd5]"><code>try-with-resource</code></code>, 让实现了 <code class="font-semibold text-[#aa8bd5]"><code>AutoClosable</code></code> 接口的实例在 <code class="font-semibold text-[#aa8bd5]"><code>try-catch</code></code> 后自动调用 <code class="font-semibold text-[#aa8bd5]"><code>close()</code></code> 方法</li>
+        <li>c# 中的 <code class="font-semibold text-[#aa8bd5]"><code>using</code></code>, 作用于实现了 <code class="font-semibold text-[#aa8bd5]"><code>IDisposable</code></code> 接口的实例, 编译器将 <code class="font-semibold text-[#aa8bd5]"><code>using</code></code> 自动转换为等价的 <code class="font-semibold text-[#aa8bd5]"><code>try-finally</code></code></li>
+        <li>cpp/rust 中的 <code class="font-semibold text-[#aa8bd5]"><code>RAII</code></code>, 让资源的生存期与变量的作用域相互绑定</li>
+        <li>……</li>
+        <li>……</li>
+      </ul>
+      <p><br>但是在 gleam 语言中, 已经存在了一个用于解决上述问题, 并且更加泛用的语法: <code class="font-semibold text-[#aa8bd5]"><code>use</code></code><br>(类似的概念在其他语言中也存在, 这并非是 gleam 独创的, 借鉴了 ocaml, koka, roc, ml系列, 甚至 python)<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="suo-jin-wen-ti"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#suo-jin-wen-ti">缩进问题</a></h1>
+      <p>让我们来点例子, 假设存在这么一段代码:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">pub fn login(credentials) {
+  case authenticate(credentials) {
+    Error(e) -> Error(e)
+    Ok(user) ->
+      case fetch_profile(user) {
+        Error(e) -> Error(e)
+        Ok(profile) -> render_welcome(user, profile)
+      }
+  }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p><code class="font-semibold text-[#aa8bd5]"><code>authenticate</code></code> 与 <code class="font-semibold text-[#aa8bd5]"><code>fetch_profile</code></code> 会返回 <code class="font-semibold text-[#aa8bd5]"><code>Result</code></code> 类型, 用 <code class="font-semibold text-[#aa8bd5]"><code>Ok/Error</code></code> 分别表示成功与失败时的情况, 并包裹返回的值:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">import gleam/io
+
+pub type Result(a, e) {
+  Ok(a)
+  Error(e)
+}
+
+pub fn main() {
+  let a = Error("error")
+  let info = case a {
+    Ok(_) -> "It's ok"
+    Error(_) -> "It's error"
+  }
+  io.println(info)
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>再回过头去看前面的那段代码, 意思就是当前一步成功(Ok)时, 再运行下一步(Ok), 每一步失败时就返回错误(Error)<br>但这有一个烦恼: 代码的缩进问题很严重, 倘若某个函数里调用了许多个会返回 <code class="font-semibold text-[#aa8bd5]"><code>Result</code></code> 类型的函数……<br><br>于是 gleam 在早期的 v-0.9 版本引入了 <code class="font-semibold text-[#aa8bd5]"><code>try</code></code> 语法, 可以将前文的代码写成如下的等价形式:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// 当前一步失败时直接将 Error 作为这一段落的表达式, 无视后面的代码
+pub fn login(credentials) {
+  try user = authenticate(credentials)
+  try profile = fetch_profile(user)
+  render_welcome(user, profile)
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这很好, 但仍不够好, 缩进问题没被完全解决<br>导致缩进复杂的情况还包括 <em>闭包/匿名函数/回调函数</em>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">pub fn handle_request(request: HttpRequest) {
+  logger.span("handle_request", fn() {
+    database.connection(fn(conn) {
+      case request.method {
+        Post ->
+          case database.insert(conn, request.body) {
+            Ok(record) -> created_response(record)
+            Error(exc) -> bad_request_response(exc)
+          }
+        _ -> method_not_allowed_response()
+      }
+    })
+  })
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>显而易见, 这段代码虽然条理清晰, 但实话实说看见的第一眼并不容易阅读, 也因为缩进问题而不够美观<br>当这种 闭包/匿名函数/回调函数 一多起来, 就会出现著名的 回调函数地域(callback-hall)<br><br>gleam 团队给出的解决方案就是新的 <code class="font-semibold text-[#aa8bd5]"><code>use</code></code> 表达式, 在保持简单概念的同时, 处理 错误处理/回调函数/资源管理 时的缩进问题:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">pub fn handle_request(request: HttpRequest) {
+  use &lt;- logger.span("handle_request")
+  use &lt;- require_method(request, Post)
+  use conn &lt;- database.connection()
+
+  case database.insert(conn, request.body) {
+    Ok(record) -> created_response(record)
+    Error(exc) -> bad_request_response(exc)
+  }
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>下面将正式介绍 <code class="font-semibold text-[#aa8bd5]"><code>use-expression</code></code> 的一些使用例子<br></p>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="usebiao-da-shi"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#usebiao-da-shi">use表达式</a></h1>
+      <p><code class="font-semibold text-[#aa8bd5]"><code>use</code></code> 仅仅是一些语法糖, 它将后续的所有表达式转换为 闭包/匿名函数, 将此函数作为参数传递给 <code class="font-semibold text-[#aa8bd5]"><code>use</code></code> 右侧的调用<br>例如, 假设有一个函数 <code class="font-semibold text-[#aa8bd5]"><code>with_file</code></code>, 打开一个文件, 进行读写, 然后关闭该文件:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn open(file) {
+  todo
+}
+
+fn close(file) {
+  todo
+}
+
+// Define the function
+pub fn with_file(path, handler) {
+  let file = open(path)
+  handler(file)
+  close(file)
+}
+
+// Use it
+pub fn main() {
+  with_file("pokemon.txt", fn(file) {
+    write(file, "Oddish\n")
+    write(file, "Farfetch'd\n")
+  })
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>在 gleam 语言中, 小写的参数表示泛型, 类型会根据传入的参数自动推导, 因此上面的例子是可以编译的, 并非伪代码<br>使用 use 无需额外缩进即可调用:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">pub fn main() {
+  use file &lt;- with_file("pokemon.txt")
+  write(file, "Oddish\n")
+  write(file, "Farfetch'd\n")
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>它不仅限于单个参数, 还可用于任何参数的函数, 包括不接受参数的函数<br>这个 <code class="font-semibold text-[#aa8bd5]"><code>use</code></code> 表达式是高度通用的, 不限于任何特定类型, 接口, 因此它可以应用于许多不同的事物<br>(在 gleam 语言中, 小写的参数表示泛型, 类型会根据传入的参数自动推导, 因此看见下面例子中诸如 <code class="font-semibold text-[#aa8bd5]"><code>defer</code></code> 时, 还请不要惊讶)<br><br>下面是一些小例子:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">//  编写 http 中间件 
+pub fn require_method(request, method, continue) {
+  case request.method == method {
+    True -> continue()
+    False -> method_not_allowed()
+  }
+}
+
+pub fn handle_request(request) {
+  use &lt;- require_method(request, Post)
+  // ...
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// 复制 go/zig 等语言中的 defer 语法 
+pub fn defer(cleanup, body) {
+  body()
+  cleanup()
+}
+
+pub fn main() {
+  use &lt;- defer(fn() { io.println("Goodbye") })
+  io.println("Hello!")
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// 复制 elixir/haskell/scala 等语言中的 `for-comprehension`
+import gleam/list
+
+pub fn main() {
+  use letter &lt;- list.flat_map(["a", "b", "c"])
+  use number &lt;- list.map([1, 2, 3])
+  #(letter, number)
+}
+
+// [
+//   #("a", 1), #("a", 2), #("a", 3),
+//   #("b", 1), #("b", 2), #("b", 3),
+//   #("c", 1), #("c", 2), #("c", 3),
+// ]</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">// 复制 gleam 自己的 `try` 表达式(目前已被 `use` 取代) 
+pub fn attempt(result, transformation) {
+  case result {
+    Ok(x) -> transformation(x)
+    Error(y) -> Error(y)
+  }
+}
+
+pub fn main() {
+  use user &lt;- attempt(authenticate(credentials))
+  use profile &lt;- attempt(fetch_profile(user))
+  render_welcome(user, profile)
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <hr class="border-2 border-dashed my-10">
+      <h1 class="flex items-center w-fit my-6" id="zong-jie"><span class="text-2xl mr-2 text-cyan-500">🔗</span> <a class="text-4xl hover:underline underline-offset-8" href="#zong-jie">总结</a></h1>
+      <p>gleam 语言中的 <code class="font-semibold text-[#aa8bd5]"><code>use</code></code> 是支持了 句法变换(syntactic-transformation) 这一概念的语法<br>它相比较于主流语言更加泛用, 仅仅是函数应用的语法糖, 而非诸如 defer/using 等针对特定问题的特殊支持<br>这种概念在函数式编程语言中较为常见, 如 ocaml 中的 <code class="font-semibold text-[#aa8bd5]"><code>let*</code></code>, koka 中的 <code class="font-semibold text-[#aa8bd5]"><code>with</code></code>, roc 中的 <code class="font-semibold text-[#aa8bd5]"><code>backpassing</code></code>, 与 <code class="font-semibold text-[#aa8bd5]"><code>use</code></code> 都是十分相似的概念<br>(上面有部分涉及到 <code class="font-semibold text-[#aa8bd5]"><code>algebraic effect</code></code>, 比 gleam 这种单纯的玩意要高级很多)<br><br>use 使得嵌套(nested)的函数可以被轻松地扁平化(flatten)<br><br>为了更加直观地体现这点, 我们可以编写一个函数 twice, 参数是一个闭包, 让该闭包可以运行两次:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">import gleam/io
+
+fn twice(f) {
+  f()
+  f()
+}
+
+fn main() {
+  twice(fn() { io.print("Message ") })
+}
+
+// Message Message</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>使用 <code class="font-semibold text-[#aa8bd5]"><code>use</code></code> 的等价写法:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn main() {
+  use &lt;- twice()
+  io.print("Message ")
+}
+
+// Message Message</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>当发生嵌套时(我们想调用两次, 三次, 更多次 twice 时), use 的优势会更加明显:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn main() {
+  twice(fn() { twice(fn() { twice(fn() { io.print("Message") }) }) })
+}
+
+// Message Message Message Message Message Message Message Message</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn main() {
+  use &lt;- twice()
+  use &lt;- twice()
+  use &lt;- twice()
+  io.println("Message")
+}
+
+// Message Message Message Message Message Message Message Message</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>于此同时, 因为 gleam 是门类型安全的语言, 我们在使用 <code class="font-semibold text-[#aa8bd5]"><code>use</code></code> 时也会检查是否匹配类型的, 比如:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn print(self: List(String)) {
+  use &lt;- bool.guard(when: self |> list.is_empty, return: io.print("Empty list"))
+
+  use i &lt;- list.each(self)
+  io.println(i)
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>倘若当我们疏忽地写成了这样:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">fn print(self: List(String)) {
+  use &lt;- bool.guard(when: self |> list.is_empty, return: "Empty list")
+
+  use i &lt;- list.each(self)
+  io.println(i)
+}</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-text text-sm sm:text-base">Expected type:
+    String
+
+Found type:
+    Nil</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>这里再来一个其他语言作为 嵌套 被 扁平化 的例子吧, 来自 rock 语言的 <code class="font-semibold text-[#aa8bd5]"><code>backpassing</code></code>, 以下两段代码等价:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">readLicense : Filename -> Task License File.ReadErr
+readLicense = \filename ->
+  Task.await (File.readUtf8 settingsFilename) \settingsYaml ->
+    settingsYaml
+      |> Yaml.decode settingsDecoder
+      |> Task.fromResult
+      |> Task.mapFail InvalidFormat
+      |> Task.await \settings ->
+        Task.await (File.readUtf8 settings.projectFilename) \projectCsv ->
+          projectCsv
+            |> Csv.decode projectDecoder
+            |> Task.fromResult
+            |> Task.mapFail InvalidFormat
+            |> Task.await \project ->
+              Task.await (File.readUf8 project.licenseFilename) \licenseStr ->
+                License.fromStr licenseStr
+                  |> Task.fromResult
+                  |> Task.mapFail InvalidFormat</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <p>使用 <code class="font-semibold text-[#aa8bd5]"><code>backpassing</code></code>:<br></p>
+      <pre class="group relative mx-2 sm:mx-6 my-4 border-2 border-slate-500 leading-[1.2em]"><script>
+        function copy_code(button) {
+          const code = button.parentElement.querySelector('code').innerText;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '好啦';
+            setTimeout(() => button.textContent = '复制', 2000);
+          });
+        }
+        function fold_code(button) {
+          const code = button.parentElement.querySelector('code');
+          const next_fold_state = button.textContent
+          if (next_fold_state == '折叠') {
+            if (!code.hasAttribute('data-original')) {
+              code.setAttribute('data-original', code.innerHTML)
+            }
+            const lines = code.innerHTML.split('\n')
+            const firstLine = lines[0]
+            code.innerHTML = firstLine
+            // code.style.display = 'none'
+            button.textContent = '展开'
+          } else {
+            const lines = code.getAttribute('data-original')
+            // code.style.display = 'block'
+            code.innerHTML = lines
+            button.textContent = '折叠'
+          }
+        }
+      </script><p><code class=" language-rust text-sm sm:text-base">readLicense : Filename -> Task License File.ReadErr
+readLicense = \filename ->
+  settingsYaml &lt;- Task.await (File.readUtf8 settingsFilename)
+
+  settings &lt;-
+    settingsYaml
+      |> Yaml.decode settingsDecoder
+      |> Task.fromResult
+      |> Task.mapFail InvalidFormat
+
+  projectCsv &lt;- Task.await (File.readUtf8 settings.projectFilename)
+
+  project &lt;-
+    projectCsv
+      |> Csv.decode projectDecoder
+      |> Task.fromResult
+      |> Task.mapFail InvalidFormat
+
+  licenseStr &lt;-
+    Task.await (File.readUf8 project.licenseFilename)
+
+  License.fromStr licenseStr
+    |> Task.fromResult
+    |> Task.mapFail InvalidFormat</code></p><button class="absolute top-2 right-2 hidden group-hover:inline text-xl" onclick="copy_code(this)">复制</button><button class="absolute top-2 right-16 hidden group-hover:inline text-xl" onclick="fold_code(this)">折叠</button></pre>
+      <hr class="border-2 border-dashed my-10">
+      <div class="flex flex-col sm:mx-2 *:my-2"><a class="flex items-center border-2 border-slate-500 w-full sm:rounded-md hover:border-white  justify-end " href="/posts/gleam/phantom-type" hx-get="/posts/gleam/phantom-type/index.html" hx-target="body" hx-push-url="/posts/gleam/phantom-type" hx-swap="innerHTML show:window:top"><span class="text-2xl sm:text-4xl sm:p-2 pr-2 pl-1 order-last ">></span> <span class="text-xl sm:text-2xl sm:p-2">gleam: phantom-type</span></a></div>
+    </div>
+  </body>
+</html>
